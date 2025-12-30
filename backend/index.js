@@ -2,10 +2,49 @@ const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
+const { Telegraf } = require('telegraf');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Telegram Bot Setup
+const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
+
+bot.start((ctx) => ctx.reply('Selamat datang di Bot Remote Upload Bokep Hot! Kirimkan link video Doodstream untuk di-upload atau ketik /help.'));
+
+bot.help((ctx) => {
+  ctx.reply('Cara pakai:\n1. Kirim link video\n2. Gunakan /list untuk melihat video terbaru\n3. Gunakan /search [keyword] untuk mencari video');
+});
+
+bot.command('list', async (ctx) => {
+  try {
+    const apiKey = process.env.DOODSTREAM_API_KEY;
+    const response = await axios.get(`https://doodstream.com/api/file/list?key=${apiKey}&page=1&per_page=5`);
+    if (response.data.success) {
+      const files = response.data.result.files;
+      let msg = '📹 *5 Video Terbaru:*\n\n';
+      files.forEach(f => {
+        msg += `• ${f.title}\n  🔗 https://bokephot.web.app/detail.html?id=${f.file_code}\n\n`;
+      });
+      ctx.replyWithMarkdown(msg);
+    }
+  } catch (error) {
+    ctx.reply('Gagal mengambil daftar video.');
+  }
+});
+
+bot.on('text', async (ctx) => {
+  const text = ctx.message.text;
+  if (text.startsWith('http')) {
+    ctx.reply('Sedang memproses link upload... (Fitur upload remote via API Doodstream sedang dikonfigurasi)');
+    // Di sini bisa ditambahkan logika remote upload Doodstream API
+  }
+});
+
+bot.launch().then(() => {
+  console.log('🤖 Telegram Bot is running');
+});
 
 // Konfigurasi CORS
 const allowedOrigins = [
