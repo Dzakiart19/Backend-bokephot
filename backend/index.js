@@ -94,18 +94,29 @@ app.get('/api/videos', async (req, res) => {
     
     if (!apiKey) {
       return res.status(500).json({ 
-        success: false, 
+        success: true, 
+        result: { files: [] },
         error: 'API Key tidak dikonfigurasi' 
       });
     }
 
     const response = await axios.get(`https://doodstream.com/api/file/list?key=${apiKey}&page=${page}&per_page=${per_page}`);
     
-    res.json(response.data);
+    // Always return a valid object structure even if Doodstream API fails
+    if (response.data && response.data.status === 200) {
+      res.json(response.data);
+    } else {
+      res.json({
+        success: true,
+        result: { files: [] },
+        msg: response.data ? response.data.msg : 'Doodstream API error'
+      });
+    }
   } catch (error) {
     console.error('Error fetching videos:', error.message);
-    res.status(500).json({ 
-      success: false, 
+    res.json({ 
+      success: true, 
+      result: { files: [] },
       error: 'Gagal mengambil daftar video' 
     });
   }
