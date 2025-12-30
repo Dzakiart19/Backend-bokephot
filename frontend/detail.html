@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Detail - VideoStream</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .loading-spinner { border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <!-- Header -->
+    <header class="bg-gray-800 shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <!-- Logo -->
+                <div class="flex items-center space-x-3">
+                    <a href="index.html" class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"/>
+                            </svg>
+                        </div>
+                        <h1 class="text-2xl font-bold text-white">VideoStream</h1>
+                    </a>
+                </div>
+                
+                <!-- Navigation -->
+                <nav class="hidden md:flex items-center space-x-6">
+                    <a href="index.html" class="text-white hover:text-red-500 font-medium transition-colors">Home</a>
+                    <a href="#" class="text-gray-300 hover:text-red-500 font-medium transition-colors">Categories</a>
+                    <a href="#" class="text-gray-300 hover:text-red-500 font-medium transition-colors">Trending</a>
+                </nav>
+                
+                <!-- User Actions -->
+                <div class="flex items-center space-x-3">
+                    <button class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                        Upload
+                    </button>
+                    <button class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                        Login
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Video Player Section -->
+            <div class="lg:col-span-2">
+                <!-- Video Player -->
+                <div class="bg-black rounded-xl aspect-video flex items-center justify-center mb-6">
+                    <div id="videoPlayer" class="w-full h-full">
+                        <div class="text-center text-gray-400 py-12">
+                            <div class="loading-spinner mx-auto mb-4"></div>
+                            <p>Memuat video player...</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Video Info -->
+                <div id="videoInfo" class="bg-gray-800 rounded-xl p-6">
+                    <h1 id="videoTitle" class="text-2xl font-bold text-white mb-4">Loading...</h1>
+                    
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center space-x-4 text-sm text-gray-400">
+                            <span id="videoViews">0 views</span>
+                            <span>•</span>
+                            <span id="videoUploadDate">Unknown</span>
+                        </div>
+                        
+                        <div class="flex items-center space-x-3">
+                            <button class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z"/>
+                                </svg>
+                                <span>Like</span>
+                            </button>
+                            <button class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z"/>
+                                </svg>
+                                <span>Share</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Tags -->
+                    <div class="flex flex-wrap gap-2 mb-6">
+                        <span class="bg-gray-700 text-gray-300 px-3 py-1 rounded-full text-sm">HD</span>
+                        <span class="bg-gray-700 text-gray-300 px-3 py-1 rounded-full text-sm">1080p</span>
+                        <span class="bg-gray-700 text-gray-300 px-3 py-1 rounded-full text-sm">Entertainment</span>
+                    </div>
+                    
+                    <!-- Description -->
+                    <div class="border-t border-gray-700 pt-4">
+                        <h3 class="text-lg font-semibold text-white mb-2">Description</h3>
+                        <p id="videoDescription" class="text-gray-300 leading-relaxed">
+                            Deskripsi video akan muncul di sini...
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sidebar -->
+            <div class="lg:col-span-1">
+                <!-- Related Videos -->
+                <div class="bg-gray-800 rounded-xl p-6">
+                    <h3 class="text-xl font-bold text-white mb-4">Related Videos</h3>
+                    <div id="relatedVideos" class="space-y-4">
+                        <!-- Related videos will be loaded here -->
+                        <div class="text-center text-gray-400 py-8">
+                            <div class="loading-spinner mx-auto mb-4"></div>
+                            <p>Memuat video terkait...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 mt-16">
+        <div class="container mx-auto px-4 py-8">
+            <div class="text-center">
+                <div class="flex items-center justify-center space-x-3 mb-4">
+                    <div class="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"/>
+                        </svg>
+                    </div>
+                    <span class="text-xl font-bold text-white">VideoStream</span>
+                </div>
+                <p class="text-gray-400 text-sm">
+                    © 2025 VideoStream. Nonton video online dengan mudah dan cepat.
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="detail.js"></script>
+</body>
+</html>

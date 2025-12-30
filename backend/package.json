@@ -1,0 +1,22 @@
+{
+  "name": "doodstream-api-proxy",
+  "version": "1.0.0",
+  "description": "API Proxy untuk Doodstream - Menyembunyikan API Key dan menangani CORS",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "keywords": ["doodstream", "api", "proxy", "cors"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "axios": "^1.6.2",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}
