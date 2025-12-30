@@ -2,7 +2,7 @@
 const CONFIG = {
     // Ganti dengan URL Replit Anda setelah deploy backend
     // Contoh: 'https://my-doodstream-api.repl.co'
-    API_BASE_URL: '/api',
+    API_BASE_URL: 'https://backend-bokephot--ioj1gjah.replit.app/api',
     
     // Jumlah video per halaman
     VIDEOS_PER_PAGE: 20,
