@@ -37,13 +37,28 @@ bot.command('list', async (ctx) => {
 bot.on('text', async (ctx) => {
   const text = ctx.message.text;
   if (text.startsWith('http')) {
-    ctx.reply('Sedang memproses link upload... (Fitur upload remote via API Doodstream sedang dikonfigurasi)');
-    // Di sini bisa ditambahkan logika remote upload Doodstream API
+    try {
+      const apiKey = process.env.DOODSTREAM_API_KEY;
+      ctx.reply('Sedang memproses link upload ke Doodstream...');
+      
+      const response = await axios.get(`https://doodstream.com/api/upload/url?key=${apiKey}&url=${encodeURIComponent(text)}`);
+      
+      if (response.data.success) {
+        ctx.reply('✅ Link berhasil ditambahkan ke antrian upload Doodstream!');
+      } else {
+        ctx.reply('❌ Gagal mengupload: ' + (response.data.msg || 'Terjadi kesalahan pada API Doodstream'));
+      }
+    } catch (error) {
+      console.error('Remote upload error:', error.message);
+      ctx.reply('❌ Terjadi kesalahan saat menghubungi API Doodstream.');
+    }
   }
 });
 
 bot.launch().then(() => {
   console.log('🤖 Telegram Bot is running');
+}).catch(err => {
+  console.error('❌ Telegram Bot failed to start:', err.message);
 });
 
 // Konfigurasi CORS
