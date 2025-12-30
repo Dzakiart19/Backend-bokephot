@@ -99,13 +99,25 @@ async function fetchVideos(page = 1, searchTerm = '') {
             params.append('search_term', searchTerm);
         }
 
-        const response = await fetch(`${CONFIG.API_BASE_URL}${endpoint}?${params}`);
+        const url = `${CONFIG.API_BASE_URL}${endpoint}?${params}`;
+        console.log('Fetching from URL:', url);
+        
+        const response = await fetch(url, {
+            mode: 'cors',
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
         
         if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Response not OK:', response.status, errorText);
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        return await response.json();
+        const data = await response.json();
+        console.log('API Response Data:', data);
+        return data;
     } catch (error) {
         console.error('Error fetching videos:', error);
         throw error;
@@ -151,12 +163,18 @@ async function loadVideos(isLoadMore = false) {
 
     try {
         const data = await fetchVideos(currentPage, currentQuery);
+        console.log('Data received in loadVideos:', data);
         
-        if (!data.success) {
-            throw new Error(data.error || 'Failed to fetch videos');
+        // Handle both possible structures (data.success or data.status === 200)
+        const isSuccess = data.success || data.status === 200;
+        
+        if (!isSuccess) {
+            throw new Error(data.error || data.msg || 'Failed to fetch videos');
         }
 
-        const videos = data.result?.files || [];
+        const result = data.result || {};
+        const videos = result.files || [];
+        console.log('Videos to display:', videos);
         
         if (videos.length === 0) {
             if (isLoadMore) {

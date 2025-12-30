@@ -69,12 +69,7 @@ const allowedOrigins = [
   'http://localhost:5000'
 ];
 
-app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
-
+app.use(cors()); // Allow all origins for debugging
 app.use(express.json());
 
 // Serve static files from frontend folder
