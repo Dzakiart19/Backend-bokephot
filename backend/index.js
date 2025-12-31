@@ -518,7 +518,7 @@ app.get('/api/health', (req, res) => {
 
 // Config endpoint - returns backend URL for client-side auto-detection
 app.get('/api/config', (req, res) => {
-  const backendUrl = process.env.REPLIT_URL || req.get('origin') || 'https://backend-bokephot--ioj1gjah.replit.app';
+  const backendUrl = process.env.REPLIT_URL || req.get('origin') || 'https://backend-bokephot--mio5ikd.replit.app';
   res.json({
     success: true,
     backendUrl: backendUrl,
