@@ -24,12 +24,18 @@ Preferred communication style: Simple, everyday language (Indonesian/English).
 - Backend proxy timeout reduced to 10s for faster response
 - Improved error responses from proxy endpoint
 - Responsive grid layout: 5 cols (desktop) → 3 cols (tablet) → 2 cols (mobile)
-4. **Telegram Bot Upload** - Fixed success check logic & added user guidance:
-   - Changed from `response.data.success` to `response.data.msg === 'OK'` 
-   - Added 30s timeout for upload processing
-   - Added validation: warns user if URL is not direct file link (.mp4, .mkv, etc)
-   - Improved error messages and logging
-   - **Note**: Bot works correctly. Doodstream error "HTML page instead of file" means user needs to provide direct file URL, not video page URL
+4. **Telegram Bot Upload** - Complete file & URL upload system:
+   - ✅ Upload file video langsung ke bot (MP4, MKV, AVI, MOV, FLV, WMV, WEBM, M3U8, 3GP)
+   - ✅ Caption sebagai judul video (optional)
+   - ✅ File size validation (max 500MB)
+   - ✅ URL link upload dengan title support
+   - Changed from `response.data.success` to `response.data.msg === 'OK'`
+   - Added 30s timeout for URL, 60s for file uploads
+   - Better error messages & logging
+   - **Bot Features**: 
+     - `/help` - Lihat panduan lengkap
+     - `/list` - Lihat 5 video terbaru
+     - `/search [keyword]` - Cari video
 
 ## System Architecture
 

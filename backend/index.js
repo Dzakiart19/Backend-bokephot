@@ -14,7 +14,7 @@ const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
 bot.start((ctx) => ctx.reply('Selamat datang di Bot Remote Upload Bokep Hot! Kirimkan link video Doodstream untuk di-upload atau ketik /help.'));
 
 bot.help((ctx) => {
-  ctx.reply('Cara pakai:\n1. Kirim link video\n2. Gunakan /list untuk melihat video terbaru\n3. Gunakan /search [keyword] untuk mencari video');
+  ctx.reply('📖 *Cara Pakai Bot:*\n\n*Opsi 1: Kirim File Video*\n1. Upload video file MP4/MKV langsung\n2. Tambahkan judul di caption (opsional)\n3. Bot akan upload ke Doodstream\n\n*Opsi 2: Kirim Link Video*\n1. Paste direct file link (.mp4, .mkv)\n2. Bot akan upload ke Doodstream\n\n*Opsi 3: List & Search*\n/list - Lihat 5 video terbaru\n/search keyword - Cari video\n\n⚠️ Untuk file video: Ukuran max ~500MB, format MP4/MKV preferred', { parse_mode: 'Markdown' });
 });
 
 bot.command('list', async (ctx) => {
@@ -34,6 +34,72 @@ bot.command('list', async (ctx) => {
   }
 });
 
+// Handle video/document file upload
+bot.on('document', async (ctx) => {
+  try {
+    const apiKey = process.env.DOODSTREAM_API_KEY;
+    if (!apiKey) {
+      return ctx.reply('❌ API Key tidak dikonfigurasi. Hubungi admin.');
+    }
+
+    const fileId = ctx.message.document.file_id;
+    const fileName = ctx.message.document.file_name;
+    const caption = ctx.message.caption || '';
+    const fileSize = ctx.message.document.file_size;
+    
+    // Check file size (Doodstream limit ~500MB)
+    if (fileSize > 500 * 1024 * 1024) {
+      return ctx.reply('❌ File terlalu besar! Max 500MB.\n\nUkuran file: ' + (fileSize / 1024 / 1024).toFixed(2) + 'MB');
+    }
+
+    // Check file type
+    const validExtensions = ['.mp4', '.mkv', '.avi', '.mov', '.flv', '.wmv', '.webm', '.m3u8', '.3gp'];
+    const hasValidExt = validExtensions.some(ext => fileName.toLowerCase().includes(ext));
+    
+    if (!hasValidExt) {
+      return ctx.reply('❌ Format file tidak didukung!\nDukungan: MP4, MKV, AVI, MOV, FLV, WMV, WEBM, M3U8, 3GP\n\nFile: ' + fileName);
+    }
+
+    ctx.reply('⏳ Sedang upload file ke Telegram CDN dan Doodstream...\n\nFile: ' + fileName + '\nUkuran: ' + (fileSize / 1024 / 1024).toFixed(2) + 'MB');
+
+    // Get file URL from Telegram
+    const file = await ctx.telegram.getFile(fileId);
+    const fileUrl = `https://api.telegram.org/file/bot${process.env.TELEGRAM_BOT_TOKEN}/${file.file_path}`;
+    
+    console.log('[BOT-FILE-UPLOAD] File:', fileName, 'Size:', fileSize, 'URL:', fileUrl);
+
+    // Upload to Doodstream
+    let uploadUrl = `https://doodstream.com/api/upload/url?key=${apiKey}&url=${encodeURIComponent(fileUrl)}`;
+    
+    // Add title if provided in caption
+    if (caption.trim()) {
+      uploadUrl += `&title=${encodeURIComponent(caption.trim())}`;
+    }
+
+    const response = await axios.get(uploadUrl, {
+      timeout: 60000 // 60 second timeout for file uploads
+    });
+
+    console.log('[BOT-FILE-UPLOAD] Response:', JSON.stringify(response.data));
+
+    const isSuccess = response.data.msg === 'OK' || response.data.success === true;
+    
+    if (isSuccess) {
+      const fileCode = response.data.result?.filecode || 'unknown';
+      const title = caption.trim() || fileName;
+      ctx.reply(`✅ Video berhasil diupload ke Doodstream!\n\n📹 Judul: ${title}\n🔖 File Code: ${fileCode}\n⏱️ Video akan diproses dalam beberapa menit.`);
+    } else {
+      const errorMsg = response.data.msg || response.data.error || 'Terjadi kesalahan';
+      ctx.reply('❌ Gagal mengupload:\n' + errorMsg);
+    }
+  } catch (error) {
+    console.error('[BOT-FILE-UPLOAD-ERROR]', error.message);
+    const errorMsg = error.message || 'Kesalahan koneksi';
+    ctx.reply('❌ Terjadi kesalahan:\n' + errorMsg);
+  }
+});
+
+// Handle text message (URL links)
 bot.on('text', async (ctx) => {
   const text = ctx.message.text.trim();
   if (text.startsWith('http')) {
