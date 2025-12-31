@@ -441,37 +441,29 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Delete video endpoint
-app.post('/api/delete/:fileCode', async (req, res) => {
+// Validate video endpoint - check if video still exists
+app.get('/api/validate/:fileCode', async (req, res) => {
   try {
     const { fileCode } = req.params;
     const apiKey = process.env.DOODSTREAM_API_KEY;
     
     if (!apiKey) {
-      return res.json({ status: 400, msg: 'API Key not configured', success: false });
-    }
-    
-    if (!fileCode) {
-      return res.json({ status: 400, msg: 'File code required', success: false });
+      return res.json({ status: 400, msg: 'API Key not configured', valid: false });
     }
 
-    console.log('[DELETE-VIDEO] Deleting file:', fileCode);
+    console.log('[VALIDATE-VIDEO] Checking file:', fileCode);
     
-    const deleteUrl = `https://doodstream.com/api/file/delete?key=${apiKey}&file_code=${fileCode}`;
-    const response = await axios.get(deleteUrl, { timeout: 10000 });
+    // Get file info from Doodstream
+    const response = await axios.get(`https://doodstream.com/api/file/info?key=${apiKey}&file_code=${fileCode}`, { timeout: 5000 });
     
-    console.log('[DELETE-VIDEO] Response:', response.data);
+    console.log('[VALIDATE-VIDEO] Response:', response.data.msg);
     
-    const isSuccess = response.data.msg === 'OK' || response.data.success === true;
+    const isValid = response.data.msg === 'OK' && response.data.result && response.data.result.file_code === fileCode;
     
-    if (isSuccess) {
-      res.json({ status: 200, msg: 'OK', success: true });
-    } else {
-      res.json({ status: 400, msg: response.data.msg || 'Delete failed', success: false });
-    }
+    res.json({ status: 200, valid: isValid, msg: isValid ? 'OK' : 'File not found' });
   } catch (error) {
-    console.error('[DELETE-VIDEO-ERROR]', error.message);
-    res.json({ status: 500, msg: error.message, success: false });
+    console.error('[VALIDATE-VIDEO-ERROR]', error.message);
+    res.json({ status: 500, valid: false, msg: 'Validation error' });
   }
 });
 

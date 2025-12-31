@@ -44,11 +44,12 @@ Preferred communication style: Simple, everyday language (Indonesian/English).
      - `/search keyword` - Cari video ✅
      - **File Upload**: Kirim file/video + caption ✅
 
-5. **Video Management - Delete Feature** ✅
-   - Delete button (trash icon) in video modal when watching
-   - One-click deletion from Doodstream & immediate removal from website
-   - Confirmation dialog to prevent accidental deletion
-   - Backend: `/api/delete/:fileCode` endpoint calls Doodstream API
+5. **Video Management - Auto-detection of Deleted Videos** ✅
+   - Validates video existence before playing (calls `/api/validate/:fileCode`)
+   - If video deleted manually from Doodstream, shows "Video tidak tersedia" message
+   - Auto-removes deleted video from grid
+   - No public delete button (security - only backend can manage via API)
+   - Backend: `/api/validate/:fileCode` endpoint checks if video exists
 
 ## System Architecture
 
