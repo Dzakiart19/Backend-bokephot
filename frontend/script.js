@@ -20,6 +20,14 @@ let totalVideos = 0;
 const elements = {
     searchInput: document.getElementById('searchInput'),
     searchButton: document.getElementById('searchButton'),
+    mobileSearchToggle: document.getElementById('mobileSearchToggle'),
+    mobileSearchBar: document.getElementById('mobileSearchBar'),
+    mobileSearchInput: document.getElementById('mobileSearchInput'),
+    mobileSearchBtn: document.getElementById('mobileSearchBtn'),
+    sidebar: document.getElementById('sidebar'),
+    sidebarOverlay: document.getElementById('sidebarOverlay'),
+    openSidebar: document.getElementById('openSidebar'),
+    closeSidebar: document.getElementById('closeSidebar'),
     videoGrid: document.getElementById('videoGrid'),
     loadingState: document.getElementById('loadingState'),
     errorState: document.getElementById('errorState'),
@@ -28,10 +36,6 @@ const elements = {
     loadMoreContainer: document.getElementById('loadMoreContainer'),
     loadMoreButton: document.getElementById('loadMoreButton'),
     retryButton: document.getElementById('retryButton'),
-    filterTabs: document.querySelectorAll('.filter-tab'),
-    latestTab: document.getElementById('latestTab'),
-    trendingTab: document.getElementById('trendingTab'),
-    popularTab: document.getElementById('popularTab'),
     videoModal: document.getElementById('videoModal'),
     modalTitle: document.getElementById('modalTitle'),
     closeModal: document.getElementById('closeModal'),
@@ -49,18 +53,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Event Listeners
 function initializeEventListeners() {
-    // Search functionality
-    elements.searchButton.addEventListener('click', handleSearch);
-    elements.searchInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            handleSearch();
-        }
+    // Sidebar
+    elements.openSidebar.addEventListener('click', toggleSidebar);
+    elements.closeSidebar.addEventListener('click', toggleSidebar);
+    elements.sidebarOverlay.addEventListener('click', toggleSidebar);
+
+    // Mobile Search
+    elements.mobileSearchToggle.addEventListener('click', () => {
+        elements.mobileSearchBar.classList.toggle('hidden');
     });
 
-    // Filter tabs
-    elements.latestTab.addEventListener('click', () => switchFilter('latest'));
-    elements.trendingTab.addEventListener('click', () => switchFilter('trending'));
-    elements.popularTab.addEventListener('click', () => switchFilter('popular'));
+    // Search functionality
+    elements.searchButton.addEventListener('click', () => handleSearch());
+    elements.searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') handleSearch();
+    });
+    elements.mobileSearchBtn.addEventListener('click', () => {
+        handleSearch(elements.mobileSearchInput.value);
+    });
 
     // Load more
     elements.loadMoreButton.addEventListener('click', loadMoreVideos);
@@ -84,215 +94,61 @@ function initializeEventListeners() {
     });
 }
 
-// API Functions
-async function fetchVideos(page = 1, searchTerm = '') {
-    try {
-        const endpoint = searchTerm ? '/search' : '/videos';
-        const params = new URLSearchParams({
-            page: page.toString(),
-            per_page: CONFIG.VIDEOS_PER_PAGE.toString()
-        });
-
-        if (searchTerm) {
-            params.append('search_term', searchTerm);
-        }
-
-        const url = `${CONFIG.API_BASE_URL}${endpoint}?${params}`;
-        console.log('Fetching from URL:', url);
-        
-        const response = await fetch(url, {
-            mode: 'cors',
-            headers: {
-                'Accept': 'application/json'
-            }
-        });
-        
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Response not OK:', response.status, errorText);
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log('API Response Data:', data);
-        return data;
-    } catch (error) {
-        console.error('Error fetching videos:', error);
-        throw error;
-    }
-}
-
-async function fetchVideoDetails(fileId) {
-    try {
-        const response = await fetch(`${CONFIG.API_BASE_URL}/file/${fileId}`);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        return await response.json();
-    } catch (error) {
-        console.error('Error fetching video details:', error);
-        throw error;
-    }
-}
-
-async function fetchEmbedUrl(fileId) {
-    try {
-        const url = `${CONFIG.API_BASE_URL}/embed/${fileId}`;
-        console.log('Fetching embed from URL:', url);
-        const response = await fetch(url);
-        
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Embed response not OK:', response.status, errorText);
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log('Embed API Response:', data);
-        return data;
-    } catch (error) {
-        console.error('Error fetching embed URL:', error);
-        throw error;
-    }
-}
-
-// Video Loading Functions
-async function loadVideos(isLoadMore = false) {
-    if (isLoading) return;
-
-    isLoading = true;
-    showLoading();
-
-    try {
-        const data = await fetchVideos(currentPage, currentQuery);
-        console.log('Data received in loadVideos:', JSON.stringify(data));
-        
-        // Handle both possible structures (data.success or data.status === 200)
-        const isSuccess = data.success === true || data.status === 200 || data.msg === 'OK';
-        
-        if (!isSuccess) {
-            throw new Error(data.error || data.msg || 'Failed to fetch videos');
-        }
-
-        const result = data.result || {};
-        const videos = Array.isArray(result) ? result : (result.files || []);
-        console.log('Videos to display:', videos);
-        
-        if (videos.length === 0) {
-            if (isLoadMore) {
-                // Tidak ada video lagi untuk dimuat
-                elements.loadMoreContainer.classList.add('hidden');
-            } else {
-                // Tidak ada hasil pencarian
-                showNoResults();
-            }
-            return;
-        }
-
-        if (isLoadMore) {
-            appendVideos(videos);
-        } else {
-            displayVideos(videos);
-        }
-
-        // Tampilkan tombol load more jika masih ada video
-        if (videos.length >= CONFIG.VIDEOS_PER_PAGE) {
-            elements.loadMoreContainer.classList.remove('hidden');
-        }
-
-        hideLoading();
-    } catch (error) {
-        console.error('Error loading videos:', error);
-        showError('Gagal memuat video. Pastikan backend sudah running dan URL API sudah benar.');
-        hideLoading();
-    } finally {
-        isLoading = false;
-    }
-}
-
-async function loadMoreVideos() {
-    currentPage++;
-    await loadVideos(true);
-}
-
-// UI Functions
-function displayVideos(videos) {
-    elements.videoGrid.innerHTML = '';
-    
-    videos.forEach(video => {
-        const videoCard = createVideoCard(video);
-        elements.videoGrid.appendChild(videoCard);
-    });
-}
-
-function appendVideos(videos) {
-    videos.forEach(video => {
-        const videoCard = createVideoCard(video);
-        elements.videoGrid.appendChild(videoCard);
-    });
+function toggleSidebar() {
+    elements.sidebar.classList.toggle('-translate-x-full');
+    elements.sidebarOverlay.classList.toggle('hidden');
+    document.body.classList.toggle('overflow-hidden');
 }
 
 function createVideoCard(video) {
     const card = document.createElement('div');
-    card.className = 'video-card bg-gray-800 rounded-xl overflow-hidden shadow-lg cursor-pointer';
+    card.className = 'video-card bg-gray-900 overflow-hidden shadow-sm cursor-pointer group flex flex-col';
     
-    // Format duration
     const duration = formatDuration(video.duration || video.length || 0);
-    
-    // Format views
     const views = formatViews(video.views || 0);
     
-    // Thumbnail URL - Doodstream API uses single_img or splash_img
     const getSecureThumb = (url) => {
         if (!url) return CONFIG.PLACEHOLDER_THUMBNAIL;
-        
-        // Force HTTPS and use our proxy
         let cleanUrl = url.replace('http://', 'https://');
-        
-        // Ensure postercdn.net or img.doodcdn.io is used
         if (cleanUrl.includes('postercdn.net') || cleanUrl.includes('doodcdn')) {
             return `${CONFIG.API_BASE_URL}/proxy-thumb?url=${encodeURIComponent(cleanUrl)}`;
         }
-        
         return cleanUrl;
     };
 
-    const thumbnailUrl = getSecureThumb(video.single_img || video.splash_img || video.thumbnail_url || video.screenshot);
+    const thumbnailUrl = getSecureThumb(video.single_img || video.splash_img);
     
     card.innerHTML = `
-        <div class="relative bg-gray-900">
+        <div class="relative aspect-video bg-gray-800">
             <img 
                 src="${thumbnailUrl}" 
-                alt="${video.title || video.name || 'Video'}"
-                class="w-full h-48 object-cover opacity-90 group-hover:opacity-100 transition-opacity"
+                alt="${video.title}"
+                class="w-full h-full object-cover"
                 loading="lazy"
                 onerror="this.src='${CONFIG.PLACEHOLDER_THUMBNAIL}'; this.onerror=null;"
             >
-            <div class="absolute bottom-2 right-2 bg-black bg-opacity-75 text-white text-xs px-2 py-1 rounded">
+            <div class="absolute bottom-1 right-1 bg-black bg-opacity-80 text-white text-[10px] px-1 py-0.5 rounded">
                 ${duration}
             </div>
-            <div class="absolute top-2 left-2 bg-red-600 text-white text-xs px-2 py-1 rounded font-medium">
-                HD
+            <div class="absolute bottom-1 left-1 bg-black bg-opacity-60 text-white text-[10px] px-1 py-0.5 rounded flex items-center space-x-1">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                <span>${views}</span>
             </div>
         </div>
-        <div class="p-4">
-            <h3 class="font-semibold text-white mb-2 line-clamp-2 text-sm leading-tight">
-                ${video.title || video.name || 'Untitled Video'}
-            </h3>
-            <div class="flex items-center justify-between text-xs text-gray-400">
-                <span>${views} views</span>
-                <span>${formatDate(video.uploaded || video.created || Date.now())}</span>
+        <div class="p-2 flex-1">
+            <div class="flex items-center space-x-1 mb-1">
+                <div class="flex items-center text-gray-400 text-[10px] space-x-1">
+                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z"/></svg>
+                    <span>100%</span>
+                </div>
             </div>
+            <h3 class="text-gray-200 text-xs font-medium line-clamp-2 leading-tight group-hover:text-white transition-colors">
+                ${video.title}
+            </h3>
         </div>
     `;
     
-    // Add click event
-    card.addEventListener('click', () => {
-        openVideoModal(video);
-    });
-    
+    card.addEventListener('click', () => openVideoModal(video));
     return card;
 }
 
@@ -360,16 +216,20 @@ function closeVideoModal() {
 }
 
 // Search Functions
-function handleSearch() {
-    const query = elements.searchInput.value.trim();
+function handleSearch(query = null) {
+    const searchTerm = query !== null ? query : elements.searchInput.value.trim();
     
-    if (query === currentQuery) return;
+    if (searchTerm === currentQuery) return;
     
-    currentQuery = query;
+    currentQuery = searchTerm;
     currentPage = 1;
     
-    // Reset filter tabs
-    switchFilter('latest', false);
+    // Reset search inputs
+    elements.searchInput.value = searchTerm;
+    elements.mobileSearchInput.value = searchTerm;
+    
+    // Hide mobile search bar after search
+    elements.mobileSearchBar.classList.add('hidden');
     
     loadVideos();
 }
@@ -381,18 +241,9 @@ function switchFilter(filter, resetSearch = true) {
     currentFilter = filter;
     currentPage = 1;
     
-    // Update tab appearance
-    elements.filterTabs.forEach(tab => {
-        tab.classList.remove('active', 'bg-red-600', 'text-white');
-        tab.classList.add('text-gray-300');
-    });
-    
-    const activeTab = document.getElementById(`${filter}Tab`);
-    activeTab.classList.add('active', 'bg-red-600', 'text-white');
-    activeTab.classList.remove('text-gray-300');
-    
     if (resetSearch) {
         elements.searchInput.value = '';
+        elements.mobileSearchInput.value = '';
         currentQuery = '';
     }
     

@@ -21,125 +21,112 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="bg-gray-900 text-white min-h-screen">
+<body class="bg-black text-white min-h-screen">
+    <!-- Sidebar Overlay -->
+    <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-[60] hidden transition-opacity duration-300"></div>
+
+    <!-- Sidebar Menu -->
+    <aside id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-gray-900 z-[70] transform -translate-x-full transition-transform duration-300 ease-in-out border-r border-gray-800">
+        <div class="p-4 flex items-center justify-between border-b border-gray-800">
+            <div class="flex items-center space-x-2">
+                <div class="w-8 h-8 bg-red-600 rounded flex items-center justify-center">
+                    <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"/>
+                    </svg>
+                </div>
+                <span class="text-xl font-bold tracking-tighter italic">LENDIR<span class="text-blue-400">QU</span></span>
+            </div>
+            <button id="closeSidebar" class="text-gray-400 hover:text-white">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <nav class="p-4 space-y-2">
+            <a href="#" class="flex items-center space-x-3 p-2 rounded hover:bg-gray-800 text-red-500 font-medium">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/></svg>
+                <span>Home</span>
+            </a>
+            <div class="pt-4 pb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Categories</div>
+            <a href="#" class="block p-2 rounded hover:bg-gray-800 text-gray-300">Bokep Indo</a>
+            <a href="#" class="block p-2 rounded hover:bg-gray-800 text-gray-300">Bokep ABG</a>
+            <a href="#" class="block p-2 rounded hover:bg-gray-800 text-gray-300">Bokep Bocil</a>
+            <a href="#" class="block p-2 rounded hover:bg-gray-800 text-gray-300">Bokep Viral</a>
+            <a href="#" class="block p-2 rounded hover:bg-gray-800 text-gray-300">Bokep Hijab</a>
+            <a href="#" class="block p-2 rounded hover:bg-gray-800 text-gray-300">Bokep Chindo</a>
+            <a href="#" class="block p-2 rounded hover:bg-gray-800 text-gray-300">Bokep Colmek</a>
+            <a href="#" class="block p-2 rounded hover:bg-gray-800 text-gray-300">Bokep Jepang</a>
+        </nav>
+    </aside>
+
     <!-- Header -->
-    <header class="bg-gray-800 shadow-lg sticky top-0 z-50">
-        <div class="container mx-auto px-4 py-4">
-            <div class="flex items-center justify-between">
-                <!-- Logo -->
-                <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center">
-                        <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+    <header class="bg-gray-900 border-b border-gray-800 sticky top-0 z-50">
+        <div class="container mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <button id="openSidebar" class="text-white">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/>
+                    </svg>
+                </button>
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 bg-red-600 rounded flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
                             <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"/>
                         </svg>
                     </div>
-                    <h1 class="text-2xl font-bold text-white uppercase tracking-tighter italic">Bokep<span class="text-red-500">Hot</span></h1>
+                    <span class="text-2xl font-bold tracking-tighter italic">LENDIR<span class="text-blue-400">QU</span></span>
                 </div>
-                
-                <!-- Navigation -->
-                <nav class="hidden md:flex items-center space-x-6">
-                    <a href="#" class="text-white hover:text-red-500 font-medium transition-colors">Home</a>
-                    <a href="#" class="text-gray-300 hover:text-red-500 font-medium transition-colors">Categories</a>
-                    <a href="#" class="text-gray-300 hover:text-red-500 font-medium transition-colors">Trending</a>
-                </nav>
-                
-                <!-- User Actions (Hidden as requested) -->
-                <div class="hidden items-center space-x-3">
-                    <button class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
-                        Upload
-                    </button>
-                    <button class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
-                        Login
-                    </button>
-                </div>
+            </div>
+            <div class="flex-1 max-w-xl mx-8 relative hidden md:block">
+                <input type="text" id="searchInput" placeholder="Search..." class="w-full bg-gray-800 border border-gray-700 text-white px-4 py-2 rounded focus:outline-none focus:border-red-600">
+                <button id="searchButton" class="absolute right-0 top-0 h-full px-4 bg-red-600 rounded-r hover:bg-red-700 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                </button>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button class="text-white md:hidden" id="mobileSearchToggle">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                </button>
+            </div>
+        </div>
+        <!-- Mobile Search Bar (Collapsible) -->
+        <div id="mobileSearchBar" class="p-4 bg-gray-800 border-b border-gray-700 hidden md:hidden">
+            <div class="relative">
+                <input type="text" id="mobileSearchInput" placeholder="Search..." class="w-full bg-gray-900 border border-gray-700 text-white px-4 py-2 rounded focus:outline-none focus:border-red-600">
+                <button id="mobileSearchBtn" class="absolute right-0 top-0 h-full px-4 bg-red-600 rounded-r">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                </button>
             </div>
         </div>
     </header>
 
-    <!-- Search Section -->
-    <section class="bg-gradient-to-r from-red-600 to-red-800 py-12">
-        <div class="container mx-auto px-4">
-            <div class="max-w-2xl mx-auto text-center">
-                <h2 class="text-4xl font-extrabold text-white mb-4 uppercase italic">BOKEP HOT</h2>
-                <p class="text-red-100 mb-8 text-lg">Koleksi video paling panas dan terbaru setiap hari</p>
-                
-                <!-- Search Bar -->
-                <div class="relative">
-                    <input 
-                        type="text" 
-                        id="searchInput"
-                        placeholder="Cari video... (misal: tutorial, music, dll)"
-                        class="w-full px-6 py-4 text-lg rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-4 focus:ring-red-300"
-                    >
-                    <button 
-                        id="searchButton"
-                        class="absolute right-2 top-2 bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
-                    >
-                        Search
-                    </button>
-                </div>
+    <!-- Ad Banner Placeholder -->
+    <div class="container mx-auto px-4 py-4">
+        <div class="bg-gray-800 rounded h-24 flex items-center justify-center border border-gray-700 overflow-hidden">
+            <img src="https://via.placeholder.com/1200x100/111111/dc2626?text=ADVERTISING+BANNER" class="w-full h-full object-cover">
+        </div>
+    </div>
+
+    <!-- Section Title -->
+    <div class="container mx-auto px-4 py-4">
+        <div class="flex items-center justify-between border-l-4 border-red-600 pl-4 bg-gray-800 py-2 rounded-r">
+            <h2 class="text-xl font-bold uppercase">Video Terupdate</h2>
+            <div class="bg-red-600 p-1 rounded">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
             </div>
         </div>
-    </section>
+    </div>
 
     <!-- Main Content -->
-    <main class="container mx-auto px-4 py-8">
-        <!-- Filter Tabs -->
-        <div class="flex items-center justify-center mb-8">
-            <div class="bg-gray-800 rounded-xl p-2 flex space-x-2">
-                <button id="latestTab" class="filter-tab active px-6 py-3 rounded-lg font-medium transition-all bg-red-600 text-white">
-                    Latest
-                </button>
-                <button id="trendingTab" class="filter-tab px-6 py-3 rounded-lg font-medium transition-all text-gray-300 hover:text-white">
-                    Trending
-                </button>
-                <button id="popularTab" class="filter-tab px-6 py-3 rounded-lg font-medium transition-all text-gray-300 hover:text-white">
-                    Popular
-                </button>
-            </div>
-        </div>
-
-        <!-- Loading State -->
-        <div id="loadingState" class="text-center py-12">
-            <div class="loading-spinner mx-auto mb-4"></div>
-            <p class="text-gray-400">Memuat video...</p>
-        </div>
-
-        <!-- Error State -->
-        <div id="errorState" class="text-center py-12 hidden">
-            <div class="text-red-500 mb-4">
-                <svg class="w-16 h-16 mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-                </svg>
-            </div>
-            <h3 class="text-xl font-semibold text-white mb-2">Terjadi Kesalahan</h3>
-            <p id="errorMessage" class="text-gray-400 mb-4"></p>
-            <button id="retryButton" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">
-                Coba Lagi
-            </button>
-        </div>
-
-        <!-- No Results State -->
-        <div id="noResultsState" class="text-center py-12 hidden">
-            <div class="text-gray-500 mb-4">
-                <svg class="w-16 h-16 mx-auto" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
-                </svg>
-            </div>
-            <h3 class="text-xl font-semibold text-white mb-2">Video Tidak Ditemukan</h3>
-            <p class="text-gray-400">Coba kata kunci lain atau kembali ke daftar video terbaru.</p>
-        </div>
-
+    <main class="container mx-auto px-4 py-4">
         <!-- Video Grid -->
-        <div id="videoGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-            <!-- Video cards will be inserted here by JavaScript -->
+        <div id="videoGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <!-- Video cards will be restyled in script.js -->
         </div>
 
-        <!-- Load More Button -->
-        <div id="loadMoreContainer" class="text-center mt-12 hidden">
-            <button id="loadMoreButton" class="bg-gray-800 hover:bg-gray-700 text-white px-8 py-3 rounded-lg font-medium transition-colors">
-                Load More Videos
-            </button>
+        <!-- Pagination/Load More -->
+        <div id="loadMoreContainer" class="flex justify-center mt-8 hidden">
+            <button id="loadMoreButton" class="bg-red-600 hover:bg-red-700 text-white px-8 py-2 rounded font-medium transition-colors">Muat Lebih Banyak</button>
         </div>
     </main>
 
