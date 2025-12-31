@@ -177,9 +177,13 @@ function createVideoCard(video) {
     
     const getSecureThumb = (url) => {
         if (!url) return CONFIG.PLACEHOLDER_THUMBNAIL;
-        let cleanUrl = url.replace('http://', 'https://');
-        // Proxy through backend to avoid CORS and referrer issues
-        if (cleanUrl.includes('postercdn.net') || cleanUrl.includes('doodcdn')) {
+        
+        // Ensure URL is HTTPS and clean
+        let cleanUrl = url.trim().replace('http://', 'https://');
+        
+        // Doodstream thumbnails often need proxying due to referrer checks
+        // We proxy almost everything that isn't a data URI or already local
+        if (cleanUrl.includes('dood') || cleanUrl.includes('poster') || cleanUrl.includes('img') || cleanUrl.startsWith('https://')) {
             return `${CONFIG.API_BASE_URL}/proxy-thumb?url=${encodeURIComponent(cleanUrl)}`;
         }
         return cleanUrl;

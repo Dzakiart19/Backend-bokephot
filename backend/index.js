@@ -179,17 +179,31 @@ app.get('/api/proxy-thumb', async (req, res) => {
 
     console.log(`[PROXY] Fetching thumb: ${url}`);
     
+    // Validate URL to ensure it's from a known source or at least looks like a URL
+    if (!url.startsWith('http')) {
+        return res.status(400).send('Invalid URL');
+    }
+
     const response = await axios.get(url, {
       responseType: 'arraybuffer',
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Referer': 'https://doodstream.com/',
-        'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8'
+        'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
       },
-      timeout: 8000
+      timeout: 10000,
+      validateStatus: false // Allow us to handle error statuses ourselves
     });
 
-    res.set('Content-Type', 'image/jpeg');
+    if (response.status !== 200) {
+      console.error(`[PROXY-ERROR] Remote status: ${response.status}`);
+      return res.status(response.status).send('Remote server error');
+    }
+
+    const contentType = response.headers['content-type'] || 'image/jpeg';
+    res.set('Content-Type', contentType);
     res.set('Access-Control-Allow-Origin', '*');
     res.set('Cache-Control', 'public, max-age=86400'); // Cache for 24h
     res.send(response.data);
