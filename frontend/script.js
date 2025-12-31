@@ -163,17 +163,17 @@ async function loadVideos(isLoadMore = false) {
 
     try {
         const data = await fetchVideos(currentPage, currentQuery);
-        console.log('Data received in loadVideos:', data);
+        console.log('Data received in loadVideos:', JSON.stringify(data));
         
         // Handle both possible structures (data.success or data.status === 200)
-        const isSuccess = data.success || data.status === 200;
+        const isSuccess = data.success === true || data.status === 200 || data.msg === 'OK';
         
         if (!isSuccess) {
             throw new Error(data.error || data.msg || 'Failed to fetch videos');
         }
 
         const result = data.result || {};
-        const videos = result.files || [];
+        const videos = Array.isArray(result) ? result : (result.files || []);
         console.log('Videos to display:', videos);
         
         if (videos.length === 0) {
