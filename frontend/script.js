@@ -248,9 +248,15 @@ function createVideoCard(video) {
     const getSecureThumb = (url) => {
         if (!url) return CONFIG.PLACEHOLDER_THUMBNAIL;
         
-        // Use our backend proxy to bypass referrer blocking
-        const cleanUrl = url.replace('http://', 'https://');
-        return `${CONFIG.API_BASE_URL}/proxy-thumb?url=${encodeURIComponent(cleanUrl)}`;
+        // Force HTTPS and use our proxy
+        let cleanUrl = url.replace('http://', 'https://');
+        
+        // Ensure postercdn.net or img.doodcdn.io is used
+        if (cleanUrl.includes('postercdn.net') || cleanUrl.includes('doodcdn')) {
+            return `${CONFIG.API_BASE_URL}/proxy-thumb?url=${encodeURIComponent(cleanUrl)}`;
+        }
+        
+        return cleanUrl;
     };
 
     const thumbnailUrl = getSecureThumb(video.single_img || video.splash_img || video.thumbnail_url || video.screenshot);

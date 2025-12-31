@@ -186,12 +186,14 @@ app.get('/api/proxy-thumb', async (req, res) => {
       responseType: 'arraybuffer',
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-        'Referer': 'https://doodstream.com/'
+        'Referer': 'https://doodstream.com/',
+        'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8'
       },
-      timeout: 5000
+      timeout: 8000
     });
 
-    res.set('Content-Type', response.headers['content-type'] || 'image/jpeg');
+    res.set('Content-Type', 'image/jpeg');
+    res.set('Access-Control-Allow-Origin', '*');
     res.set('Cache-Control', 'public, max-age=86400'); // Cache for 24h
     res.send(response.data);
   } catch (error) {
