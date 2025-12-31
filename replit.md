@@ -8,7 +8,7 @@ A video streaming website that integrates with the Doodstream API. The applicati
 
 Preferred communication style: Simple, everyday language (Indonesian/English).
 
-## Recent Changes (2025-12-31 - Sync Fix + Firebase Hosting)
+## Recent Changes (2025-12-31 - FIXED: Full API URL for Firebase)
 
 ### Fixed Issues (Latest Session):
 1. **Web Loading Performance** - Changed API base URL from hardcoded external domain to relative `/api` path
@@ -61,13 +61,16 @@ Preferred communication style: Simple, everyday language (Indonesian/English).
    - Tidak ada delay dari sync - semuanya langsung realtime
    - Firebase dan Replit backend sekarang fully synchronized
 
-7. **Firebase Hosting Deployment** ✅ (NEW)
+7. **Firebase Hosting Deployment + API Fix** ✅ (NEW)
    - ✅ Frontend berhasil di-deploy ke Firebase Hosting
+   - **Issue Fixed**: Relative `/api` URL tidak berfungsi di Firebase
+   - **Solution**: Ganti ke full Replit URL: `https://backend-bokephot--ioj1gjah.replit.app/api`
+   - Kedua file (script.js + detail.js) sekarang pakai full backend URL ✅
    - **Live URL**: https://bokephot.web.app
-   - **Status**: Online dan siap diakses
+   - **Status**: ✅ Online, Connected, Dan Siap Diakses
    - Backend Replit: https://backend-bokephot--ioj1gjah.replit.app
    - CORS sudah configured di backend (origin: '*')
-   - Firebase frontend → Replit backend sync sudah verified
+   - Firebase frontend ↔ Replit backend: **FULLY SYNCED & WORKING**
 
 ## 🚀 Deployment URLs
 
@@ -121,8 +124,9 @@ Preferred communication style: Simple, everyday language (Indonesian/English).
 2. **API proxy pattern**: Protects API keys by keeping them server-side only
 3. **No build step**: Frontend uses CDN for Tailwind CSS, no bundler required
 4. **Stateless API**: No database required, all data comes from Doodstream API
-5. **Relative URL strategy**: Frontend uses `/api` relative paths untuk seamless sync antara Firebase dan Replit
-6. **Auto-refresh polling**: Client-side polling (10-15 detik) untuk real-time video updates tanpa WebSocket overhead
+5. **Full Backend URL**: Frontend (Firebase) uses absolute URL ke Replit backend (bukan relative path)
+6. **Auto-refresh polling**: Client-side polling (10-15 detik) untuk real-time video updates dari bot upload
+7. **Cross-origin CORS**: Backend mengizinkan semua origins (origin: '*') untuk fleksibilitas hosting
 
 ## External Dependencies
 
