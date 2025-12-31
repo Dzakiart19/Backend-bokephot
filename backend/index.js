@@ -35,7 +35,7 @@ bot.command('list', async (ctx) => {
 });
 
 bot.on('text', async (ctx) => {
-  const text = ctx.message.text;
+  const text = ctx.message.text.trim();
   if (text.startsWith('http')) {
     try {
       const apiKey = process.env.DOODSTREAM_API_KEY;
@@ -44,22 +44,32 @@ bot.on('text', async (ctx) => {
         return ctx.reply('❌ API Key tidak dikonfigurasi. Hubungi admin.');
       }
       
-      ctx.reply('⏳ Sedang memproses link upload ke Doodstream...');
+      // Warn user if URL doesn't look like direct file link
+      const directFileExtensions = ['.mp4', '.mkv', '.avi', '.mov', '.flv', '.wmv', '.webm', '.m3u8'];
+      const isDirect = directFileExtensions.some(ext => text.toLowerCase().includes(ext));
+      
+      if (!isDirect) {
+        ctx.reply('⚠️ Catatan: Gunakan direct file link (.mp4, .mkv, dll)\nContoh: https://example.com/video.mp4\n\n⏳ Sedang memproses...');
+      } else {
+        ctx.reply('⏳ Sedang memproses link upload ke Doodstream...');
+      }
       
       const response = await axios.get(`https://doodstream.com/api/upload/url?key=${apiKey}&url=${encodeURIComponent(text)}`, {
         timeout: 30000
       });
       
+      console.log('[BOT-UPLOAD] URL:', text);
       console.log('[BOT-UPLOAD] Response:', JSON.stringify(response.data));
       
       // Doodstream API returns msg: "OK" on success, not a success field
-      const isSuccess = response.data.msg === 'OK' || response.data.success === true || response.status === 200;
+      const isSuccess = response.data.msg === 'OK' || response.data.success === true;
       
-      if (isSuccess && response.data.msg !== 'Error') {
-        ctx.reply('✅ Link berhasil ditambahkan ke antrian upload Doodstream!\n\nVideo akan diproses dalam beberapa menit.');
+      if (isSuccess) {
+        const fileCode = response.data.result?.filecode || 'unknown';
+        ctx.reply(`✅ Link berhasil ditambahkan ke antrian upload Doodstream!\n\nFile Code: ${fileCode}\nVideo akan diproses dalam beberapa menit.\n\n⚠️ Jika error "HTML page" → gunakan direct file link (.mp4, dll)`);
       } else {
         const errorMsg = response.data.msg || response.data.error || 'Terjadi kesalahan pada API Doodstream';
-        ctx.reply('❌ Gagal mengupload: ' + errorMsg);
+        ctx.reply('❌ Gagal mengupload:\n' + errorMsg + '\n\n💡 Pastikan URL adalah direct file link (.mp4, .mkv, dll)');
       }
     } catch (error) {
       console.error('[BOT-UPLOAD-ERROR]', error.message);
