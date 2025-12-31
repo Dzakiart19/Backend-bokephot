@@ -432,7 +432,7 @@ app.get('/api/file-image/:fileId', async (req, res) => {
   }
 });
 
-// Endpoint: Get or Trigger Thumbnail Generation
+// Endpoint: Get Proper Thumbnails from Doodstream API
 app.get('/api/thumbnail/:fileId', async (req, res) => {
   try {
     const { fileId } = req.params;
@@ -442,26 +442,23 @@ app.get('/api/thumbnail/:fileId', async (req, res) => {
       return res.status(500).json({ success: false, error: 'API Key not configured' });
     }
     
-    console.log(`[THUMBNAIL] Fetching info for ${fileId}`);
+    console.log(`[THUMBNAIL] Fetching proper thumbnails for ${fileId}`);
     
-    // Get file info which includes thumbnail data
-    const fileInfoResponse = await axios.get(`https://doodstream.com/api/file/info?key=${apiKey}&file_code=${fileId}`, { timeout: 10000 });
+    // Use official Doodstream /api/file/image endpoint which returns working img.doodcdn.com URLs
+    const response = await axios.get(`https://doodapi.co/api/file/image?key=${apiKey}&file_code=${fileId}`, { timeout: 10000 });
     
-    if (fileInfoResponse.data.msg === 'OK' && fileInfoResponse.data.result) {
+    if (response.data.msg === 'OK' && response.data.result) {
       // Result is an array, get first element
-      const resultData = Array.isArray(fileInfoResponse.data.result) ? fileInfoResponse.data.result[0] : fileInfoResponse.data.result;
+      const resultData = Array.isArray(response.data.result) ? response.data.result[0] : response.data.result;
       const fileData = resultData;
       
-      // Log what we received for debugging
-      console.log(`[THUMBNAIL] File data:`, {
-        single_img: fileData.single_img,
+      console.log(`[THUMBNAIL] Got proper thumbnail URLs for ${fileId}:`, {
         splash_img: fileData.splash_img,
-        image: fileData.image,
-        thumbnail: fileData.thumbnail
+        single_img: fileData.single_img
       });
       
-      // Check for thumbnails with multiple possible field names
-      const primaryThumb = fileData.single_img || fileData.image || fileData.thumbnail;
+      // Return properly formatted URLs from img.doodcdn.com (these are working!)
+      const primaryThumb = fileData.single_img;
       const fallbackThumb = fileData.splash_img;
       
       // Verify thumbnails are not empty strings
@@ -478,26 +475,7 @@ app.get('/api/thumbnail/:fileId', async (req, res) => {
         });
       }
       
-      // If no thumbnails exist, try to trigger generation via alternative method
-      console.log(`[THUMBNAIL] No thumbnails yet for ${fileId}, attempting to trigger generation...`);
-      
-      // Try doodapi.co method for image
-      try {
-        const imageResponse = await axios.get(`https://doodapi.co/api/file/image?key=${apiKey}&file_code=${fileId}`, { timeout: 5000 });
-        if (imageResponse.data && imageResponse.data.image) {
-          console.log(`[THUMBNAIL] Got image from doodapi.co for ${fileId}`);
-          return res.json({
-            success: true,
-            has_thumbnail: true,
-            primary: imageResponse.data.image,
-            title: fileData.title
-          });
-        }
-      } catch (e) {
-        console.log(`[THUMBNAIL] doodapi.co method also returned no image:`, e.message);
-      }
-      
-      // Return info that thumbnail is still being processed
+      // Return info that thumbnail is being processed
       return res.json({
         success: true,
         has_thumbnail: false,
@@ -507,10 +485,12 @@ app.get('/api/thumbnail/:fileId', async (req, res) => {
       });
     }
     
+    // File not found or error response
     res.json({
       success: false,
-      error: 'File not found',
-      message: fileInfoResponse.data.msg || 'Unknown error'
+      has_thumbnail: false,
+      error: 'File not found or API error',
+      message: response.data.msg || 'Unknown error'
     });
   } catch (error) {
     console.error('[THUMBNAIL-ERROR]', error.message);

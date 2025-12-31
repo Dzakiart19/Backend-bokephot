@@ -280,6 +280,7 @@ function createVideoCard(video) {
         }
         
         let cleanUrl = url.trim();
+        
         // Handle URLs that already contain our proxy to avoid double proxying
         if (cleanUrl.includes('/proxy-thumb?url=')) {
             return cleanUrl;
@@ -291,7 +292,8 @@ function createVideoCard(video) {
             cleanUrl = 'https://' + cleanUrl;
         }
         
-        // Proxy ALL external images through our backend to ensure they bypass referer/CORS blocks
+        // IMPORTANT: postercdn.net returns 405 errors, so we MUST proxy ALL Doodstream images through our backend
+        // This includes postercdn.net (old CDN) and any other external CDNs
         let proxyUrl = `${CONFIG.API_BASE_URL}/proxy-thumb?url=${encodeURIComponent(cleanUrl)}`;
         if (isFallback) proxyUrl += '&fallback=1';
         return proxyUrl;
