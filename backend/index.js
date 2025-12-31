@@ -178,34 +178,10 @@ app.get('/api/file/:fileId', async (req, res) => {
 app.get('/api/embed/:fileId', async (req, res) => {
   try {
     const { fileId } = req.params;
-    const apiKey = process.env.DOODSTREAM_API_KEY;
-    
-    if (!apiKey) {
-      return res.status(500).json({ 
-        success: true,
-        embed_url: `https://doodstream.com/e/${fileId}`,
-        error: 'API Key tidak dikonfigurasi' 
-      });
-    }
-
-    // Direct embed URL construction is often more reliable
     const embedUrl = `https://doodstream.com/e/${fileId}`;
     
-    // We still try to fetch info to confirm file exists, but we don't block on it
-    try {
-      const response = await axios.get(`https://doodstream.com/api/file/info?key=${apiKey}&file_code=${fileId}`);
-      if (response.data && (response.data.status === 200 || response.data.msg === 'OK')) {
-        return res.json({
-          success: true,
-          embed_url: embedUrl,
-          result: response.data.result
-        });
-      }
-    } catch (e) {
-      console.error('Info fetch failed, falling back to direct embed:', e.message);
-    }
-
-    // Fallback: Return the constructed embed URL anyway
+    // We simply return the URL. Doodstream embed URLs are predictable.
+    // This avoids 404s if the info API is slow or has different behavior.
     res.json({
       success: true,
       embed_url: embedUrl
