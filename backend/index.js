@@ -448,16 +448,32 @@ app.get('/api/thumbnail/:fileId', async (req, res) => {
     const fileInfoResponse = await axios.get(`https://doodstream.com/api/file/info?key=${apiKey}&file_code=${fileId}`, { timeout: 10000 });
     
     if (fileInfoResponse.data.msg === 'OK' && fileInfoResponse.data.result) {
-      const fileData = fileInfoResponse.data.result;
+      // Result is an array, get first element
+      const resultData = Array.isArray(fileInfoResponse.data.result) ? fileInfoResponse.data.result[0] : fileInfoResponse.data.result;
+      const fileData = resultData;
       
-      // If thumbnails exist, return them
-      if (fileData.single_img || fileData.splash_img) {
+      // Log what we received for debugging
+      console.log(`[THUMBNAIL] File data:`, {
+        single_img: fileData.single_img,
+        splash_img: fileData.splash_img,
+        image: fileData.image,
+        thumbnail: fileData.thumbnail
+      });
+      
+      // Check for thumbnails with multiple possible field names
+      const primaryThumb = fileData.single_img || fileData.image || fileData.thumbnail;
+      const fallbackThumb = fileData.splash_img;
+      
+      // Verify thumbnails are not empty strings
+      const hasThumbnail = (primaryThumb && primaryThumb.trim()) || (fallbackThumb && fallbackThumb.trim());
+      
+      if (hasThumbnail) {
         console.log(`[THUMBNAIL] Found existing thumbnails for ${fileId}`);
         return res.json({
           success: true,
           has_thumbnail: true,
-          primary: fileData.single_img,
-          fallback: fileData.splash_img,
+          primary: primaryThumb,
+          fallback: fallbackThumb,
           title: fileData.title
         });
       }
@@ -469,6 +485,7 @@ app.get('/api/thumbnail/:fileId', async (req, res) => {
       try {
         const imageResponse = await axios.get(`https://doodapi.co/api/file/image?key=${apiKey}&file_code=${fileId}`, { timeout: 5000 });
         if (imageResponse.data && imageResponse.data.image) {
+          console.log(`[THUMBNAIL] Got image from doodapi.co for ${fileId}`);
           return res.json({
             success: true,
             has_thumbnail: true,
@@ -477,7 +494,7 @@ app.get('/api/thumbnail/:fileId', async (req, res) => {
           });
         }
       } catch (e) {
-        console.log(`[THUMBNAIL] doodapi.co method also returned no image`);
+        console.log(`[THUMBNAIL] doodapi.co method also returned no image:`, e.message);
       }
       
       // Return info that thumbnail is still being processed
