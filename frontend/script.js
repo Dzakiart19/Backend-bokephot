@@ -247,8 +247,10 @@ function createVideoCard(video) {
     // Thumbnail URL - Doodstream API uses single_img or splash_img
     const getSecureThumb = (url) => {
         if (!url) return CONFIG.PLACEHOLDER_THUMBNAIL;
-        // Force HTTPS and use a proxy if needed, but first try direct
-        return url.replace('http://', 'https://');
+        
+        // Use our backend proxy to bypass referrer blocking
+        const cleanUrl = url.replace('http://', 'https://');
+        return `${CONFIG.API_BASE_URL}/proxy-thumb?url=${encodeURIComponent(cleanUrl)}`;
     };
 
     const thumbnailUrl = getSecureThumb(video.single_img || video.splash_img || video.thumbnail_url || video.screenshot);

@@ -174,6 +174,32 @@ app.get('/api/file/:fileId', async (req, res) => {
   }
 });
 
+// Proxy for thumbnails to bypass Referer/Blocked issues
+app.get('/api/proxy-thumb', async (req, res) => {
+  try {
+    const { url } = req.query;
+    if (!url) return res.status(400).send('URL is required');
+
+    console.log(`[PROXY] Fetching thumb: ${url}`);
+    
+    const response = await axios.get(url, {
+      responseType: 'arraybuffer',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Referer': 'https://doodstream.com/'
+      },
+      timeout: 5000
+    });
+
+    res.set('Content-Type', response.headers['content-type'] || 'image/jpeg');
+    res.set('Cache-Control', 'public, max-age=86400'); // Cache for 24h
+    res.send(response.data);
+  } catch (error) {
+    console.error('[PROXY-ERROR]', error.message);
+    res.status(500).send('Error proxying image');
+  }
+});
+
 // Endpoint 4: Get Embed URL
 app.get('/api/embed/:fileId', async (req, res) => {
   const { fileId } = req.params;
