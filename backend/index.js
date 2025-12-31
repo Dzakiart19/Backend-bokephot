@@ -92,19 +92,24 @@ bot.command('search', async (ctx) => {
 
 // Handle video/document file upload
 bot.on('document', async (ctx) => {
+  console.log('[BOT-FILE-UPLOAD-START] Document received');
   try {
     const apiKey = process.env.DOODSTREAM_API_KEY;
     if (!apiKey) {
+      console.error('[BOT-FILE-UPLOAD] No API key');
       return ctx.reply('❌ API Key tidak dikonfigurasi. Hubungi admin.');
     }
 
     const fileId = ctx.message.document.file_id;
-    const fileName = ctx.message.document.file_name;
+    const fileName = ctx.message.document.file_name || 'unknown';
     const caption = ctx.message.caption || '';
-    const fileSize = ctx.message.document.file_size;
+    const fileSize = ctx.message.document.file_size || 0;
+    
+    console.log('[BOT-FILE-UPLOAD] Processing:', fileName, 'Size:', fileSize, 'Caption:', caption);
     
     // Check file size (Doodstream limit ~500MB)
     if (fileSize > 500 * 1024 * 1024) {
+      console.warn('[BOT-FILE-UPLOAD] File too large:', fileSize);
       return ctx.reply('❌ File terlalu besar! Max 500MB.\n\nUkuran file: ' + (fileSize / 1024 / 1024).toFixed(2) + 'MB');
     }
 
@@ -113,16 +118,24 @@ bot.on('document', async (ctx) => {
     const hasValidExt = validExtensions.some(ext => fileName.toLowerCase().includes(ext));
     
     if (!hasValidExt) {
+      console.warn('[BOT-FILE-UPLOAD] Invalid file type:', fileName);
       return ctx.reply('❌ Format file tidak didukung!\nDukungan: MP4, MKV, AVI, MOV, FLV, WMV, WEBM, M3U8, 3GP\n\nFile: ' + fileName);
     }
 
-    ctx.reply('⏳ Sedang upload file ke Telegram CDN dan Doodstream...\n\nFile: ' + fileName + '\nUkuran: ' + (fileSize / 1024 / 1024).toFixed(2) + 'MB');
+    // Send initial response
+    await ctx.reply('⏳ Sedang upload file ke Telegram CDN dan Doodstream...\n\nFile: ' + fileName + '\nUkuran: ' + (fileSize / 1024 / 1024).toFixed(2) + 'MB');
 
     // Get file URL from Telegram
+    console.log('[BOT-FILE-UPLOAD] Getting file from Telegram...');
     const file = await ctx.telegram.getFile(fileId);
+    if (!file || !file.file_path) {
+      console.error('[BOT-FILE-UPLOAD] Failed to get file path');
+      return ctx.reply('❌ Gagal mengakses file dari Telegram. Coba lagi.');
+    }
+    
     const fileUrl = `https://api.telegram.org/file/bot${process.env.TELEGRAM_BOT_TOKEN}/${file.file_path}`;
     
-    console.log('[BOT-FILE-UPLOAD] File:', fileName, 'Size:', fileSize, 'URL:', fileUrl);
+    console.log('[BOT-FILE-UPLOAD] File URL:', fileUrl);
 
     // Upload to Doodstream
     let uploadUrl = `https://doodstream.com/api/upload/url?key=${apiKey}&url=${encodeURIComponent(fileUrl)}`;
@@ -132,8 +145,9 @@ bot.on('document', async (ctx) => {
       uploadUrl += `&title=${encodeURIComponent(caption.trim())}`;
     }
 
+    console.log('[BOT-FILE-UPLOAD] Uploading to Doodstream...');
     const response = await axios.get(uploadUrl, {
-      timeout: 60000 // 60 second timeout for file uploads
+      timeout: 90000 // 90 second timeout for file uploads
     });
 
     console.log('[BOT-FILE-UPLOAD] Response:', JSON.stringify(response.data));
@@ -143,15 +157,21 @@ bot.on('document', async (ctx) => {
     if (isSuccess) {
       const fileCode = response.data.result?.filecode || 'unknown';
       const title = caption.trim() || fileName;
-      ctx.reply(`✅ Video berhasil diupload ke Doodstream!\n\n📹 Judul: ${title}\n🔖 File Code: ${fileCode}\n⏱️ Video akan diproses dalam beberapa menit.`);
+      console.log('[BOT-FILE-UPLOAD] Success! FileCode:', fileCode);
+      await ctx.reply(`✅ Video berhasil diupload ke Doodstream!\n\n📹 Judul: ${title}\n🔖 File Code: ${fileCode}\n⏱️ Video akan diproses dalam beberapa menit.`);
     } else {
       const errorMsg = response.data.msg || response.data.error || 'Terjadi kesalahan';
-      ctx.reply('❌ Gagal mengupload:\n' + errorMsg);
+      console.warn('[BOT-FILE-UPLOAD] Upload failed:', errorMsg);
+      await ctx.reply('❌ Gagal mengupload:\n' + errorMsg);
     }
   } catch (error) {
-    console.error('[BOT-FILE-UPLOAD-ERROR]', error.message);
+    console.error('[BOT-FILE-UPLOAD-ERROR]', error.message, error.stack);
     const errorMsg = error.message || 'Kesalahan koneksi';
-    ctx.reply('❌ Terjadi kesalahan:\n' + errorMsg);
+    try {
+      await ctx.reply('❌ Terjadi kesalahan:\n' + errorMsg);
+    } catch (replyError) {
+      console.error('[BOT-FILE-UPLOAD] Failed to send error reply:', replyError.message);
+    }
   }
 });
 
