@@ -388,6 +388,12 @@ app.get('/api/proxy-thumb', async (req, res) => {
         return res.status(404).json({ error: 'Empty response' });
     }
 
+    // NEW: Detect blank/placeholder images (Doodstream sends ~560 bytes for blank ones)
+    if (response.data.length < 1000) {
+        console.warn(`[PROXY-BLOCK] Detected likely blank/placeholder image (${response.data.length} bytes) for ${url}`);
+        return res.status(404).json({ error: 'Placeholder image detected', size: response.data.length });
+    }
+
     const contentType = response.headers['content-type'] || 'image/jpeg';
     res.set('Content-Type', contentType);
     res.set('Access-Control-Allow-Origin', '*');

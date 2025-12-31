@@ -304,8 +304,11 @@ function createVideoCard(video) {
         return proxyUrl;
     };
 
-    const primaryThumb = getSecureThumb(video.single_img);
-    const fallbackThumb = getSecureThumb(video.splash_img, true);
+    // SWAP: Use splash_img as primary because single_img (snaps) are often blank white (560 bytes)
+    // This matches the user's observation where splash works but snaps don't.
+    const primaryThumb = getSecureThumb(video.splash_img);
+    const fallbackThumb = getSecureThumb(video.single_img, true);
+    
     // If both are placeholders, use placeholder directly
     const useFallback = primaryThumb === CONFIG.PLACEHOLDER_THUMBNAIL && fallbackThumb === CONFIG.PLACEHOLDER_THUMBNAIL;
     const fileId = video.file_code || video.id || '';
@@ -322,6 +325,7 @@ function createVideoCard(video) {
     const fallbackWithCache = addCacheBuster(fallbackThumb);
     
     // Use splash image as high-priority fallback if single_img is problematic
+    // Since we swapped them, splash is now primary, and we'll keep single as fallback
     const splashThumb = getSecureThumb(video.splash_img);
     const splashWithCache = addCacheBuster(splashThumb);
     
