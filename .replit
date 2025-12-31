@@ -46,5 +46,5 @@ localPort = 5000
 externalPort = 80
 
 [deployment]
-run = ["sh", "-c", "cd backend && node index.js"]
-deploymentTarget = "cloudrun"
+run = ["node", "backend/index.js"]
+deploymentTarget = "autoscale"
