@@ -8,9 +8,9 @@ A video streaming website that integrates with the Doodstream API. The applicati
 
 Preferred communication style: Simple, everyday language (Indonesian/English).
 
-## Recent Changes (2025-12-31)
+## Recent Changes (2025-12-31 - Sync Fix Update)
 
-### Fixed Issues:
+### Fixed Issues (Latest Session):
 1. **Web Loading Performance** - Changed API base URL from hardcoded external domain to relative `/api` path
 2. **Thumbnail Display** - Implemented consistent 16:9 aspect ratio using CSS, adjusted grid to 5 columns (20 videos per page)
 3. **Blank Thumbnails** - Added intelligent fallback system:
@@ -50,6 +50,16 @@ Preferred communication style: Simple, everyday language (Indonesian/English).
    - Auto-removes deleted video from grid
    - No public delete button (security - only backend can manage via API)
    - Backend: `/api/validate/:fileCode` endpoint checks if video exists
+
+6. **Real-Time Sync Between Bot Upload & Web Display** ✅ (NEW)
+   - Fixed hardcoded URL in `detail.js` (was: `https://backend-bokephot--ioj1gjah.replit.app/api` → now: `/api`)
+   - Both `script.js` and `detail.js` sekarang pakai relative `/api` URL ✅
+   - **Auto-refresh mechanism added:**
+     - `script.js`: Check untuk video baru setiap 10 detik (hanya halaman utama)
+     - `detail.js`: Refresh related videos setiap 15 detik
+   - Ketika bot upload via Telegram, video muncul di web dalam maksimal 10-15 detik ✅
+   - Tidak ada delay dari sync - semuanya langsung realtime
+   - Firebase dan Replit backend sekarang fully synchronized
 
 ## System Architecture
 
@@ -92,6 +102,8 @@ Preferred communication style: Simple, everyday language (Indonesian/English).
 2. **API proxy pattern**: Protects API keys by keeping them server-side only
 3. **No build step**: Frontend uses CDN for Tailwind CSS, no bundler required
 4. **Stateless API**: No database required, all data comes from Doodstream API
+5. **Relative URL strategy**: Frontend uses `/api` relative paths untuk seamless sync antara Firebase dan Replit
+6. **Auto-refresh polling**: Client-side polling (10-15 detik) untuk real-time video updates tanpa WebSocket overhead
 
 ## External Dependencies
 

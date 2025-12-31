@@ -8,6 +8,8 @@ const CONFIG = {
 let currentPage = 1;
 let currentQuery = '';
 let isLoading = false;
+let lastVideoCount = 0;
+let refreshInterval = null;
 
 const elements = {
     searchInput: document.getElementById('searchInput'),
@@ -42,7 +44,45 @@ let currentVideoFileCode = '';
 document.addEventListener('DOMContentLoaded', () => {
     initializeEventListeners();
     loadVideos();
+    startAutoRefresh();
 });
+
+function startAutoRefresh() {
+    // Check every 10 seconds for new videos from bot uploads
+    refreshInterval = setInterval(async () => {
+        try {
+            const endpoint = currentQuery ? '/search' : '/videos';
+            const params = new URLSearchParams({
+                page: '1',
+                per_page: CONFIG.VIDEOS_PER_PAGE.toString()
+            });
+            if (currentQuery) params.append('search_term', currentQuery);
+            
+            const url = `${CONFIG.API_BASE_URL}${endpoint}?${params}`;
+            const response = await fetch(url);
+            
+            if (!response.ok) return;
+            const data = await response.json();
+            
+            const isSuccess = data.success === true || data.status === 200 || data.msg === 'OK';
+            if (!isSuccess) return;
+            
+            const result = data.result || {};
+            const videos = Array.isArray(result) ? result : (result.files || []);
+            const currentCount = videos.length;
+            
+            // If new videos added (from bot upload), refresh the list
+            if (currentCount > lastVideoCount && !currentQuery) {
+                console.log(`📹 New videos detected! Refreshing list... (${lastVideoCount} → ${currentCount})`);
+                currentPage = 1;
+                lastVideoCount = currentCount;
+                loadVideos();
+            }
+        } catch (error) {
+            console.log('Auto-refresh check skipped');
+        }
+    }, 10000); // Check every 10 seconds
+}
 
 function initializeEventListeners() {
     if (elements.openSidebar) elements.openSidebar.addEventListener('click', toggleSidebar);
@@ -174,6 +214,11 @@ async function loadVideos(isLoadMore = false) {
             else showNoResults();
             hideLoading();
             return;
+        }
+
+        // Update last video count for auto-refresh
+        if (!isLoadMore && currentPage === 1) {
+            lastVideoCount = videos.length;
         }
 
         if (!isLoadMore) elements.videoGrid.innerHTML = '';

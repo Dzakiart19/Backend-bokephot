@@ -1,6 +1,6 @@
 // Konfigurasi
 const CONFIG = {
-    API_BASE_URL: 'https://backend-bokephot--ioj1gjah.replit.app/api',
+    API_BASE_URL: '/api',
     PLACEHOLDER_THUMBNAIL: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE4MCIgdmlld0JveD0iMCAwIDMyMCAxODAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMjAiIGhlaWdodD0iMTgwIiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0xNDAgNzBIMTgwVjExMEgxNDBWNzBaIiBzdHJva2U9IiM2QjczODAiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWRhc2hhcnJheT0iNCA0Ii8+CjxjaXJjbGUgY3g9IjE2MCIgY3k9IjkwIiByPSIxNSIgZmlsbD0iIzZCNzM4MCIvPgo8L3N2Zz4K'
 };
 
@@ -267,8 +267,13 @@ function formatDate(dateString) {
     }
 }
 
-// IMPORTANT: Ganti URL API di atas dengan URL Replit Anda setelah deploy backend!
-// const CONFIG = {
-//     API_BASE_URL: 'https://your-replit-project.repl.co/api',
-//     PLACEHOLDER_THUMBNAIL: 'data:image/svg+xml;base64,...'
-// };
+// Auto-refresh related videos every 15 seconds to catch new uploads from bot
+let relatedVideoInterval = null;
+document.addEventListener('DOMContentLoaded', () => {
+    relatedVideoInterval = setInterval(loadRelatedVideos, 15000);
+});
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', () => {
+    if (relatedVideoInterval) clearInterval(relatedVideoInterval);
+});
