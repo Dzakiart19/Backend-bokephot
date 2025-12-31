@@ -200,7 +200,7 @@ function loadMoreVideos() {
 
 function createVideoCard(video) {
     const card = document.createElement('div');
-    card.className = 'video-card bg-gray-900 overflow-hidden shadow-sm cursor-pointer group flex flex-col hover:ring-2 hover:ring-red-600 transition-all';
+    card.className = 'video-card bg-gray-900 rounded overflow-hidden shadow-sm cursor-pointer group flex flex-col hover:ring-2 hover:ring-red-600 transition-all';
     const duration = formatDuration(video.duration || video.length || 0);
     const views = formatViews(video.views || 0);
     
@@ -225,15 +225,15 @@ function createVideoCard(video) {
 
     const thumbnailUrl = getSecureThumb(video.single_img || video.splash_img);
     card.innerHTML = `
-        <div class="relative aspect-video bg-gray-800">
-            <img src="${thumbnailUrl}" class="w-full h-full object-cover" onerror="this.src='${CONFIG.PLACEHOLDER_THUMBNAIL}';">
-            <div class="absolute bottom-1 right-1 bg-black bg-opacity-80 text-white text-[10px] px-1 py-0.5 rounded">${duration}</div>
-            <div class="absolute bottom-1 left-1 bg-black bg-opacity-60 text-white text-[10px] px-1 py-0.5 rounded flex items-center space-x-1">
-                <span>${views} views</span>
+        <div class="video-thumbnail relative bg-gray-800">
+            <img src="${thumbnailUrl}" class="w-full h-full object-cover" onerror="this.src='${CONFIG.PLACEHOLDER_THUMBNAIL}';" alt="">
+            <div class="absolute bottom-1 right-1 bg-black bg-opacity-80 text-white text-[9px] px-1.5 py-0.5 rounded">${duration}</div>
+            <div class="absolute bottom-1 left-1 bg-black bg-opacity-60 text-white text-[9px] px-1.5 py-0.5 rounded flex items-center space-x-1">
+                <span>${views}</span>
             </div>
         </div>
-        <div class="p-2 flex-1">
-            <h3 class="text-gray-200 text-xs font-medium line-clamp-2">${video.title || 'Untitled'}</h3>
+        <div class="p-1.5 flex-1 flex flex-col justify-between min-h-0">
+            <h3 class="text-gray-200 text-[11px] font-medium line-clamp-2 overflow-hidden">${video.title || 'Untitled'}</h3>
         </div>
     `;
     card.addEventListener('click', () => openVideoModal(video));

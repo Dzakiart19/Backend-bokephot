@@ -12,6 +12,9 @@
         body { font-family: 'Inter', sans-serif; background-color: black; color: white; }
         .loading-spinner { border: 3px solid rgba(255,255,255,0.1); border-top: 3px solid #dc2626; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .video-card { height: 100%; }
+        .video-thumbnail { aspect-ratio: 16/9; width: 100%; overflow: hidden; }
+        .video-thumbnail img { width: 100%; height: 100%; object-fit: cover; display: block; }
     </style>
 </head>
 <body class="bg-black text-white min-h-screen">
@@ -97,7 +100,7 @@
         <div id="noResultsState" class="text-center py-12 hidden">
             <h3 class="text-xl font-semibold text-white mb-2">Video Tidak Ditemukan</h3>
         </div>
-        <div id="videoGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+        <div id="videoGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3"></div>
         <div id="loadMoreContainer" class="flex justify-center mt-8 hidden">
             <button id="loadMoreButton" class="bg-red-600 hover:bg-red-700 text-white px-8 py-2 rounded font-medium">Muat Lebih Banyak</button>
         </div>
