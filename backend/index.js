@@ -390,7 +390,12 @@ app.get('/api/proxy-thumb', async (req, res) => {
     const contentType = response.headers['content-type'] || 'image/jpeg';
     res.set('Content-Type', contentType);
     res.set('Access-Control-Allow-Origin', '*');
-    res.set('Cache-Control', 'public, max-age=86400'); // Cache for 24h
+    res.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.set('Access-Control-Allow-Headers', 'Content-Type, Accept');
+    res.set('Access-Control-Allow-Credentials', 'false');
+    res.set('Cache-Control', 'public, max-age=3600'); // Cache for 1h
+    res.set('X-Content-Type-Options', 'nosniff');
+    console.log(`[PROXY-SUCCESS] Returned ${response.data.length} bytes of ${contentType} for image`);
     res.send(response.data);
   } catch (error) {
     console.error('[PROXY-ERROR]', error.message);

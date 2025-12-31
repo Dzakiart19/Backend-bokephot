@@ -305,9 +305,13 @@ function createVideoCard(video) {
     const useFallback = primaryThumb === CONFIG.PLACEHOLDER_THUMBNAIL && fallbackThumb === CONFIG.PLACEHOLDER_THUMBNAIL;
     const fileId = video.file_code || video.id || '';
     
+    // Add cache-buster to prevent stale proxy responses
+    const thumbWithCache = useFallback ? CONFIG.PLACEHOLDER_THUMBNAIL : (primaryThumb + `&_=${Date.now()}`);
+    const fallbackWithCache = fallbackThumb + `&_=${Date.now()}`;
+    
     card.innerHTML = `
         <div class="video-thumbnail relative bg-gray-800 flex items-center justify-center">
-            <img id="thumb-${fileId}" src="${useFallback ? CONFIG.PLACEHOLDER_THUMBNAIL : primaryThumb}" class="w-full h-full object-cover" alt="">
+            <img id="thumb-${fileId}" src="${thumbWithCache}" data-primary="${primaryThumb}" data-fallback="${fallbackWithCache}" class="w-full h-full object-cover" alt="">
             <div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 transition-opacity">
                 <svg class="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
             </div>
