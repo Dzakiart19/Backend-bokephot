@@ -44,6 +44,12 @@ Preferred communication style: Simple, everyday language (Indonesian/English).
      - `/search keyword` - Cari video ✅
      - **File Upload**: Kirim file/video + caption ✅
 
+5. **Video Management - Delete Feature** ✅
+   - Delete button (trash icon) in video modal when watching
+   - One-click deletion from Doodstream & immediate removal from website
+   - Confirmation dialog to prevent accidental deletion
+   - Backend: `/api/delete/:fileCode` endpoint calls Doodstream API
+
 ## System Architecture
 
 ### Backend Architecture

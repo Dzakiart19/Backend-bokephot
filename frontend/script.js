@@ -31,11 +31,14 @@ const elements = {
     videoModal: document.getElementById('videoModal'),
     modalTitle: document.getElementById('modalTitle'),
     closeModal: document.getElementById('closeModal'),
+    deleteVideoBtn: document.getElementById('deleteVideoBtn'),
     videoPlayerContainer: document.getElementById('videoPlayerContainer'),
     videoDuration: document.getElementById('videoDuration'),
     videoViews: document.getElementById('videoViews'),
     videoUploadDate: document.getElementById('videoUploadDate')
 };
+
+let currentVideoFileCode = '';
 
 document.addEventListener('DOMContentLoaded', () => {
     initializeEventListeners();
@@ -68,6 +71,7 @@ function initializeEventListeners() {
     if (elements.loadMoreButton) elements.loadMoreButton.addEventListener('click', loadMoreVideos);
     if (elements.retryButton) elements.retryButton.addEventListener('click', retryLoad);
     if (elements.closeModal) elements.closeModal.addEventListener('click', closeVideoModal);
+    if (elements.deleteVideoBtn) elements.deleteVideoBtn.addEventListener('click', deleteCurrentVideo);
 
     if (elements.videoModal) {
         elements.videoModal.addEventListener('click', (e) => {
@@ -256,6 +260,7 @@ function createVideoCard(video) {
         });
     }
     
+    card.setAttribute('data-file-code', video.file_code || video.id || '');
     card.addEventListener('click', () => openVideoModal(video));
     return card;
 }
@@ -264,6 +269,7 @@ async function openVideoModal(video) {
     if (!elements.videoModal) return;
     elements.videoModal.classList.remove('hidden');
     elements.modalTitle.textContent = video.title || 'Untitled';
+    currentVideoFileCode = video.file_code || video.id || '';
     try {
         elements.videoPlayerContainer.innerHTML = '<div class="text-center py-20 text-gray-400">Loading...</div>';
         
@@ -285,6 +291,53 @@ async function openVideoModal(video) {
 function closeVideoModal() {
     if (elements.videoModal) elements.videoModal.classList.add('hidden');
     if (elements.videoPlayerContainer) elements.videoPlayerContainer.innerHTML = '';
+    currentVideoFileCode = '';
+}
+
+async function deleteCurrentVideo() {
+    if (!currentVideoFileCode) {
+        alert('Error: Video code not found');
+        return;
+    }
+
+    if (!confirm('Yakin hapus video ini? Tidak bisa dibatalkan.')) return;
+
+    try {
+        elements.deleteVideoBtn.disabled = true;
+        elements.deleteVideoBtn.innerHTML = '⏳';
+        
+        const response = await fetch(`${CONFIG.API_BASE_URL}/delete/${currentVideoFileCode}`, {
+            method: 'POST',
+            headers: { 'Accept': 'application/json' }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Remove from DOM by looking for video card with matching file code
+            const videoCards = document.querySelectorAll('[data-file-code]');
+            videoCards.forEach(card => {
+                if (card.getAttribute('data-file-code') === currentVideoFileCode) {
+                    card.remove();
+                }
+            });
+            
+            closeVideoModal();
+            alert('✅ Video berhasil dihapus!');
+            
+            // Reload if page becomes empty
+            if (elements.videoGrid.children.length === 0) {
+                loadVideos();
+            }
+        } else {
+            alert('❌ Gagal menghapus: ' + (data.msg || 'Unknown error'));
+        }
+    } catch (error) {
+        alert('❌ Error: ' + error.message);
+    } finally {
+        elements.deleteVideoBtn.disabled = false;
+        elements.deleteVideoBtn.innerHTML = '<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>';
+    }
 }
 
 function handleSearch(query = null) {

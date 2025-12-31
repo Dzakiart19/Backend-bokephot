@@ -441,6 +441,40 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Delete video endpoint
+app.post('/api/delete/:fileCode', async (req, res) => {
+  try {
+    const { fileCode } = req.params;
+    const apiKey = process.env.DOODSTREAM_API_KEY;
+    
+    if (!apiKey) {
+      return res.json({ status: 400, msg: 'API Key not configured', success: false });
+    }
+    
+    if (!fileCode) {
+      return res.json({ status: 400, msg: 'File code required', success: false });
+    }
+
+    console.log('[DELETE-VIDEO] Deleting file:', fileCode);
+    
+    const deleteUrl = `https://doodstream.com/api/file/delete?key=${apiKey}&file_code=${fileCode}`;
+    const response = await axios.get(deleteUrl, { timeout: 10000 });
+    
+    console.log('[DELETE-VIDEO] Response:', response.data);
+    
+    const isSuccess = response.data.msg === 'OK' || response.data.success === true;
+    
+    if (isSuccess) {
+      res.json({ status: 200, msg: 'OK', success: true });
+    } else {
+      res.json({ status: 400, msg: response.data.msg || 'Delete failed', success: false });
+    }
+  } catch (error) {
+    console.error('[DELETE-VIDEO-ERROR]', error.message);
+    res.json({ status: 500, msg: error.message, success: false });
+  }
+});
+
 // Fallback to index.html for SPA-like behavior on detail.html
 app.get('/detail.html', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/detail.html'));
