@@ -190,18 +190,15 @@ app.get('/api/proxy-thumb', async (req, res) => {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Referer': 'https://doodstream.com/',
         'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache',
-        'host': new URL(url).hostname
+        'Cache-Control': 'no-cache'
       },
       timeout: 15000,
       maxRedirects: 5,
-      validateStatus: false
+      validateStatus: (status) => status < 500
     });
 
-    if (response.status !== 200) {
-      console.error(`[PROXY-ERROR] Remote status: ${response.status}`);
-      return res.status(response.status).send('Remote server error');
+    if (response.status === 403 || response.status === 404) {
+        console.warn(`[PROXY-WARN] Remote status ${response.status} for ${url}`);
     }
 
     const contentType = response.headers['content-type'] || 'image/jpeg';

@@ -183,6 +183,11 @@ function createVideoCard(video) {
         if (!url) return CONFIG.PLACEHOLDER_THUMBNAIL;
         
         let cleanUrl = url.trim();
+        // Handle URLs that already contain our proxy to avoid double proxying
+        if (cleanUrl.includes('/proxy-thumb?url=')) {
+            return cleanUrl;
+        }
+
         if (cleanUrl.startsWith('//')) {
             cleanUrl = 'https:' + cleanUrl;
         } else if (!cleanUrl.startsWith('http')) {
