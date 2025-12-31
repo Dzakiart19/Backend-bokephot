@@ -191,10 +191,12 @@ app.get('/api/proxy-thumb', async (req, res) => {
         'Referer': 'https://doodstream.com/',
         'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
         'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache'
+        'Pragma': 'no-cache',
+        'host': new URL(url).hostname
       },
-      timeout: 10000,
-      validateStatus: false // Allow us to handle error statuses ourselves
+      timeout: 15000,
+      maxRedirects: 5,
+      validateStatus: false
     });
 
     if (response.status !== 200) {
