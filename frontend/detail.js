@@ -13,15 +13,8 @@ function getApiBaseUrl() {
     return savedUrl;
   }
   
-  // Fallback to default - try new account first, then old account
-  const defaultUrls = [
-    'https://backend-bokephot--aejlejeg.replit.app/api',
-    'https://backend-bokephot--ioj1gjah.replit.app/api'
-  ];
-  
-  console.log('[CONFIG] Trying fallback URLs in order:', defaultUrls);
-  // Use first URL as default, user can update if needed
-  const defaultUrl = defaultUrls[0];
+  // Fallback to default backend URL
+  const defaultUrl = 'https://backend-bokephot--aejlejeg.replit.app/api';
   console.log('[CONFIG] Using backend URL:', defaultUrl);
   return defaultUrl;
 }
