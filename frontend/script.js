@@ -111,9 +111,13 @@ async function fetchVideos(page = 1, searchTerm = '') {
     }
 }
 
-async function fetchEmbedUrl(fileId) {
+async function fetchEmbedUrl(fileId, posterUrl = '') {
     try {
-        const response = await fetch(`${CONFIG.API_BASE_URL}/embed/${fileId}`, { mode: 'cors' });
+        let url = `${CONFIG.API_BASE_URL}/embed/${fileId}`;
+        if (posterUrl) {
+            url += `?poster=${encodeURIComponent(posterUrl)}`;
+        }
+        const response = await fetch(url, { mode: 'cors' });
         return await response.json();
     } catch (error) {
         console.error(error);
@@ -212,7 +216,11 @@ async function openVideoModal(video) {
     elements.modalTitle.textContent = video.title || 'Untitled';
     try {
         elements.videoPlayerContainer.innerHTML = '<div class="text-center py-20 text-gray-400">Loading...</div>';
-        const embedData = await fetchEmbedUrl(video.file_code || video.id);
+        
+        // Use the same thumb logic to get the best possible poster URL
+        const thumbUrl = video.single_img || video.splash_img || '';
+        const embedData = await fetchEmbedUrl(video.file_code || video.id, thumbUrl);
+        
         if (embedData.success && embedData.embed_url) {
             elements.videoPlayerContainer.innerHTML = `<iframe src="${embedData.embed_url}" width="100%" height="100%" frameborder="0" allowfullscreen class="rounded-lg" style="aspect-ratio: 16/9;"></iframe>`;
             if (elements.videoDuration) elements.videoDuration.textContent = formatDuration(video.duration || video.length || 0);

@@ -215,16 +215,36 @@ app.get('/api/proxy-thumb', async (req, res) => {
 
 // Endpoint 4: Get Embed URL
 app.get('/api/embed/:fileId', async (req, res) => {
-  const { fileId } = req.params;
-  const embedUrl = `https://doodstream.com/e/${fileId}`;
-  
-  console.log(`[EMBED] Constructing URL for ${fileId}: ${embedUrl}`);
-  
-  // Return SUCCESS directly without any complex logic or status codes
-  res.status(200).json({
-    success: true,
-    embed_url: embedUrl
-  });
+  try {
+    const { fileId } = req.params;
+    const { poster } = req.query;
+    let embedUrl = `https://doodstream.com/e/${fileId}`;
+    
+    if (poster) {
+      embedUrl += `?c_poster=${encodeURIComponent(poster)}`;
+    }
+    
+    console.log(`[EMBED] Constructing URL for ${fileId}: ${embedUrl}`);
+    
+    res.status(200).json({
+      success: true,
+      embed_url: embedUrl
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// New Endpoint: Get Image via API directly
+app.get('/api/file-image/:fileId', async (req, res) => {
+  try {
+    const { fileId } = req.params;
+    const apiKey = process.env.DOODSTREAM_API_KEY;
+    const response = await axios.get(`https://doodapi.co/api/file/image?key=${apiKey}&file_code=${fileId}`);
+    res.json(response.data);
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 // Health check endpoint
