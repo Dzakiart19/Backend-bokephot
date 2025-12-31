@@ -62,14 +62,11 @@ bot.launch().then(() => {
 });
 
 // Konfigurasi CORS
-const allowedOrigins = [
-  'https://bokephot.web.app',
-  'https://bokephot.firebaseapp.com',
-  'http://localhost:3000',
-  'http://localhost:5000'
-];
-
-app.use(cors()); // Allow all origins for debugging
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Accept', 'Authorization']
+}));
 app.use(express.json());
 
 // Serve static files from frontend folder

@@ -1,4 +1,5 @@
 const CONFIG = {
+    // UPDATED: Using absolute URL for backend to ensure Firebase can talk to Replit
     API_BASE_URL: 'https://backend-bokephot--ioj1gjah.replit.app/api',
     VIDEOS_PER_PAGE: 20,
     PLACEHOLDER_THUMBNAIL: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE4MCIgdmlld0JveD0iMCAwIDMyMCAxODAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMjAiIGhlaWdodD0iMTgwIiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0xNDAgNzBIMTgwVjExMEgxNDBWNzBaIiBzdHJva2U9IiM2QjczODAiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWRhc2hhcnJheT0iNCA0Ii8+CjxjaXJjbGUgY3g9IjE2MCIgY3k9IjkwIiByPSIxNSIgZmlsbD0iIzZCNzM4MCIvPgo8L3N2Zz4K'
@@ -98,19 +99,21 @@ async function fetchVideos(page = 1, searchTerm = '') {
 
         const response = await fetch(`${CONFIG.API_BASE_URL}${endpoint}?${params}`, {
             mode: 'cors',
-            headers: { 'Accept': 'application/json' }
+            headers: { 
+                'Accept': 'application/json'
+            }
         });
-        if (!response.ok) throw new Error('HTTP Error');
+        if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
         return await response.json();
     } catch (error) {
-        console.error(error);
+        console.error('Fetch error:', error);
         throw error;
     }
 }
 
 async function fetchEmbedUrl(fileId) {
     try {
-        const response = await fetch(`${CONFIG.API_BASE_URL}/embed/${fileId}`);
+        const response = await fetch(`${CONFIG.API_BASE_URL}/embed/${fileId}`, { mode: 'cors' });
         return await response.json();
     } catch (error) {
         console.error(error);
@@ -125,8 +128,13 @@ async function loadVideos(isLoadMore = false) {
 
     try {
         const data = await fetchVideos(currentPage, currentQuery);
+        // Doodstream API can return different success flags
         const isSuccess = data.success === true || data.status === 200 || data.msg === 'OK';
-        if (!isSuccess) throw new Error('Load error');
+        
+        if (!isSuccess) {
+            console.error('API Response was not successful:', data);
+            throw new Error(data.error || 'API Error');
+        }
 
         const result = data.result || {};
         const videos = Array.isArray(result) ? result : (result.files || []);
@@ -149,7 +157,8 @@ async function loadVideos(isLoadMore = false) {
         }
         hideLoading();
     } catch (error) {
-        showError('Gagal memuat video.');
+        console.error('LoadVideos error:', error);
+        showError('Gagal memuat video. Silakan periksa koneksi atau coba lagi nanti.');
     } finally {
         isLoading = false;
     }
@@ -162,13 +171,14 @@ function loadMoreVideos() {
 
 function createVideoCard(video) {
     const card = document.createElement('div');
-    card.className = 'video-card bg-gray-900 overflow-hidden shadow-sm cursor-pointer group flex flex-col';
+    card.className = 'video-card bg-gray-900 overflow-hidden shadow-sm cursor-pointer group flex flex-col hover:ring-2 hover:ring-red-600 transition-all';
     const duration = formatDuration(video.duration || video.length || 0);
     const views = formatViews(video.views || 0);
     
     const getSecureThumb = (url) => {
         if (!url) return CONFIG.PLACEHOLDER_THUMBNAIL;
         let cleanUrl = url.replace('http://', 'https://');
+        // Proxy through backend to avoid CORS and referrer issues
         if (cleanUrl.includes('postercdn.net') || cleanUrl.includes('doodcdn')) {
             return `${CONFIG.API_BASE_URL}/proxy-thumb?url=${encodeURIComponent(cleanUrl)}`;
         }
@@ -226,7 +236,7 @@ function handleSearch(query = null) {
 function formatDuration(s) {
     if (!s) return '0:00';
     const m = Math.floor(s / 60);
-    const rs = s % 60;
+    const rs = Math.floor(s % 60);
     return `${m}:${rs.toString().padStart(2, '0')}`;
 }
 
