@@ -191,9 +191,11 @@ async function fetchVideos(page = 1, searchTerm = '') {
 async function fetchEmbedUrl(fileId, posterUrl = '') {
     try {
         let url = `${CONFIG.API_BASE_URL}/embed/${fileId}`;
+        console.log('[EMBED-CALL] File ID:', fileId, 'Poster:', posterUrl);
         if (posterUrl) {
             url += `?poster=${encodeURIComponent(posterUrl)}`;
         }
+        console.log('[EMBED-URL] Full URL:', url);
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000);
         
@@ -202,10 +204,13 @@ async function fetchEmbedUrl(fileId, posterUrl = '') {
         });
         clearTimeout(timeoutId);
         
+        console.log('[EMBED-RESPONSE] Status:', response.status, 'OK:', response.ok);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        return await response.json();
+        const data = await response.json();
+        console.log('[EMBED-DATA] Received:', data);
+        return data;
     } catch (error) {
-        console.error('Embed URL error:', error.message);
+        console.error('[EMBED-ERROR]', error.message);
         throw error;
     }
 }
@@ -380,6 +385,7 @@ function createVideoCard(video) {
 
 async function openVideoModal(video) {
     if (!elements.videoModal) return;
+    console.log('[MODAL-OPEN] Opening for:', video.file_code, video.title);
     elements.videoModal.classList.remove('hidden');
     elements.modalTitle.textContent = video.title || 'Untitled';
     currentVideoFileCode = video.file_code || video.id || '';
@@ -388,9 +394,12 @@ async function openVideoModal(video) {
         
         // Use the same thumb logic to get the best possible poster URL
         const thumbUrl = video.single_img || video.splash_img || '';
+        console.log('[MODAL-THUMB] Using thumb:', thumbUrl);
         const embedData = await fetchEmbedUrl(video.file_code || video.id, thumbUrl);
         
-        if (embedData.success && embedData.embed_url) {
+        console.log('[MODAL-EMBED-CHECK] embedData:', embedData);
+        if (embedData && embedData.embed_url) {
+            console.log('[MODAL-IFRAME] Creating iframe with URL:', embedData.embed_url);
             elements.videoPlayerContainer.innerHTML = `<iframe src="${embedData.embed_url}" width="100%" height="100%" frameborder="0" allowfullscreen class="rounded-lg" style="aspect-ratio: 16/9;"></iframe>`;
             if (elements.videoDuration) elements.videoDuration.textContent = formatDuration(video.duration || video.length || 0);
             if (elements.videoViews) elements.videoViews.textContent = formatViews(video.views || 0);
