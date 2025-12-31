@@ -407,10 +407,12 @@ async function openVideoModal(video) {
     try {
         elements.videoPlayerContainer.innerHTML = '<div class="text-center py-20 text-gray-400">Loading...</div>';
         
-        // Use the same thumb logic to get the best possible poster URL
-        const thumbUrl = video.single_img || video.splash_img || '';
-        console.log('[MODAL-THUMB] Using thumb:', thumbUrl);
-        const embedData = await fetchEmbedUrl(video.file_code || video.id, thumbUrl);
+        // Use splash_img as the custom poster if available, otherwise single_img
+        // This uses the ?c_poster parameter you mentioned to show the image on the player
+        const posterUrl = video.splash_img || video.single_img || '';
+        console.log('[MODAL-POSTER] Using custom poster:', posterUrl);
+        
+        const embedData = await fetchEmbedUrl(video.file_code || video.id, posterUrl);
         
         console.log('[MODAL-EMBED-CHECK] embedData:', embedData);
         if (embedData && embedData.embed_url) {

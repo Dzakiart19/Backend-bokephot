@@ -130,7 +130,13 @@ async function loadVideoDetail() {
 
 async function loadVideoPlayer(fileId) {
     try {
-        const embedData = await fetchEmbedUrl(fileId);
+        // Fetch fresh video details to get the thumbnail/splash for the poster
+        const videoData = await fetchVideoDetails(fileId);
+        const video = videoData.result;
+        const posterUrl = video.splash_img || video.single_img || '';
+        
+        const response = await fetch(`${CONFIG.API_BASE_URL}/embed/${fileId}${posterUrl ? `?poster=${encodeURIComponent(posterUrl)}` : ''}`);
+        const embedData = await response.json();
         
         if (embedData.success && embedData.embed_url) {
             // Create iframe for video player

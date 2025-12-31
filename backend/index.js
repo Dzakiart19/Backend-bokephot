@@ -412,8 +412,13 @@ app.get('/api/embed/:fileId', async (req, res) => {
     const { poster } = req.query;
     let embedUrl = `https://doodstream.com/e/${fileId}`;
     
+    // Check if poster is a full URL or needs proxying
     if (poster) {
-      embedUrl += `?c_poster=${encodeURIComponent(poster)}`;
+      let posterUrl = poster;
+      if (!posterUrl.startsWith('http')) {
+        posterUrl = `https://${posterUrl}`;
+      }
+      embedUrl += `?c_poster=${encodeURIComponent(posterUrl)}`;
     }
     
     console.log(`[EMBED] Constructing URL for ${fileId}: ${embedUrl}`);
