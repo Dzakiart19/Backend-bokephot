@@ -1,6 +1,6 @@
 const CONFIG = {
-    // UPDATED: Using absolute URL for backend to ensure Firebase can talk to Replit
-    API_BASE_URL: 'https://backend-bokephot--ioj1gjah.replit.app/api',
+    // Use relative URL to talk to the local backend on same domain
+    API_BASE_URL: '/api',
     VIDEOS_PER_PAGE: 20,
     PLACEHOLDER_THUMBNAIL: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE4MCIgdmlld0JveD0iMCAwIDMyMCAxODAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMjAiIGhlaWdodD0iMTgwIiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0xNDAgNzBIMTgwVjExMEgxNDBWNzBaIiBzdHJva2U9IiM2QjczODAiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWRhc2hhcnJheT0iNCA0Ii8+CjxjaXJjbGUgY3g9IjE2MCIgY3k9IjkwIiByPSIxNSIgZmlsbD0iIzZCNzM4MCIvPgo8L3N2Zz4K'
 };
@@ -97,16 +97,30 @@ async function fetchVideos(page = 1, searchTerm = '') {
         });
         if (searchTerm) params.append('search_term', searchTerm);
 
-        const response = await fetch(`${CONFIG.API_BASE_URL}${endpoint}?${params}`, {
-            mode: 'cors',
+        const url = `${CONFIG.API_BASE_URL}${endpoint}?${params}`;
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+        
+        const response = await fetch(url, {
+            signal: controller.signal,
             headers: { 
                 'Accept': 'application/json'
             }
         });
-        if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
-        return await response.json();
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        
+        // Check if API returned an error
+        if (data && typeof data === 'object') {
+            if (data.error || (data.success === false)) {
+                throw new Error(data.error || data.msg || 'API returned an error');
+            }
+        }
+        return data;
     } catch (error) {
-        console.error('Fetch error:', error);
+        console.error('Fetch error:', error.message);
         throw error;
     }
 }
@@ -117,10 +131,18 @@ async function fetchEmbedUrl(fileId, posterUrl = '') {
         if (posterUrl) {
             url += `?poster=${encodeURIComponent(posterUrl)}`;
         }
-        const response = await fetch(url, { mode: 'cors' });
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        
+        const response = await fetch(url, { 
+            signal: controller.signal 
+        });
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         return await response.json();
     } catch (error) {
-        console.error(error);
+        console.error('Embed URL error:', error.message);
         throw error;
     }
 }
@@ -132,20 +154,23 @@ async function loadVideos(isLoadMore = false) {
 
     try {
         const data = await fetchVideos(currentPage, currentQuery);
+        console.log('API response:', data);
+        
         // Doodstream API can return different success flags
         const isSuccess = data.success === true || data.status === 200 || data.msg === 'OK';
         
         if (!isSuccess) {
             console.error('API Response was not successful:', data);
-            throw new Error(data.error || 'API Error');
+            throw new Error(data.error || data.msg || 'API Error');
         }
 
         const result = data.result || {};
         const videos = Array.isArray(result) ? result : (result.files || []);
         
-        if (videos.length === 0) {
+        if (!Array.isArray(videos) || videos.length === 0) {
             if (isLoadMore) elements.loadMoreContainer.classList.add('hidden');
             else showNoResults();
+            hideLoading();
             return;
         }
 
@@ -161,7 +186,7 @@ async function loadVideos(isLoadMore = false) {
         }
         hideLoading();
     } catch (error) {
-        console.error('LoadVideos error:', error);
+        console.error('LoadVideos error:', error.message);
         showError('Gagal memuat video. Silakan periksa koneksi atau coba lagi nanti.');
     } finally {
         isLoading = false;
