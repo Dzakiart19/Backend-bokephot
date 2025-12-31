@@ -14,7 +14,9 @@ function getApiBaseUrl() {
   }
   
   // Fallback to default backend URL
-  const defaultUrl = 'https://backend-bokephot.mio5ikd.replit.app/api';
+  const defaultUrl = window.location.hostname.includes('replit.dev') || window.location.hostname === 'localhost'
+    ? window.location.origin + '/api'
+    : 'https://backend-bokephot.mio5ikd.replit.app/api';
   console.log('[CONFIG] Using backend URL:', defaultUrl);
   return defaultUrl;
 }
