@@ -297,9 +297,9 @@ function createVideoCard(video) {
             cleanUrl = 'https://' + cleanUrl;
         }
         
-        // IMPORTANT: postercdn.net returns 405 errors, so we MUST proxy ALL Doodstream images through our backend
-        // This includes postercdn.net (old CDN) and any other external CDNs
-        let proxyUrl = `${CONFIG.API_BASE_URL}/proxy-thumb?url=${encodeURIComponent(cleanUrl)}`;
+        // Use a persistent cache buster based on minutes to avoid repeated blank detections
+        const timeBuster = Math.floor(Date.now() / 60000);
+        let proxyUrl = `${CONFIG.API_BASE_URL}/proxy-thumb?url=${encodeURIComponent(cleanUrl)}&t=${timeBuster}`;
         if (isFallback) proxyUrl += '&fallback=1';
         return proxyUrl;
     };

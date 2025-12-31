@@ -272,8 +272,13 @@ app.get('/api/videos', async (req, res) => {
       });
     }
 
-    const response = await axios.get(`https://doodstream.com/api/file/list?key=${apiKey}&page=${page}&per_page=${per_page}`);
+    console.log(`[API-LIST] Fetching videos page ${page}`);
+    const response = await axios.get(`https://doodstream.com/api/file/list?key=${apiKey}&page=${page}&per_page=${per_page}`, { timeout: 10000 });
     
+    // Log the number of files found for debugging
+    const filesCount = response.data?.result?.files?.length || 0;
+    console.log(`[API-LIST] Doodstream returned ${filesCount} files`);
+
     // Always return a valid object structure even if Doodstream API fails
     if (response.data && response.data.status === 200) {
       res.json(response.data);
