@@ -13,8 +13,19 @@ function getApiBaseUrl() {
     return savedUrl;
   }
   
-  // Fallback to default backend URL
-  const defaultUrl = 'https://backend-bokephot.mio5ikd.replit.app/api';
+  // Dynamic backend URL detection
+  const currentOrigin = window.location.origin;
+  let defaultUrl = '';
+  
+  if (window.location.hostname.includes('replit.dev') || window.location.hostname === 'localhost') {
+    // Development environment
+    defaultUrl = currentOrigin + '/api';
+  } else {
+    // Production / External environment (Firebase, etc)
+    // Always use the stable Replit backend URL for external sites
+    defaultUrl = 'https://backend-bokephot.mio5ikd.replit.app/api';
+  }
+  
   console.log('[CONFIG] Using backend URL:', defaultUrl);
   return defaultUrl;
 }
