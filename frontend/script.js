@@ -305,13 +305,19 @@ function createVideoCard(video) {
     const useFallback = primaryThumb === CONFIG.PLACEHOLDER_THUMBNAIL && fallbackThumb === CONFIG.PLACEHOLDER_THUMBNAIL;
     const fileId = video.file_code || video.id || '';
     
-    // Add cache-buster to prevent stale proxy responses
-    const thumbWithCache = useFallback ? CONFIG.PLACEHOLDER_THUMBNAIL : (primaryThumb + `&_=${Date.now()}`);
-    const fallbackWithCache = fallbackThumb + `&_=${Date.now()}`;
+    // Add cache-buster to prevent stale proxy responses (only for proxy URLs, not data URIs)
+    const addCacheBuster = (url) => {
+        if (!url || url.startsWith('data:')) return url;
+        const sep = url.includes('?') ? '&' : '?';
+        return url + sep + `_=${Date.now()}`;
+    };
+    
+    const thumbWithCache = useFallback ? CONFIG.PLACEHOLDER_THUMBNAIL : addCacheBuster(primaryThumb);
+    const fallbackWithCache = addCacheBuster(fallbackThumb);
     
     card.innerHTML = `
         <div class="video-thumbnail relative bg-gray-800 flex items-center justify-center">
-            <img id="thumb-${fileId}" src="${thumbWithCache}" data-primary="${primaryThumb}" data-fallback="${fallbackWithCache}" class="w-full h-full object-cover" alt="">
+            <img id="thumb-${fileId}" src="${thumbWithCache}" data-primary="${primaryThumb}" data-fallback="${fallbackWithCache}" data-fileid="${fileId}" class="w-full h-full object-cover" alt="Thumbnail">
             <div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 transition-opacity">
                 <svg class="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
             </div>
@@ -352,7 +358,7 @@ function createVideoCard(video) {
             if (!this.hasAttribute('data-fallback-tried')) {
                 // Try fallback thumbnail
                 this.setAttribute('data-fallback-tried', '1');
-                this.src = fallbackThumb;
+                this.src = fallbackWithCache;
             } else if (!this.hasAttribute('data-checking-thumbnail')) {
                 // If both fail, check if thumbnail is being generated via backend
                 this.setAttribute('data-checking-thumbnail', '1');
