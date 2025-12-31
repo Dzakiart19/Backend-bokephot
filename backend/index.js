@@ -39,18 +39,32 @@ bot.on('text', async (ctx) => {
   if (text.startsWith('http')) {
     try {
       const apiKey = process.env.DOODSTREAM_API_KEY;
-      ctx.reply('Sedang memproses link upload ke Doodstream...');
       
-      const response = await axios.get(`https://doodstream.com/api/upload/url?key=${apiKey}&url=${encodeURIComponent(text)}`);
+      if (!apiKey) {
+        return ctx.reply('❌ API Key tidak dikonfigurasi. Hubungi admin.');
+      }
       
-      if (response.data.success) {
-        ctx.reply('✅ Link berhasil ditambahkan ke antrian upload Doodstream!');
+      ctx.reply('⏳ Sedang memproses link upload ke Doodstream...');
+      
+      const response = await axios.get(`https://doodstream.com/api/upload/url?key=${apiKey}&url=${encodeURIComponent(text)}`, {
+        timeout: 30000
+      });
+      
+      console.log('[BOT-UPLOAD] Response:', JSON.stringify(response.data));
+      
+      // Doodstream API returns msg: "OK" on success, not a success field
+      const isSuccess = response.data.msg === 'OK' || response.data.success === true || response.status === 200;
+      
+      if (isSuccess && response.data.msg !== 'Error') {
+        ctx.reply('✅ Link berhasil ditambahkan ke antrian upload Doodstream!\n\nVideo akan diproses dalam beberapa menit.');
       } else {
-        ctx.reply('❌ Gagal mengupload: ' + (response.data.msg || 'Terjadi kesalahan pada API Doodstream'));
+        const errorMsg = response.data.msg || response.data.error || 'Terjadi kesalahan pada API Doodstream';
+        ctx.reply('❌ Gagal mengupload: ' + errorMsg);
       }
     } catch (error) {
-      console.error('Remote upload error:', error.message);
-      ctx.reply('❌ Terjadi kesalahan saat menghubungi API Doodstream.');
+      console.error('[BOT-UPLOAD-ERROR]', error.message);
+      const errorMsg = error.response?.data?.msg || error.message || 'Kesalahan koneksi';
+      ctx.reply('❌ Terjadi kesalahan:\n' + errorMsg);
     }
   }
 });

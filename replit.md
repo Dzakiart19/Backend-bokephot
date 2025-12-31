@@ -24,6 +24,10 @@ Preferred communication style: Simple, everyday language (Indonesian/English).
 - Backend proxy timeout reduced to 10s for faster response
 - Improved error responses from proxy endpoint
 - Responsive grid layout: 5 cols (desktop) → 3 cols (tablet) → 2 cols (mobile)
+4. **Telegram Bot Upload** - Fixed success check logic:
+   - Changed from `response.data.success` to `response.data.msg === 'OK'` 
+   - Added 30s timeout for upload processing
+   - Improved error messages and logging
 
 ## System Architecture
 
