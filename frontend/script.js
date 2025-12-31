@@ -245,15 +245,22 @@ function createVideoCard(video) {
     const views = formatViews(video.views || 0);
     
     // Thumbnail URL - Doodstream API uses single_img or splash_img
-    const thumbnailUrl = video.single_img || video.splash_img || video.thumbnail_url || video.screenshot || CONFIG.PLACEHOLDER_THUMBNAIL;
+    const getSecureThumb = (url) => {
+        if (!url) return CONFIG.PLACEHOLDER_THUMBNAIL;
+        // Force HTTPS and use a proxy if needed, but first try direct
+        return url.replace('http://', 'https://');
+    };
+
+    const thumbnailUrl = getSecureThumb(video.single_img || video.splash_img || video.thumbnail_url || video.screenshot);
     
     card.innerHTML = `
-        <div class="relative">
+        <div class="relative bg-gray-900">
             <img 
                 src="${thumbnailUrl}" 
                 alt="${video.title || video.name || 'Video'}"
-                class="w-full h-48 object-cover"
-                onerror="this.src='${CONFIG.PLACEHOLDER_THUMBNAIL}'"
+                class="w-full h-48 object-cover opacity-90 group-hover:opacity-100 transition-opacity"
+                loading="lazy"
+                onerror="this.src='${CONFIG.PLACEHOLDER_THUMBNAIL}'; this.onerror=null;"
             >
             <div class="absolute bottom-2 right-2 bg-black bg-opacity-75 text-white text-xs px-2 py-1 rounded">
                 ${duration}
