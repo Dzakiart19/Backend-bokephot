@@ -8,7 +8,7 @@ A video streaming website that integrates with the Doodstream API. The applicati
 
 Preferred communication style: Simple, everyday language (Indonesian/English).
 
-## Recent Changes (2025-12-31 - Sync Fix Update)
+## Recent Changes (2025-12-31 - Sync Fix + Firebase Hosting)
 
 ### Fixed Issues (Latest Session):
 1. **Web Loading Performance** - Changed API base URL from hardcoded external domain to relative `/api` path
@@ -60,6 +60,25 @@ Preferred communication style: Simple, everyday language (Indonesian/English).
    - Ketika bot upload via Telegram, video muncul di web dalam maksimal 10-15 detik ✅
    - Tidak ada delay dari sync - semuanya langsung realtime
    - Firebase dan Replit backend sekarang fully synchronized
+
+7. **Firebase Hosting Deployment** ✅ (NEW)
+   - ✅ Frontend berhasil di-deploy ke Firebase Hosting
+   - **Live URL**: https://bokephot.web.app
+   - **Status**: Online dan siap diakses
+   - Backend Replit: https://backend-bokephot--ioj1gjah.replit.app
+   - CORS sudah configured di backend (origin: '*')
+   - Firebase frontend → Replit backend sync sudah verified
+
+## 🚀 Deployment URLs
+
+### Live Website
+- **Frontend** (Firebase): https://bokephot.web.app
+- **Backend** (Replit): https://backend-bokephot--ioj1gjah.replit.app
+- **Status**: ✅ Both online and synced
+
+### Development
+- Backend local: http://localhost:5000
+- Frontend works with `/api` relative paths
 
 ## System Architecture
 
