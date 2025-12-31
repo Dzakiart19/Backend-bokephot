@@ -26,18 +26,21 @@ Preferred communication style: Simple, everyday language (Indonesian/English).
 - Responsive grid layout: 5 cols (desktop) → 3 cols (tablet) → 2 cols (mobile)
 4. **Telegram Bot Complete System** - Full upload, list, search functionality:
    - ✅ Upload file video langsung (.mp4, .mkv, .avi, .mov, .flv, .wmv, .webm, .m3u8, .3gp)
+   - ✅ Both document & video message types supported (handles Telegram's video classification)
    - ✅ Caption sebagai judul video (auto fallback ke filename)
    - ✅ File size validation (max 500MB)
    - ✅ URL link upload dengan direct file support
    - ✅ `/list` command - List 5 video terbaru dengan working link
    - ✅ `/search` command - Cari video by keyword, show up to 5 results
    - Fixed API check: `response.data.msg === 'OK'` instead of `response.data.success`
-   - Added 30s timeout for URL, 60s for file uploads
-   - Better error messages & logging
+   - Added 90s timeout for file uploads, 30s for URL uploads
+   - Extensive logging for debugging: `[BOT-FILE-UPLOAD-START]`, `[BOT-FILE-UPLOAD]`, `[BOT-FILE-UPLOAD-ERROR]`
+   - Better error messages & fallback handling
    - **Bot Commands**: 
      - `/help` - Lihat panduan lengkap
      - `/list` - Lihat 5 video terbaru ✅
      - `/search keyword` - Cari video ✅
+     - **File Upload**: Kirim file/video + caption ✅
 
 ## System Architecture
 

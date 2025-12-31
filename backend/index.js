@@ -90,22 +90,23 @@ bot.command('search', async (ctx) => {
   }
 });
 
-// Handle video/document file upload
-bot.on('document', async (ctx) => {
-  console.log('[BOT-FILE-UPLOAD-START] Document received');
+// Handle both document and video file uploads
+const handleFileUpload = async (ctx, fileData, isVideo = false) => {
+  const msgType = isVideo ? 'VIDEO' : 'DOCUMENT';
+  console.log(`[BOT-FILE-UPLOAD-START] ${msgType} received`);
   try {
     const apiKey = process.env.DOODSTREAM_API_KEY;
     if (!apiKey) {
-      console.error('[BOT-FILE-UPLOAD] No API key');
+      console.error(`[BOT-FILE-UPLOAD] No API key`);
       return ctx.reply('❌ API Key tidak dikonfigurasi. Hubungi admin.');
     }
 
-    const fileId = ctx.message.document.file_id;
-    const fileName = ctx.message.document.file_name || 'unknown';
+    const fileId = fileData.file_id;
+    const fileName = fileData.file_name || `video_${Date.now()}.mp4`;
     const caption = ctx.message.caption || '';
-    const fileSize = ctx.message.document.file_size || 0;
+    const fileSize = fileData.file_size || 0;
     
-    console.log('[BOT-FILE-UPLOAD] Processing:', fileName, 'Size:', fileSize, 'Caption:', caption);
+    console.log(`[BOT-FILE-UPLOAD] Processing ${msgType}:`, fileName, 'Size:', fileSize, 'Caption:', caption);
     
     // Check file size (Doodstream limit ~500MB)
     if (fileSize > 500 * 1024 * 1024) {
@@ -113,13 +114,15 @@ bot.on('document', async (ctx) => {
       return ctx.reply('❌ File terlalu besar! Max 500MB.\n\nUkuran file: ' + (fileSize / 1024 / 1024).toFixed(2) + 'MB');
     }
 
-    // Check file type
-    const validExtensions = ['.mp4', '.mkv', '.avi', '.mov', '.flv', '.wmv', '.webm', '.m3u8', '.3gp'];
-    const hasValidExt = validExtensions.some(ext => fileName.toLowerCase().includes(ext));
-    
-    if (!hasValidExt) {
-      console.warn('[BOT-FILE-UPLOAD] Invalid file type:', fileName);
-      return ctx.reply('❌ Format file tidak didukung!\nDukungan: MP4, MKV, AVI, MOV, FLV, WMV, WEBM, M3U8, 3GP\n\nFile: ' + fileName);
+    // For videos, always assume valid. For documents, check extension
+    if (!isVideo) {
+      const validExtensions = ['.mp4', '.mkv', '.avi', '.mov', '.flv', '.wmv', '.webm', '.m3u8', '.3gp'];
+      const hasValidExt = validExtensions.some(ext => fileName.toLowerCase().includes(ext));
+      
+      if (!hasValidExt) {
+        console.warn('[BOT-FILE-UPLOAD] Invalid file type:', fileName);
+        return ctx.reply('❌ Format file tidak didukung!\nDukungan: MP4, MKV, AVI, MOV, FLV, WMV, WEBM, M3U8, 3GP\n\nFile: ' + fileName);
+      }
     }
 
     // Send initial response
@@ -173,6 +176,16 @@ bot.on('document', async (ctx) => {
       console.error('[BOT-FILE-UPLOAD] Failed to send error reply:', replyError.message);
     }
   }
+};
+
+// Handle document uploads
+bot.on('document', async (ctx) => {
+  await handleFileUpload(ctx, ctx.message.document, false);
+});
+
+// Handle video uploads (videos sent as file, not as video message type with player)
+bot.on('video', async (ctx) => {
+  await handleFileUpload(ctx, ctx.message.video, true);
 });
 
 // Handle text message (URL links)
