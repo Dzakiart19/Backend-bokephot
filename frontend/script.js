@@ -301,10 +301,11 @@ function createVideoCard(video) {
     const fallbackThumb = getSecureThumb(video.splash_img, true);
     // If both are placeholders, use placeholder directly
     const useFallback = primaryThumb === CONFIG.PLACEHOLDER_THUMBNAIL && fallbackThumb === CONFIG.PLACEHOLDER_THUMBNAIL;
+    const fileId = video.file_code || video.id || '';
     
     card.innerHTML = `
         <div class="video-thumbnail relative bg-gray-800 flex items-center justify-center">
-            <img id="thumb-${video.file_code}" src="${useFallback ? CONFIG.PLACEHOLDER_THUMBNAIL : primaryThumb}" class="w-full h-full object-cover" alt="">
+            <img id="thumb-${fileId}" src="${useFallback ? CONFIG.PLACEHOLDER_THUMBNAIL : primaryThumb}" class="w-full h-full object-cover" alt="">
             <div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 transition-opacity">
                 <svg class="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
             </div>
@@ -318,22 +319,31 @@ function createVideoCard(video) {
         </div>
     `;
     
-    // Add fallback logic for images that fail to load
-    const imgElement = card.querySelector(`#thumb-${video.file_code}`);
+    // Add fallback logic for images that fail to load and auto-refresh for new uploads
+    const imgElement = card.querySelector(`#thumb-${fileId}`);
     if (imgElement) {
-        imgElement.addEventListener('error', function() {
+        let retryCount = 0;
+        const maxRetries = 5;
+        
+        imgElement.addEventListener('error', async function() {
             if (!this.hasAttribute('data-fallback-tried')) {
                 // Try fallback thumbnail
                 this.setAttribute('data-fallback-tried', '1');
                 this.src = fallbackThumb;
-            } else {
-                // If both fail, use placeholder
-                this.src = CONFIG.PLACEHOLDER_THUMBNAIL;
+            } else if (!this.hasAttribute('data-checking-thumbnail')) {
+                // If both fail, check if thumbnail is being generated via backend
+                this.setAttribute('data-checking-thumbnail', '1');
+                checkAndRefreshThumbnail(fileId, imgElement, retryCount, maxRetries);
             }
         });
+        
+        // If initial load shows placeholder, check if thumbnail exists on backend
+        if (useFallback) {
+            checkAndRefreshThumbnail(fileId, imgElement, retryCount, maxRetries);
+        }
     }
     
-    card.setAttribute('data-file-code', video.file_code || video.id || '');
+    card.setAttribute('data-file-code', fileId);
     card.addEventListener('click', () => openVideoModal(video));
     return card;
 }
@@ -406,3 +416,52 @@ function showError(m) {
 }
 function showNoResults() { if (elements.noResultsState) elements.noResultsState.classList.remove('hidden'); }
 function retryLoad() { currentPage = 1; loadVideos(); }
+
+// Function to check and refresh thumbnail for newly uploaded videos
+async function checkAndRefreshThumbnail(fileId, imgElement, retryCount = 0, maxRetries = 5) {
+    if (retryCount >= maxRetries) return;
+    
+    try {
+        const response = await fetch(`${CONFIG.API_BASE_URL}/thumbnail/${fileId}`);
+        const data = await response.json();
+        
+        if (data.success && data.has_thumbnail) {
+            // Thumbnail found! Update the image
+            const thumbUrl = data.primary || data.fallback;
+            if (thumbUrl && imgElement) {
+                imgElement.src = getSecureThumb(thumbUrl);
+                console.log(`✅ Thumbnail loaded for ${fileId}`);
+                return;
+            }
+        } else if (data.is_processing) {
+            // Still processing, retry after 2 seconds
+            console.log(`⏳ Thumbnail still generating for ${fileId}, retrying...`);
+            retryCount++;
+            setTimeout(() => {
+                checkAndRefreshThumbnail(fileId, imgElement, retryCount, maxRetries);
+            }, 2000);
+        }
+    } catch (error) {
+        console.log(`[THUMBNAIL-CHECK] Error checking thumbnail for ${fileId}:`, error.message);
+    }
+}
+
+// Helper function for getSecureThumb in global scope
+function getSecureThumb(url) {
+    if (!url || url.trim() === '') {
+        return CONFIG.PLACEHOLDER_THUMBNAIL;
+    }
+    
+    let cleanUrl = url.trim();
+    if (cleanUrl.includes('/proxy-thumb?url=')) {
+        return cleanUrl;
+    }
+    
+    if (cleanUrl.startsWith('//')) {
+        cleanUrl = 'https:' + cleanUrl;
+    } else if (!cleanUrl.startsWith('http')) {
+        cleanUrl = 'https://' + cleanUrl;
+    }
+    
+    return `${CONFIG.API_BASE_URL}/proxy-thumb?url=${encodeURIComponent(cleanUrl)}`;
+}

@@ -196,6 +196,20 @@ async function loadRelatedVideos() {
     }
 }
 
+// Proxy thumbnail URLs through backend to handle new uploads
+function getProxiedThumbUrl(url) {
+    if (!url || !url.trim()) return null;
+    let cleanUrl = url.trim();
+    
+    if (cleanUrl.startsWith('//')) {
+        cleanUrl = 'https:' + cleanUrl;
+    } else if (!cleanUrl.startsWith('http')) {
+        cleanUrl = 'https://' + cleanUrl;
+    }
+    
+    return `${CONFIG.API_BASE_URL}/proxy-thumb?url=${encodeURIComponent(cleanUrl)}`;
+}
+
 // UI Functions
 function createRelatedVideoCard(video) {
     const card = document.createElement('div');
@@ -203,18 +217,26 @@ function createRelatedVideoCard(video) {
     
     // Use primary thumbnail, with fallbacks
     const primaryThumb = video.single_img || video.thumbnail_url || video.screenshot;
-    const fallbackThumb = video.splash_img || CONFIG.PLACEHOLDER_THUMBNAIL;
-    const thumbnailUrl = (primaryThumb && primaryThumb.trim()) ? primaryThumb : (fallbackThumb && fallbackThumb.trim() ? fallbackThumb : CONFIG.PLACEHOLDER_THUMBNAIL);
+    const fallbackThumb = video.splash_img;
+    const fileId = video.file_code || video.id;
+    
+    let thumbnailUrl = CONFIG.PLACEHOLDER_THUMBNAIL;
+    if (primaryThumb && primaryThumb.trim()) {
+        thumbnailUrl = getProxiedThumbUrl(primaryThumb);
+    } else if (fallbackThumb && fallbackThumb.trim()) {
+        thumbnailUrl = getProxiedThumbUrl(fallbackThumb);
+    }
+    
     const duration = formatDuration(video.duration || video.length || 0);
     const views = formatViews(video.views || 0);
     
     card.innerHTML = `
         <div class="relative flex-shrink-0">
             <img 
+                id="thumb-${fileId}"
                 src="${thumbnailUrl}" 
                 alt="${video.title || video.name || 'Video'}"
                 class="w-32 h-20 object-cover rounded-md"
-                onerror="this.src='${CONFIG.PLACEHOLDER_THUMBNAIL}'"
             >
             <div class="absolute bottom-1 right-1 bg-black bg-opacity-75 text-white text-xs px-1 py-0.5 rounded">
                 ${duration}
@@ -228,6 +250,27 @@ function createRelatedVideoCard(video) {
             <p class="text-xs text-gray-400">${formatDate(video.uploaded || video.created || Date.now())}</p>
         </div>
     `;
+    
+    // Auto-refresh thumbnail for new uploads
+    const imgElement = card.querySelector(`#thumb-${fileId}`);
+    if (imgElement && thumbnailUrl === CONFIG.PLACEHOLDER_THUMBNAIL) {
+        checkAndRefreshThumbnail(fileId, imgElement, 0, 5);
+    }
+    
+    imgElement?.addEventListener('error', async function() {
+        if (primaryThumb && !this.hasAttribute('data-tried-primary')) {
+            this.setAttribute('data-tried-primary', '1');
+            const altUrl = getProxiedThumbUrl(primaryThumb);
+            if (altUrl) this.src = altUrl;
+        } else if (fallbackThumb && !this.hasAttribute('data-tried-fallback')) {
+            this.setAttribute('data-tried-fallback', '1');
+            const altUrl = getProxiedThumbUrl(fallbackThumb);
+            if (altUrl) this.src = altUrl;
+        } else if (!this.hasAttribute('data-checking')) {
+            this.setAttribute('data-checking', '1');
+            checkAndRefreshThumbnail(fileId, imgElement, 0, 5);
+        }
+    });
     
     // Add click event
     card.addEventListener('click', () => {
@@ -300,3 +343,32 @@ document.addEventListener('DOMContentLoaded', () => {
 window.addEventListener('beforeunload', () => {
     if (relatedVideoInterval) clearInterval(relatedVideoInterval);
 });
+
+// Function to check and refresh thumbnail for newly uploaded videos
+async function checkAndRefreshThumbnail(fileId, imgElement, retryCount = 0, maxRetries = 5) {
+    if (retryCount >= maxRetries) return;
+    
+    try {
+        const response = await fetch(`${CONFIG.API_BASE_URL}/thumbnail/${fileId}`);
+        const data = await response.json();
+        
+        if (data.success && data.has_thumbnail) {
+            // Thumbnail found! Update the image
+            const thumbUrl = data.primary || data.fallback;
+            if (thumbUrl && imgElement) {
+                imgElement.src = getProxiedThumbUrl(thumbUrl);
+                console.log(`✅ Thumbnail loaded for ${fileId}`);
+                return;
+            }
+        } else if (data.is_processing) {
+            // Still processing, retry after 2 seconds
+            console.log(`⏳ Thumbnail still generating for ${fileId}, retrying...`);
+            retryCount++;
+            setTimeout(() => {
+                checkAndRefreshThumbnail(fileId, imgElement, retryCount, maxRetries);
+            }, 2000);
+        }
+    } catch (error) {
+        console.log(`[THUMBNAIL-CHECK] Error checking thumbnail for ${fileId}:`, error.message);
+    }
+}
