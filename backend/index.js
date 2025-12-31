@@ -34,7 +34,8 @@ bot.command('list', async (ctx) => {
       const files = response.data.result.files;
       let msg = '📹 *5 Video Terbaru:*\n\n';
       files.forEach(f => {
-        msg += `• ${f.title}\n  🔗 https://bokephot.web.app/detail.html?id=${f.file_code}\n\n`;
+        // Use relative path for detail page to ensure it works across different domains
+        msg += `• ${f.title}\n  🔗 /detail.html?id=${f.file_code}\n\n`;
       });
       ctx.replyWithMarkdown(msg);
     } else {
