@@ -20,17 +20,73 @@ bot.help((ctx) => {
 bot.command('list', async (ctx) => {
   try {
     const apiKey = process.env.DOODSTREAM_API_KEY;
+    if (!apiKey) {
+      return ctx.reply('❌ API Key tidak dikonfigurasi.');
+    }
+    
     const response = await axios.get(`https://doodstream.com/api/file/list?key=${apiKey}&page=1&per_page=5`);
-    if (response.data.success) {
+    console.log('[BOT-LIST] Response:', response.data.msg);
+    
+    // Check success - Doodstream API returns msg: "OK" or success: true
+    const isSuccess = response.data.msg === 'OK' || response.data.success === true || response.status === 200;
+    
+    if (isSuccess && response.data.result?.files) {
       const files = response.data.result.files;
       let msg = '📹 *5 Video Terbaru:*\n\n';
       files.forEach(f => {
         msg += `• ${f.title}\n  🔗 https://bokephot.web.app/detail.html?id=${f.file_code}\n\n`;
       });
       ctx.replyWithMarkdown(msg);
+    } else {
+      ctx.reply('❌ Gagal mengambil daftar video: ' + (response.data.msg || 'Unknown error'));
     }
   } catch (error) {
-    ctx.reply('Gagal mengambil daftar video.');
+    console.error('[BOT-LIST-ERROR]', error.message);
+    ctx.reply('❌ Gagal mengambil daftar video.\n\nError: ' + error.message);
+  }
+});
+
+bot.command('search', async (ctx) => {
+  try {
+    const apiKey = process.env.DOODSTREAM_API_KEY;
+    if (!apiKey) {
+      return ctx.reply('❌ API Key tidak dikonfigurasi.');
+    }
+    
+    const searchTerm = ctx.message.text.replace('/search', '').trim();
+    
+    if (!searchTerm) {
+      return ctx.reply('⚠️ Cara pakai: /search [kata kunci]\n\nContoh: /search colmek');
+    }
+    
+    console.log('[BOT-SEARCH] Term:', searchTerm);
+    
+    const response = await axios.get(`https://doodstream.com/api/search/videos?key=${apiKey}&search_term=${encodeURIComponent(searchTerm)}`);
+    console.log('[BOT-SEARCH] Response:', response.data.msg);
+    
+    // Check success
+    const isSuccess = response.data.msg === 'OK' || response.data.success === true || response.status === 200;
+    
+    if (isSuccess && response.data.result) {
+      const results = response.data.result;
+      const files = Array.isArray(results) ? results : (results.files || []);
+      
+      if (files.length === 0) {
+        return ctx.reply('❌ Video tidak ditemukan untuk: ' + searchTerm);
+      }
+      
+      let msg = `🔍 *Hasil Pencarian: "${searchTerm}"*\n\n`;
+      files.slice(0, 5).forEach(f => {
+        msg += `• ${f.title}\n  🔗 https://bokephot.web.app/detail.html?id=${f.file_code}\n\n`;
+      });
+      msg += `\n📊 Total: ${files.length} video ditemukan`;
+      ctx.replyWithMarkdown(msg);
+    } else {
+      ctx.reply('❌ Pencarian gagal: ' + (response.data.msg || 'Unknown error'));
+    }
+  } catch (error) {
+    console.error('[BOT-SEARCH-ERROR]', error.message);
+    ctx.reply('❌ Gagal mencari video.\n\nError: ' + error.message);
   }
 });
 

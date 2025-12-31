@@ -24,18 +24,20 @@ Preferred communication style: Simple, everyday language (Indonesian/English).
 - Backend proxy timeout reduced to 10s for faster response
 - Improved error responses from proxy endpoint
 - Responsive grid layout: 5 cols (desktop) → 3 cols (tablet) → 2 cols (mobile)
-4. **Telegram Bot Upload** - Complete file & URL upload system:
-   - ✅ Upload file video langsung ke bot (MP4, MKV, AVI, MOV, FLV, WMV, WEBM, M3U8, 3GP)
-   - ✅ Caption sebagai judul video (optional)
+4. **Telegram Bot Complete System** - Full upload, list, search functionality:
+   - ✅ Upload file video langsung (.mp4, .mkv, .avi, .mov, .flv, .wmv, .webm, .m3u8, .3gp)
+   - ✅ Caption sebagai judul video (auto fallback ke filename)
    - ✅ File size validation (max 500MB)
-   - ✅ URL link upload dengan title support
-   - Changed from `response.data.success` to `response.data.msg === 'OK'`
+   - ✅ URL link upload dengan direct file support
+   - ✅ `/list` command - List 5 video terbaru dengan working link
+   - ✅ `/search` command - Cari video by keyword, show up to 5 results
+   - Fixed API check: `response.data.msg === 'OK'` instead of `response.data.success`
    - Added 30s timeout for URL, 60s for file uploads
    - Better error messages & logging
-   - **Bot Features**: 
+   - **Bot Commands**: 
      - `/help` - Lihat panduan lengkap
-     - `/list` - Lihat 5 video terbaru
-     - `/search [keyword]` - Cari video
+     - `/list` - Lihat 5 video terbaru ✅
+     - `/search keyword` - Cari video ✅
 
 ## System Architecture
 
