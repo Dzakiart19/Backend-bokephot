@@ -314,7 +314,8 @@ function createVideoCard(video) {
     const addCacheBuster = (url) => {
         if (!url || url.startsWith('data:')) return url;
         const sep = url.includes('?') ? '&' : '?';
-        return url + sep + `_=${Date.now()}`;
+        // Use a more aggressive cache buster for thumbnails
+        return url + sep + `t=${Math.floor(Date.now() / 60000)}`;
     };
     
     const thumbWithCache = useFallback ? CONFIG.PLACEHOLDER_THUMBNAIL : addCacheBuster(primaryThumb);

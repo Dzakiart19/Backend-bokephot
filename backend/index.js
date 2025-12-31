@@ -368,10 +368,12 @@ app.get('/api/proxy-thumb', async (req, res) => {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Referer': 'https://doodstream.com/',
+        'Origin': 'https://doodstream.com',
         'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
-        'Cache-Control': 'no-cache'
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
       },
-      timeout: 10000,
+      timeout: 15000,
       maxRedirects: 5,
       validateStatus: (status) => status < 500
     });
