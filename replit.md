@@ -33,7 +33,9 @@ Preferred communication style: Simple, everyday language (Indonesian/English).
    - ✅ `/list` command - List 5 video terbaru dengan working link
    - ✅ `/search` command - Cari video by keyword, show up to 5 results
    - Fixed API check: `response.data.msg === 'OK'` instead of `response.data.success`
+   - Fixed title parameter: `new_title` (Doodstream API requirement)
    - Added 90s timeout for file uploads, 30s for URL uploads
+   - Both document & video message types supported
    - Extensive logging for debugging: `[BOT-FILE-UPLOAD-START]`, `[BOT-FILE-UPLOAD]`, `[BOT-FILE-UPLOAD-ERROR]`
    - Better error messages & fallback handling
    - **Bot Commands**: 

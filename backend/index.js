@@ -143,9 +143,9 @@ const handleFileUpload = async (ctx, fileData, isVideo = false) => {
     // Upload to Doodstream
     let uploadUrl = `https://doodstream.com/api/upload/url?key=${apiKey}&url=${encodeURIComponent(fileUrl)}`;
     
-    // Add title if provided in caption
+    // Add title if provided in caption (Doodstream uses 'new_title' parameter)
     if (caption.trim()) {
-      uploadUrl += `&title=${encodeURIComponent(caption.trim())}`;
+      uploadUrl += `&new_title=${encodeURIComponent(caption.trim())}`;
     }
 
     console.log('[BOT-FILE-UPLOAD] Uploading to Doodstream...');
