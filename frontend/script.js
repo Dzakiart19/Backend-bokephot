@@ -244,8 +244,8 @@ function createVideoCard(video) {
     // Format views
     const views = formatViews(video.views || 0);
     
-    // Thumbnail URL
-    const thumbnailUrl = video.thumbnail_url || video.screenshot || CONFIG.PLACEHOLDER_THUMBNAIL;
+    // Thumbnail URL - Doodstream API uses single_img or splash_img
+    const thumbnailUrl = video.single_img || video.splash_img || video.thumbnail_url || video.screenshot || CONFIG.PLACEHOLDER_THUMBNAIL;
     
     card.innerHTML = `
         <div class="relative">
