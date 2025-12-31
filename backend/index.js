@@ -373,8 +373,8 @@ app.get('/api/proxy-thumb', async (req, res) => {
         'Cache-Control': 'no-cache',
         'Pragma': 'no-cache'
       },
-      timeout: 15000,
-      maxRedirects: 5,
+      timeout: 20000,
+      maxRedirects: 10,
       validateStatus: (status) => status < 500
     });
 

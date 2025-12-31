@@ -321,9 +321,13 @@ function createVideoCard(video) {
     const thumbWithCache = useFallback ? CONFIG.PLACEHOLDER_THUMBNAIL : addCacheBuster(primaryThumb);
     const fallbackWithCache = addCacheBuster(fallbackThumb);
     
+    // Use splash image as high-priority fallback if single_img is problematic
+    const splashThumb = getSecureThumb(video.splash_img);
+    const splashWithCache = addCacheBuster(splashThumb);
+    
     card.innerHTML = `
         <div class="video-thumbnail relative bg-gray-800 flex items-center justify-center">
-            <img id="thumb-${fileId}" src="${thumbWithCache}" data-primary="${primaryThumb}" data-fallback="${fallbackWithCache}" data-fileid="${fileId}" class="w-full h-full object-cover" alt="Thumbnail">
+            <img id="thumb-${fileId}" src="${thumbWithCache}" data-primary="${primaryThumb}" data-fallback="${fallbackWithCache}" data-splash="${splashWithCache}" data-fileid="${fileId}" class="w-full h-full object-cover" alt="Thumbnail">
             <div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 transition-opacity">
                 <svg class="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
             </div>
@@ -361,6 +365,16 @@ function createVideoCard(video) {
         
         imgElement.addEventListener('error', async function() {
             clearTimeout(loadCheckTimeout);
+            if (!this.hasAttribute('data-splash-tried')) {
+                // Try splash image first as it's often more reliable
+                this.setAttribute('data-splash-tried', '1');
+                const splash = this.getAttribute('data-splash');
+                if (splash && splash !== CONFIG.PLACEHOLDER_THUMBNAIL) {
+                    this.src = addCacheBuster(splash);
+                    return;
+                }
+            }
+            
             if (!this.hasAttribute('data-fallback-tried')) {
                 // Try fallback thumbnail
                 this.setAttribute('data-fallback-tried', '1');
