@@ -176,23 +176,16 @@ app.get('/api/file/:fileId', async (req, res) => {
 
 // Endpoint 4: Get Embed URL
 app.get('/api/embed/:fileId', async (req, res) => {
-  try {
-    const { fileId } = req.params;
-    const embedUrl = `https://doodstream.com/e/${fileId}`;
-    
-    // We simply return the URL. Doodstream embed URLs are predictable.
-    // This avoids 404s if the info API is slow or has different behavior.
-    res.json({
-      success: true,
-      embed_url: embedUrl
-    });
-  } catch (error) {
-    console.error('Error in embed endpoint:', error.message);
-    res.json({ 
-      success: true, 
-      embed_url: `https://doodstream.com/e/${req.params.fileId}`
-    });
-  }
+  const { fileId } = req.params;
+  const embedUrl = `https://doodstream.com/e/${fileId}`;
+  
+  console.log(`[EMBED] Constructing URL for ${fileId}: ${embedUrl}`);
+  
+  // Return SUCCESS directly without any complex logic or status codes
+  res.status(200).json({
+    success: true,
+    embed_url: embedUrl
+  });
 });
 
 // Health check endpoint
