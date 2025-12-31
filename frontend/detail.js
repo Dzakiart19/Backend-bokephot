@@ -1,11 +1,5 @@
 // Auto-detect API base URL - smart detection for different environments
 function getApiBaseUrl() {
-  // Check if running on Replit development (localhost or replit preview)
-  if (window.location.hostname === 'localhost' || window.location.hostname.includes('replit.dev')) {
-    console.log('[CONFIG] Detected Replit development environment → using /api');
-    return '/api';
-  }
-  
   // Try to get saved URL from localStorage (if user updated it)
   const savedUrl = localStorage.getItem('BACKEND_API_URL');
   if (savedUrl) {
@@ -13,21 +7,17 @@ function getApiBaseUrl() {
     return savedUrl;
   }
   
-  // Dynamic backend URL detection
-  const currentOrigin = window.location.origin;
-  let defaultUrl = '';
-  
+  // Replit-specific internal path for Web Preview
   if (window.location.hostname.includes('replit.dev') || window.location.hostname === 'localhost') {
-    // Development environment
-    defaultUrl = currentOrigin + '/api';
-  } else {
-    // Production / External environment (Firebase, etc)
-    // Always use the stable Replit backend URL for external sites
-    defaultUrl = 'https://backend-bokephot.mio5ikd.replit.app/api';
+    console.log('[CONFIG] Replit Preview detected → using relative /api');
+    return '/api';
   }
   
-  console.log('[CONFIG] Using backend URL:', defaultUrl);
-  return defaultUrl;
+  // Production / External (Firebase, Replit App, etc)
+  // ALWAYS use the public .replit.app URL for consistency across all external domains
+  const publicUrl = 'https://backend-bokephot.mio5ikd.replit.app/api';
+  console.log('[CONFIG] External Environment detected → using public URL:', publicUrl);
+  return publicUrl;
 }
 
 // Konfigurasi
