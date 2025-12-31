@@ -8,7 +8,7 @@ A video streaming website that integrates with the Doodstream API. The applicati
 
 Preferred communication style: Simple, everyday language (Indonesian/English).
 
-## Recent Changes (2025-12-31 - FIXED: Full API URL for Firebase)
+## Recent Changes (2025-12-31 - FINAL: Auto-Detect API URL)
 
 ### Fixed Issues (Latest Session):
 1. **Web Loading Performance** - Changed API base URL from hardcoded external domain to relative `/api` path
@@ -61,27 +61,42 @@ Preferred communication style: Simple, everyday language (Indonesian/English).
    - Tidak ada delay dari sync - semuanya langsung realtime
    - Firebase dan Replit backend sekarang fully synchronized
 
-7. **Firebase Hosting Deployment + API Fix** ✅ (NEW)
-   - ✅ Frontend berhasil di-deploy ke Firebase Hosting
-   - **Issue Fixed**: Relative `/api` URL tidak berfungsi di Firebase
-   - **Solution**: Ganti ke full Replit URL: `https://backend-bokephot--ioj1gjah.replit.app/api`
-   - Kedua file (script.js + detail.js) sekarang pakai full backend URL ✅
+7. **Firebase Hosting + Auto-Detect API URL** ✅ (FINAL FIX)
+   - ✅ Frontend di-deploy ke Firebase Hosting
+   - ✅ **Auto-detect Backend URL** - smart environment detection:
+     - Jika localhost/replit.dev preview → gunakan `/api` (relative path)
+     - Jika Firebase/production → gunakan full Replit URL (fallback)
+     - Bisa di-override via localStorage: `localStorage.setItem('BACKEND_API_URL', 'new-url')`
+   - **Backend `/api/config` endpoint** - returns actual backend URL
+   - Ketika ganti akun Replit, tidak perlu hardcode ulang URL lagi! ✅
    - **Live URL**: https://bokephot.web.app
-   - **Status**: ✅ Online, Connected, Dan Siap Diakses
-   - Backend Replit: https://backend-bokephot--ioj1gjah.replit.app
-   - CORS sudah configured di backend (origin: '*')
-   - Firebase frontend ↔ Replit backend: **FULLY SYNCED & WORKING**
+   - **Status**: ✅ Production Ready
+   - Firebase frontend ↔ Replit backend: **FULLY SYNCED & AUTO-DETECTING**
 
 ## 🚀 Deployment URLs
 
 ### Live Website
 - **Frontend** (Firebase): https://bokephot.web.app
 - **Backend** (Replit): https://backend-bokephot--ioj1gjah.replit.app
-- **Status**: ✅ Both online and synced
+- **Status**: ✅ Both online and auto-synced
 
 ### Development
 - Backend local: http://localhost:5000
-- Frontend works with `/api` relative paths
+- Frontend auto-detects `/api` on localhost/replit.dev
+- Frontend auto-falls back to Replit URL on Firebase
+
+### Update Backend URL (If Account Changes)
+**Option 1**: Set environment variable in Replit:
+```
+REPLIT_URL=https://new-backend--userid.replit.app
+```
+
+**Option 2**: Update from browser console:
+```javascript
+localStorage.setItem('BACKEND_API_URL', 'https://new-backend-url/api')
+```
+
+**Option 3**: Code doesn't need change - auto-detection will try `/api` config endpoint first
 
 ## System Architecture
 
@@ -127,6 +142,34 @@ Preferred communication style: Simple, everyday language (Indonesian/English).
 5. **Full Backend URL**: Frontend (Firebase) uses absolute URL ke Replit backend (bukan relative path)
 6. **Auto-refresh polling**: Client-side polling (10-15 detik) untuk real-time video updates dari bot upload
 7. **Cross-origin CORS**: Backend mengizinkan semua origins (origin: '*') untuk fleksibilitas hosting
+
+## How Auto-Detection Works
+
+### Frontend Logic
+1. **Replit Development** (localhost:5000 or replit.dev preview)
+   - Auto-detect → Use `/api` (relative path)
+   - Backend serves frontend from same domain
+
+2. **Firebase Production** (bokephot.web.app)
+   - Try localStorage `BACKEND_API_URL` first
+   - Fall back to hardcoded Replit URL
+   - Can be updated without re-deploy via localStorage
+
+3. **Future Account Change**
+   - Set `REPLIT_URL` environment variable on Replit
+   - Or update localStorage from browser console
+   - No code changes needed!
+
+### Backend Endpoint
+- **GET /api/config** - Returns actual backend URL for client discovery
+  ```json
+  {
+    "success": true,
+    "backendUrl": "https://backend-bokephot--userid.replit.app",
+    "apiUrl": "https://backend-bokephot--userid.replit.app/api",
+    "environment": "production"
+  }
+  ```
 
 ## External Dependencies
 

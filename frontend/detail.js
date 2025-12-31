@@ -1,7 +1,27 @@
+// Auto-detect API base URL - smart detection for different environments
+function getApiBaseUrl() {
+  // Check if running on Replit development (localhost or replit preview)
+  if (window.location.hostname === 'localhost' || window.location.hostname.includes('replit.dev')) {
+    console.log('[CONFIG] Detected Replit development environment → using /api');
+    return '/api';
+  }
+  
+  // Try to get saved URL from localStorage (if user updated it)
+  const savedUrl = localStorage.getItem('BACKEND_API_URL');
+  if (savedUrl) {
+    console.log('[CONFIG] Using saved backend URL from localStorage:', savedUrl);
+    return savedUrl;
+  }
+  
+  // Fallback to default (can be updated by user if account changes)
+  const defaultUrl = 'https://backend-bokephot--ioj1gjah.replit.app/api';
+  console.log('[CONFIG] Using default backend URL:', defaultUrl);
+  return defaultUrl;
+}
+
 // Konfigurasi
 const CONFIG = {
-    // Full Replit backend URL for Firebase deployment
-    API_BASE_URL: 'https://backend-bokephot--ioj1gjah.replit.app/api',
+    API_BASE_URL: getApiBaseUrl(),
     PLACEHOLDER_THUMBNAIL: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE4MCIgdmlld0JveD0iMCAwIDMyMCAxODAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMjAiIGhlaWdodD0iMTgwIiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0xNDAgNzBIMTgwVjExMEgxNDBWNzBaIiBzdHJva2U9IiM2QjczODAiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWRhc2hhcnJheT0iNCA0Ii8+CjxjaXJjbGUgY3g9IjE2MCIgY3k9IjkwIiByPSIxNSIgZmlsbD0iIzZCNzM4MCIvPgo8L3N2Zz4K'
 };
 
