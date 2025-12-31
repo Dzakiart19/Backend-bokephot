@@ -4,28 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bokep Hot - Nonton Video Online</title>
-    
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .video-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid transparent; }
-        .video-card:hover { transform: translateY(-8px); border-color: #dc2626; box-shadow: 0 20px 25px -5px rgba(220, 38, 38, 0.2); }
+        body { font-family: 'Inter', sans-serif; background-color: black; color: white; }
         .loading-spinner { border: 3px solid rgba(255,255,255,0.1); border-top: 3px solid #dc2626; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="bg-black text-white min-h-screen">
-    <!-- Sidebar Overlay -->
     <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-[60] hidden transition-opacity duration-300"></div>
 
-    <!-- Sidebar Menu -->
     <aside id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-gray-900 z-[70] transform -translate-x-full transition-transform duration-300 ease-in-out border-r border-gray-800">
         <div class="p-4 flex items-center justify-between border-b border-gray-800">
             <div class="flex items-center space-x-2">
@@ -34,12 +25,10 @@
                         <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"/>
                     </svg>
                 </div>
-                <span class="text-xl font-bold tracking-tighter italic">BOKEP<span class="text-red-500">HOT</span></span>
+                <span class="text-xl font-bold tracking-tighter italic uppercase">BOKEP<span class="text-red-500">HOT</span></span>
             </div>
             <button id="closeSidebar" class="text-gray-400 hover:text-white">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
         </div>
         <nav class="p-4 space-y-2">
@@ -50,31 +39,21 @@
             <div class="pt-4 pb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Categories</div>
             <a href="#" class="block p-2 rounded hover:bg-gray-800 text-gray-300">Bokep Indo</a>
             <a href="#" class="block p-2 rounded hover:bg-gray-800 text-gray-300">Bokep ABG</a>
-            <a href="#" class="block p-2 rounded hover:bg-gray-800 text-gray-300">Bokep Bocil</a>
             <a href="#" class="block p-2 rounded hover:bg-gray-800 text-gray-300">Bokep Viral</a>
-            <a href="#" class="block p-2 rounded hover:bg-gray-800 text-gray-300">Bokep Hijab</a>
-            <a href="#" class="block p-2 rounded hover:bg-gray-800 text-gray-300">Bokep Chindo</a>
-            <a href="#" class="block p-2 rounded hover:bg-gray-800 text-gray-300">Bokep Colmek</a>
-            <a href="#" class="block p-2 rounded hover:bg-gray-800 text-gray-300">Bokep Jepang</a>
         </nav>
     </aside>
 
-    <!-- Header -->
     <header class="bg-gray-900 border-b border-gray-800 sticky top-0 z-50">
         <div class="container mx-auto px-4 h-16 flex items-center justify-between">
             <div class="flex items-center space-x-4">
                 <button id="openSidebar" class="text-white">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/>
-                    </svg>
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/></svg>
                 </button>
                 <div class="flex items-center space-x-2">
                     <div class="w-8 h-8 bg-red-600 rounded flex items-center justify-center">
-                        <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"/>
-                        </svg>
+                        <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"/></svg>
                     </div>
-                    <span class="text-2xl font-bold tracking-tighter italic">BOKEP<span class="text-red-500">HOT</span></span>
+                    <span class="text-2xl font-bold tracking-tighter italic uppercase">BOKEP<span class="text-red-500">HOT</span></span>
                 </div>
             </div>
             <div class="flex-1 max-w-xl mx-8 relative hidden md:block">
@@ -89,7 +68,6 @@
                 </button>
             </div>
         </div>
-        <!-- Mobile Search Bar (Collapsible) -->
         <div id="mobileSearchBar" class="p-4 bg-gray-800 border-b border-gray-700 hidden md:hidden">
             <div class="relative">
                 <input type="text" id="mobileSearchInput" placeholder="Search..." class="w-full bg-gray-900 border border-gray-700 text-white px-4 py-2 rounded focus:outline-none focus:border-red-600">
@@ -100,94 +78,59 @@
         </div>
     </header>
 
-    <!-- Section Title -->
     <div class="container mx-auto px-4 py-4">
         <div class="flex items-center justify-between border-l-4 border-red-600 pl-4 bg-gray-800 py-2 rounded-r">
             <h2 class="text-xl font-bold uppercase">Video Terupdate</h2>
-            <div class="bg-red-600 p-1 rounded">
-                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
-            </div>
         </div>
     </div>
 
-    <!-- Main Content -->
     <main class="container mx-auto px-4 py-4">
-        <!-- Video Grid -->
-        <div id="videoGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            <!-- Video cards will be restyled in script.js -->
+        <div id="loadingState" class="text-center py-12">
+            <div class="loading-spinner mx-auto mb-4"></div>
+            <p class="text-gray-400">Memuat video...</p>
         </div>
-
-        <!-- Pagination/Load More -->
+        <div id="errorState" class="text-center py-12 hidden">
+            <h3 class="text-xl font-semibold text-white mb-2">Terjadi Kesalahan</h3>
+            <p id="errorMessage" class="text-gray-400 mb-4"></p>
+            <button id="retryButton" class="bg-red-600 px-6 py-2 rounded">Coba Lagi</button>
+        </div>
+        <div id="noResultsState" class="text-center py-12 hidden">
+            <h3 class="text-xl font-semibold text-white mb-2">Video Tidak Ditemukan</h3>
+        </div>
+        <div id="videoGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
         <div id="loadMoreContainer" class="flex justify-center mt-8 hidden">
-            <button id="loadMoreButton" class="bg-red-600 hover:bg-red-700 text-white px-8 py-2 rounded font-medium transition-colors">Muat Lebih Banyak</button>
+            <button id="loadMoreButton" class="bg-red-600 hover:bg-red-700 text-white px-8 py-2 rounded font-medium">Muat Lebih Banyak</button>
         </div>
     </main>
 
-    <!-- Video Modal -->
     <div id="videoModal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
-        <div class="bg-gray-900 rounded-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div class="p-6">
-                <!-- Modal Header -->
-                <div class="flex items-center justify-between mb-4">
-                    <h3 id="modalTitle" class="text-2xl font-bold text-white"></h3>
-                    <button id="closeModal" class="text-gray-400 hover:text-white transition-colors">
-                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
-                        </svg>
-                    </button>
-                </div>
-                
-                <!-- Video Player -->
-                <div class="mb-4">
-                    <div id="videoPlayerContainer" class="bg-black rounded-lg aspect-video flex items-center justify-center">
-                        <div class="text-center text-gray-400">
-                            <svg class="w-16 h-16 mx-auto mb-4" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"/>
-                            </svg>
-                            <p>Memuat video player...</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Video Info -->
-                <div id="videoInfo" class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                    <div class="bg-gray-800 p-3 rounded-lg">
-                        <span class="text-gray-400">Duration:</span>
-                        <span id="videoDuration" class="text-white font-medium ml-2">-</span>
-                    </div>
-                    <div class="bg-gray-800 p-3 rounded-lg">
-                        <span class="text-gray-400">Views:</span>
-                        <span id="videoViews" class="text-white font-medium ml-2">-</span>
-                    </div>
-                    <div class="bg-gray-800 p-3 rounded-lg">
-                        <span class="text-gray-400">Uploaded:</span>
-                        <span id="videoUploadDate" class="text-white font-medium ml-2">-</span>
-                    </div>
-                </div>
+        <div class="bg-gray-900 rounded-xl max-w-4xl w-full mx-4 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 id="modalTitle" class="text-xl font-bold text-white"></h3>
+                <button id="closeModal" class="text-gray-400 hover:text-white">
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                </button>
+            </div>
+            <div id="videoPlayerContainer" class="bg-black rounded-lg aspect-video"></div>
+            <div id="videoInfo" class="mt-4 flex space-x-4 text-sm text-gray-400">
+                <span>Durasi: <span id="videoDuration" class="text-white"></span></span>
+                <span>Views: <span id="videoViews" class="text-white"></span></span>
+                <span>Upload: <span id="videoUploadDate" class="text-white"></span></span>
             </div>
         </div>
     </div>
 
-    <!-- Footer -->
-    <footer class="bg-gray-800 mt-16">
-        <div class="container mx-auto px-4 py-8">
-            <div class="text-center">
-                <div class="flex items-center justify-center space-x-3 mb-4">
-                    <div class="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center">
-                        <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"/>
-                        </svg>
-                    </div>
-                    <span class="text-xl font-bold text-white uppercase tracking-tighter italic">Bokep<span class="text-red-500">Hot</span></span>
+    <footer class="bg-gray-900 border-t border-gray-800 mt-16 py-8">
+        <div class="container mx-auto px-4 text-center">
+            <div class="flex items-center justify-center space-x-2 mb-4">
+                <div class="w-8 h-8 bg-red-600 rounded flex items-center justify-center">
+                    <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"/></svg>
                 </div>
-                <p class="text-gray-400 text-sm">
-                    © 2025 Bokep Hot. Nonton video online dengan mudah dan cepat.
-                </p>
+                <span class="text-xl font-bold tracking-tighter italic uppercase">BOKEP<span class="text-red-500">HOT</span></span>
             </div>
+            <p class="text-gray-500 text-sm">© 2025 Bokep Hot. Nonton video online dengan mudah dan cepat.</p>
         </div>
     </footer>
-
-    <!-- JavaScript -->
     <script src="script.js"></script>
 </body>
 </html>
