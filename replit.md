@@ -84,13 +84,14 @@ Preferred communication style: Simple, everyday language (Indonesian/English).
 
 ### Live Website
 - **Frontend** (Firebase): https://bokephot.web.app
-- **Backend** (Replit): https://backend-bokephot--ioj1gjah.replit.app
-- **Status**: ✅ Both online and auto-synced
+- **Backend** (Replit): https://backend-bokephot--aejlejeg.replit.app
+- **Status**: ✅ Both online and auto-synced (Updated for new account)
 
 ### Development
 - Backend local: http://localhost:5000
 - Frontend auto-detects `/api` on localhost/replit.dev
 - Frontend auto-falls back to Replit URL on Firebase
+- Current Backend Domain: `backend-bokephot--aejlejeg.replit.app`
 
 ### Update Backend URL (If Account Changes)
 **Option 1**: Set environment variable in Replit:

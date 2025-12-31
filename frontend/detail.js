@@ -14,7 +14,7 @@ function getApiBaseUrl() {
   }
   
   // Fallback to default (can be updated by user if account changes)
-  const defaultUrl = 'https://backend-bokephot--ioj1gjah.replit.app/api';
+  const defaultUrl = 'https://backend-bokephot--aejlejeg.replit.app/api';
   console.log('[CONFIG] Using default backend URL:', defaultUrl);
   return defaultUrl;
 }
