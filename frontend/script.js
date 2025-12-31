@@ -323,9 +323,26 @@ function createVideoCard(video) {
     const imgElement = card.querySelector(`#thumb-${fileId}`);
     if (imgElement) {
         let retryCount = 0;
-        const maxRetries = 5;
+        const maxRetries = 8;
+        let loadCheckTimeout;
+        
+        // Monitor if image loads within timeout
+        loadCheckTimeout = setTimeout(() => {
+            // If image hasn't loaded within 2 seconds, check thumbnail via backend
+            if (imgElement.naturalWidth === 0 && !imgElement.hasAttribute('data-checking-thumbnail')) {
+                console.log(`[IMAGE-LOAD-CHECK] Image not loaded after 2s for ${fileId}, checking via backend...`);
+                imgElement.setAttribute('data-checking-thumbnail', '1');
+                checkAndRefreshThumbnail(fileId, imgElement, retryCount, maxRetries);
+            }
+        }, 2000);
+        
+        imgElement.addEventListener('load', () => {
+            clearTimeout(loadCheckTimeout);
+            console.log(`✅ Thumbnail loaded for ${fileId}`);
+        });
         
         imgElement.addEventListener('error', async function() {
+            clearTimeout(loadCheckTimeout);
             if (!this.hasAttribute('data-fallback-tried')) {
                 // Try fallback thumbnail
                 this.setAttribute('data-fallback-tried', '1');
@@ -337,8 +354,9 @@ function createVideoCard(video) {
             }
         });
         
-        // If initial load shows placeholder, check if thumbnail exists on backend
+        // If initial load shows placeholder, immediately check if thumbnail exists on backend
         if (useFallback) {
+            clearTimeout(loadCheckTimeout);
             checkAndRefreshThumbnail(fileId, imgElement, retryCount, maxRetries);
         }
     }

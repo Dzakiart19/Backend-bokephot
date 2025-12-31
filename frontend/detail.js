@@ -251,26 +251,47 @@ function createRelatedVideoCard(video) {
         </div>
     `;
     
-    // Auto-refresh thumbnail for new uploads
+    // Auto-refresh thumbnail for new uploads with timeout monitoring
     const imgElement = card.querySelector(`#thumb-${fileId}`);
-    if (imgElement && thumbnailUrl === CONFIG.PLACEHOLDER_THUMBNAIL) {
-        checkAndRefreshThumbnail(fileId, imgElement, 0, 5);
-    }
-    
-    imgElement?.addEventListener('error', async function() {
-        if (primaryThumb && !this.hasAttribute('data-tried-primary')) {
-            this.setAttribute('data-tried-primary', '1');
-            const altUrl = getProxiedThumbUrl(primaryThumb);
-            if (altUrl) this.src = altUrl;
-        } else if (fallbackThumb && !this.hasAttribute('data-tried-fallback')) {
-            this.setAttribute('data-tried-fallback', '1');
-            const altUrl = getProxiedThumbUrl(fallbackThumb);
-            if (altUrl) this.src = altUrl;
-        } else if (!this.hasAttribute('data-checking')) {
-            this.setAttribute('data-checking', '1');
+    if (imgElement) {
+        let loadCheckTimeout;
+        
+        // Monitor if image loads within timeout
+        loadCheckTimeout = setTimeout(() => {
+            // If image hasn't loaded within 1.5 seconds, check thumbnail via backend
+            if (imgElement.naturalWidth === 0 && !imgElement.hasAttribute('data-checking')) {
+                console.log(`[RELATED] Image not loaded for ${fileId}, checking via backend...`);
+                imgElement.setAttribute('data-checking', '1');
+                checkAndRefreshThumbnail(fileId, imgElement, 0, 5);
+            }
+        }, 1500);
+        
+        imgElement.addEventListener('load', () => {
+            clearTimeout(loadCheckTimeout);
+        });
+        
+        imgElement.addEventListener('error', async function() {
+            clearTimeout(loadCheckTimeout);
+            if (primaryThumb && !this.hasAttribute('data-tried-primary')) {
+                this.setAttribute('data-tried-primary', '1');
+                const altUrl = getProxiedThumbUrl(primaryThumb);
+                if (altUrl) this.src = altUrl;
+            } else if (fallbackThumb && !this.hasAttribute('data-tried-fallback')) {
+                this.setAttribute('data-tried-fallback', '1');
+                const altUrl = getProxiedThumbUrl(fallbackThumb);
+                if (altUrl) this.src = altUrl;
+            } else if (!this.hasAttribute('data-checking')) {
+                this.setAttribute('data-checking', '1');
+                checkAndRefreshThumbnail(fileId, imgElement, 0, 5);
+            }
+        });
+        
+        // If initial thumbnail is placeholder, immediately check backend
+        if (thumbnailUrl === CONFIG.PLACEHOLDER_THUMBNAIL) {
+            clearTimeout(loadCheckTimeout);
             checkAndRefreshThumbnail(fileId, imgElement, 0, 5);
         }
-    });
+    }
     
     // Add click event
     card.addEventListener('click', () => {
