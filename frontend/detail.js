@@ -181,7 +181,6 @@ async function loadRelatedVideos() {
         );
 
         elements.relatedVideos.innerHTML = '';
-        
         filteredVideos.forEach(video => {
             const videoCard = createRelatedVideoCard(video);
             elements.relatedVideos.appendChild(videoCard);
@@ -202,7 +201,10 @@ function createRelatedVideoCard(video) {
     const card = document.createElement('div');
     card.className = 'flex space-x-3 bg-gray-700 rounded-lg p-3 cursor-pointer hover:bg-gray-600 transition-colors';
     
-    const thumbnailUrl = video.thumbnail_url || video.screenshot || CONFIG.PLACEHOLDER_THUMBNAIL;
+    // Use primary thumbnail, with fallbacks
+    const primaryThumb = video.single_img || video.thumbnail_url || video.screenshot;
+    const fallbackThumb = video.splash_img || CONFIG.PLACEHOLDER_THUMBNAIL;
+    const thumbnailUrl = (primaryThumb && primaryThumb.trim()) ? primaryThumb : (fallbackThumb && fallbackThumb.trim() ? fallbackThumb : CONFIG.PLACEHOLDER_THUMBNAIL);
     const duration = formatDuration(video.duration || video.length || 0);
     const views = formatViews(video.views || 0);
     

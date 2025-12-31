@@ -274,7 +274,10 @@ function createVideoCard(video) {
     const views = formatViews(video.views || 0);
     
     const getSecureThumb = (url, isFallback = false) => {
-        if (!url) return CONFIG.PLACEHOLDER_THUMBNAIL;
+        // Return placeholder if URL is empty/null/undefined
+        if (!url || url.trim() === '') {
+            return CONFIG.PLACEHOLDER_THUMBNAIL;
+        }
         
         let cleanUrl = url.trim();
         // Handle URLs that already contain our proxy to avoid double proxying
@@ -296,10 +299,15 @@ function createVideoCard(video) {
 
     const primaryThumb = getSecureThumb(video.single_img);
     const fallbackThumb = getSecureThumb(video.splash_img, true);
+    // If both are placeholders, use placeholder directly
+    const useFallback = primaryThumb === CONFIG.PLACEHOLDER_THUMBNAIL && fallbackThumb === CONFIG.PLACEHOLDER_THUMBNAIL;
     
     card.innerHTML = `
-        <div class="video-thumbnail relative bg-gray-800">
-            <img id="thumb-${video.file_code}" src="${primaryThumb}" class="w-full h-full object-cover" alt="">
+        <div class="video-thumbnail relative bg-gray-800 flex items-center justify-center">
+            <img id="thumb-${video.file_code}" src="${useFallback ? CONFIG.PLACEHOLDER_THUMBNAIL : primaryThumb}" class="w-full h-full object-cover" alt="">
+            <div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 transition-opacity">
+                <svg class="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            </div>
             <div class="absolute bottom-1 right-1 bg-black bg-opacity-80 text-white text-[9px] px-1.5 py-0.5 rounded">${duration}</div>
             <div class="absolute bottom-1 left-1 bg-black bg-opacity-60 text-white text-[9px] px-1.5 py-0.5 rounded flex items-center space-x-1">
                 <span>${views}</span>
