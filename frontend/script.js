@@ -204,7 +204,7 @@ function createVideoCard(video) {
     const duration = formatDuration(video.duration || video.length || 0);
     const views = formatViews(video.views || 0);
     
-    const getSecureThumb = (url) => {
+    const getSecureThumb = (url, isFallback = false) => {
         if (!url) return CONFIG.PLACEHOLDER_THUMBNAIL;
         
         let cleanUrl = url.trim();
@@ -220,13 +220,17 @@ function createVideoCard(video) {
         }
         
         // Proxy ALL external images through our backend to ensure they bypass referer/CORS blocks
-        return `${CONFIG.API_BASE_URL}/proxy-thumb?url=${encodeURIComponent(cleanUrl)}`;
+        let proxyUrl = `${CONFIG.API_BASE_URL}/proxy-thumb?url=${encodeURIComponent(cleanUrl)}`;
+        if (isFallback) proxyUrl += '&fallback=1';
+        return proxyUrl;
     };
 
-    const thumbnailUrl = getSecureThumb(video.single_img || video.splash_img);
+    const primaryThumb = getSecureThumb(video.single_img);
+    const fallbackThumb = getSecureThumb(video.splash_img, true);
+    
     card.innerHTML = `
         <div class="video-thumbnail relative bg-gray-800">
-            <img src="${thumbnailUrl}" class="w-full h-full object-cover" onerror="this.src='${CONFIG.PLACEHOLDER_THUMBNAIL}';" alt="">
+            <img id="thumb-${video.file_code}" src="${primaryThumb}" class="w-full h-full object-cover" alt="">
             <div class="absolute bottom-1 right-1 bg-black bg-opacity-80 text-white text-[9px] px-1.5 py-0.5 rounded">${duration}</div>
             <div class="absolute bottom-1 left-1 bg-black bg-opacity-60 text-white text-[9px] px-1.5 py-0.5 rounded flex items-center space-x-1">
                 <span>${views}</span>
@@ -236,6 +240,22 @@ function createVideoCard(video) {
             <h3 class="text-gray-200 text-[11px] font-medium line-clamp-2 overflow-hidden">${video.title || 'Untitled'}</h3>
         </div>
     `;
+    
+    // Add fallback logic for images that fail to load
+    const imgElement = card.querySelector(`#thumb-${video.file_code}`);
+    if (imgElement) {
+        imgElement.addEventListener('error', function() {
+            if (!this.hasAttribute('data-fallback-tried')) {
+                // Try fallback thumbnail
+                this.setAttribute('data-fallback-tried', '1');
+                this.src = fallbackThumb;
+            } else {
+                // If both fail, use placeholder
+                this.src = CONFIG.PLACEHOLDER_THUMBNAIL;
+            }
+        });
+    }
+    
     card.addEventListener('click', () => openVideoModal(video));
     return card;
 }

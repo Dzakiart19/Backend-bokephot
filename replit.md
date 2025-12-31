@@ -6,7 +6,24 @@ A video streaming website that integrates with the Doodstream API. The applicati
 
 ## User Preferences
 
-Preferred communication style: Simple, everyday language.
+Preferred communication style: Simple, everyday language (Indonesian/English).
+
+## Recent Changes (2025-12-31)
+
+### Fixed Issues:
+1. **Web Loading Performance** - Changed API base URL from hardcoded external domain to relative `/api` path
+2. **Thumbnail Display** - Implemented consistent 16:9 aspect ratio using CSS, adjusted grid to 5 columns (20 videos per page)
+3. **Blank Thumbnails** - Added intelligent fallback system:
+   - Primary thumbnail: tries `single_img` from Doodstream API
+   - Fallback thumbnail: tries `splash_img` if primary fails
+   - Placeholder: Shows SVG placeholder if both fail
+   - Backend proxy returns proper error codes for blocked images (403/404)
+
+### Technical Improvements:
+- Frontend image error handling with fallback chaining
+- Backend proxy timeout reduced to 10s for faster response
+- Improved error responses from proxy endpoint
+- Responsive grid layout: 5 cols (desktop) → 3 cols (tablet) → 2 cols (mobile)
 
 ## System Architecture
 

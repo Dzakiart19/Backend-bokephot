@@ -174,10 +174,10 @@ app.get('/api/file/:fileId', async (req, res) => {
 // Proxy for thumbnails to bypass Referer/Blocked issues
 app.get('/api/proxy-thumb', async (req, res) => {
   try {
-    const { url } = req.query;
+    const { url, fallback } = req.query;
     if (!url) return res.status(400).send('URL is required');
 
-    console.log(`[PROXY] Fetching thumb: ${url}`);
+    console.log(`[PROXY] Fetching thumb: ${url}${fallback ? ' (fallback)' : ''}`);
     
     // Validate URL to ensure it's from a known source or at least looks like a URL
     if (!url.startsWith('http')) {
@@ -192,13 +192,20 @@ app.get('/api/proxy-thumb', async (req, res) => {
         'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
         'Cache-Control': 'no-cache'
       },
-      timeout: 15000,
+      timeout: 10000,
       maxRedirects: 5,
       validateStatus: (status) => status < 500
     });
 
+    // Return error for blocked/not found responses
     if (response.status === 403 || response.status === 404) {
         console.warn(`[PROXY-WARN] Remote status ${response.status} for ${url}`);
+        return res.status(404).json({ error: 'Image not accessible', status: response.status });
+    }
+
+    if (!response.data || response.data.length === 0) {
+        console.warn(`[PROXY-WARN] Empty response for ${url}`);
+        return res.status(404).json({ error: 'Empty response' });
     }
 
     const contentType = response.headers['content-type'] || 'image/jpeg';
@@ -208,7 +215,7 @@ app.get('/api/proxy-thumb', async (req, res) => {
     res.send(response.data);
   } catch (error) {
     console.error('[PROXY-ERROR]', error.message);
-    res.status(500).send('Error proxying image');
+    res.status(404).json({ error: 'Error proxying image', message: error.message });
   }
 });
 
