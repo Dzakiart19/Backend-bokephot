@@ -119,7 +119,7 @@ async function loadVideoDetail() {
         elements.videoUploadDate.textContent = formatDate(video.uploaded || video.created || Date.now());
         elements.videoDescription.textContent = video.description || 'Tidak ada deskripsi untuk video ini.';
         
-        // Load video player
+        // Load video player (let Doodstream handle any errors)
         await loadVideoPlayer(videoId);
         
     } catch (error) {

@@ -336,23 +336,6 @@ async function openVideoModal(video) {
     try {
         elements.videoPlayerContainer.innerHTML = '<div class="text-center py-20 text-gray-400">Loading...</div>';
         
-        // Validate video still exists before loading
-        const fileCode = video.file_code || video.id;
-        const validationRes = await fetch(`${CONFIG.API_BASE_URL}/validate/${fileCode}`);
-        const validationData = await validationRes.json();
-        
-        if (!validationData.valid) {
-            elements.videoPlayerContainer.innerHTML = '<div class="text-center py-20 text-red-500">❌ Video tidak tersedia (dihapus)</div>';
-            // Remove from grid
-            const videoCards = document.querySelectorAll('[data-file-code]');
-            videoCards.forEach(card => {
-                if (card.getAttribute('data-file-code') === fileCode) {
-                    setTimeout(() => card.remove(), 1000);
-                }
-            });
-            return;
-        }
-        
         // Use the same thumb logic to get the best possible poster URL
         const thumbUrl = video.single_img || video.splash_img || '';
         const embedData = await fetchEmbedUrl(video.file_code || video.id, thumbUrl);
@@ -362,9 +345,12 @@ async function openVideoModal(video) {
             if (elements.videoDuration) elements.videoDuration.textContent = formatDuration(video.duration || video.length || 0);
             if (elements.videoViews) elements.videoViews.textContent = formatViews(video.views || 0);
             if (elements.videoUploadDate) elements.videoUploadDate.textContent = video.uploaded || 'Unknown';
+        } else {
+            elements.videoPlayerContainer.innerHTML = '<div class="text-center py-20 text-red-500">❌ Video tidak tersedia</div>';
         }
     } catch (e) {
-        elements.videoPlayerContainer.innerHTML = '<div class="text-center py-20 text-red-500">Gagal memuat video.</div>';
+        console.error('Error loading video:', e);
+        elements.videoPlayerContainer.innerHTML = '<div class="text-center py-20 text-red-500">Gagal memuat video. Coba lagi.</div>';
     }
 }
 
