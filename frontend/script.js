@@ -160,6 +160,7 @@ async function fetchVideos(page = 1, searchTerm = '') {
         if (searchTerm) params.append('search_term', searchTerm);
 
         const url = `${CONFIG.API_BASE_URL}${endpoint}?${params}`;
+        console.log('[API] Fetching from:', url);
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
         
@@ -182,7 +183,7 @@ async function fetchVideos(page = 1, searchTerm = '') {
         }
         return data;
     } catch (error) {
-        console.error('Fetch error:', error.message);
+        console.error('[API-ERROR] URL:', `${CONFIG.API_BASE_URL}`, 'Error:', error.message);
         throw error;
     }
 }
@@ -215,8 +216,9 @@ async function loadVideos(isLoadMore = false) {
     if (!isLoadMore) showLoading();
 
     try {
+        console.log('[LOAD] Starting load with API_BASE_URL:', CONFIG.API_BASE_URL);
         const data = await fetchVideos(currentPage, currentQuery);
-        console.log('API response:', data);
+        console.log('[API-SUCCESS] Response:', data);
         
         // Doodstream API can return different success flags
         const isSuccess = data.success === true || data.status === 200 || data.msg === 'OK';
