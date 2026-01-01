@@ -217,7 +217,13 @@ const TelegramBot = require('node-telegram-bot-api');
 const token = process.env.TELEGRAM_BOT_TOKEN;
 
 if (token) {
-    const bot = new TelegramBot(token, { polling: true });
+    const bot = new TelegramBot(token, { 
+        polling: {
+            interval: 2000,
+            autoStart: true,
+            params: { timeout: 10 }
+        }
+    });
     console.log('🤖 Telegram Bot is running...');
 
     bot.on('message', async (msg) => {
