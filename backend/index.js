@@ -241,6 +241,7 @@ if (token) {
     console.log('🤖 Telegram Bot is running...');
 
     bot.on('message', async (msg) => {
+        console.log(`[BOT-MSG] Received from ${msg.chat.id}: ${msg.text ? msg.text : (msg.video ? 'Video' : (msg.document ? 'Document' : 'Other'))}`);
         const chatId = msg.chat.id;
         if (msg.text && msg.text.startsWith('/list')) {
             try {
