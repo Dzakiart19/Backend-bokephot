@@ -84,9 +84,24 @@ app.get('/api/file/:fileId', async (req, res) => {
       return res.status(500).json({ success: false, error: 'API Key tidak dikonfigurasi' });
     }
 
-    const response = await axios.get(`https://doodstream.com/api/file/info?key=${apiKey}&file_code=${fileId}`);
-    res.json(response.data);
+    console.log(`[API-INFO] Fetching info for: ${fileId}`);
+    const response = await axios.get(`https://doodstream.com/api/file/info?key=${apiKey}&file_code=${fileId}`, { timeout: 10000 });
+    
+    if (response.data && response.data.msg === 'OK') {
+      // Doodstream API result for file/info is often an array or single object
+      const result = Array.isArray(response.data.result) ? response.data.result[0] : response.data.result;
+      res.json({
+        success: true,
+        result: result
+      });
+    } else {
+      res.json({
+        success: false,
+        error: response.data ? response.data.msg : 'Doodstream API error'
+      });
+    }
   } catch (error) {
+    console.error(`[API-INFO-ERROR] ${error.message}`);
     res.status(500).json({ success: false, error: error.message });
   }
 });
