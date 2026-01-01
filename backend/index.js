@@ -235,7 +235,7 @@ const token = process.env.TELEGRAM_BOT_TOKEN;
 if (token) {
     const bot = new TelegramBot(token, { 
         polling: {
-            interval: 2000,
+            interval: 3000,
             autoStart: true,
             params: { timeout: 10 }
         }
@@ -261,7 +261,7 @@ if (token) {
                 if (response.data.msg === 'OK' && response.data.result.files) {
                     let message = '📺 **5 Video Terbaru:**\n\n';
                     response.data.result.files.forEach((f, i) => {
-                        message += `${i+1}. ${f.title}\n🔗 https://bokepbot.web.app/detail?id=${f.file_code}\n\n`;
+                        message += `${i+1}. ${f.title}\n🔗 https://backend-bokephot-1--m4j2vzehsbsbs.replit.app/detail?id=${f.file_code}\n\n`;
                     });
                     bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
                 } else {
@@ -292,7 +292,7 @@ if (token) {
                     }
                     let message = `🔍 **Hasil Pencarian: ${query}**\n\n`;
                     results.forEach((f, i) => {
-                        message += `${i+1}. ${f.title}\n🔗 https://bokepbot.web.app/detail?id=${f.file_code}\n\n`;
+                        message += `${i+1}. ${f.title}\n🔗 https://backend-bokephot-1--m4j2vzehsbsbs.replit.app/detail?id=${f.file_code}\n\n`;
                     });
                     bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
                 } else {
@@ -311,7 +311,7 @@ if (token) {
                            `2. **/list**: Lihat 5 video terbaru di website.\n` +
                            `3. **/search [kata kunci]**: Cari video berdasarkan judul.\n` +
                            `4. **/start**: Mulai ulang bot.\n\n` +
-                           `Website: https://bokepbot.web.app`;
+                           `Website: https://backend-bokephot-1--m4j2vzehsbsbs.replit.app`;
             bot.sendMessage(chatId, helpMsg, { parse_mode: 'Markdown' });
             return;
         }
