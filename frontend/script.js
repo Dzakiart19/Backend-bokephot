@@ -14,8 +14,7 @@ function getApiBaseUrl() {
   }
   
   // Production / External (Firebase, etc)
-  // ALWAYS use the public URL for consistency across all external domains
-  const publicUrl = 'https://backend-bokephot.mio5ikd.replit.app/api';
+  const publicUrl = 'https://backend-bokephot--mio5ikd.replit.app/api';
   console.log('[CONFIG] External Environment detected → using public URL:', publicUrl);
   return publicUrl;
 }

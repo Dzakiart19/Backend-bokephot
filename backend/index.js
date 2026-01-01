@@ -116,9 +116,11 @@ app.get('/api/proxy-thumb', async (req, res) => {
       validateStatus: (status) => status < 500
     });
 
-    if (response.status === 403 || response.status === 404) {
-        return res.status(404).json({ error: 'Image not accessible' });
-    }
+  // Filter image blank (misal 560 bytes adalah gambar blank Doodstream)
+  if (response.data.length < 1000) {
+    console.log('[PROXY-FILTER] Image too small, possibly blank/processing. Returning 404 to trigger fallback.');
+    return res.status(404).send('Processing');
+  }
 
     if (!response.data || response.data.length < 1000) {
         return res.status(404).json({ error: 'Image too small or blank' });
