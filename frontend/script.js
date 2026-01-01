@@ -280,29 +280,14 @@ function createVideoCard(video) {
     const views = formatViews(video.views || 0);
     
     const getSecureThumb = (url, isFallback = false) => {
-        // Return placeholder if URL is empty/null/undefined
-        if (!url || url.trim() === '') {
-            return CONFIG.PLACEHOLDER_THUMBNAIL;
-        }
-        
+        if (!url || url.trim() === '') return CONFIG.PLACEHOLDER_THUMBNAIL;
         let cleanUrl = url.trim();
+        if (cleanUrl.startsWith('//')) cleanUrl = 'https:' + cleanUrl;
+        else if (!cleanUrl.startsWith('http')) cleanUrl = 'https://' + cleanUrl;
         
-        // Handle URLs that already contain our proxy to avoid double proxying
-        if (cleanUrl.includes('/proxy-thumb?url=')) {
-            return cleanUrl;
-        }
-
-        if (cleanUrl.startsWith('//')) {
-            cleanUrl = 'https:' + cleanUrl;
-        } else if (!cleanUrl.startsWith('http')) {
-            cleanUrl = 'https://' + cleanUrl;
-        }
-        
-        // Use a persistent cache buster based on minutes to avoid repeated blank detections
-        const timeBuster = Math.floor(Date.now() / 60000);
-        let proxyUrl = `${CONFIG.API_BASE_URL}/proxy-thumb?url=${encodeURIComponent(cleanUrl)}&t=${timeBuster}`;
-        if (isFallback) proxyUrl += '&fallback=1';
-        return proxyUrl;
+        // Cache buster for new uploads
+        const buster = video.uploaded && (Date.now() - new Date(video.uploaded).getTime() < 3600000) ? Date.now() : Math.floor(Date.now() / 60000);
+        return `${CONFIG.API_BASE_URL}/proxy-thumb?url=${encodeURIComponent(cleanUrl)}&t=${buster}${isFallback ? '&fallback=1' : ''}`;
     };
 
     // SWAP: Use splash_img as primary because single_img (snaps) are often blank white (560 bytes)
@@ -318,8 +303,10 @@ function createVideoCard(video) {
     const addCacheBuster = (url) => {
         if (!url || url.startsWith('data:')) return url;
         const sep = url.includes('?') ? '&' : '?';
-        // Use a more aggressive cache buster for thumbnails
-        return url + sep + `t=${Math.floor(Date.now() / 60000)}`;
+        // Use a more aggressive cache buster for NEW videos
+        const isNew = video.uploaded && (Date.now() - new Date(video.uploaded).getTime() < 3600000);
+        const buster = isNew ? Date.now() : Math.floor(Date.now() / 60000);
+        return url + sep + `t=${buster}`;
     };
     
     const thumbWithCache = useFallback ? CONFIG.PLACEHOLDER_THUMBNAIL : addCacheBuster(primaryThumb);
