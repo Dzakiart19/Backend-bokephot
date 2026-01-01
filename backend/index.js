@@ -180,17 +180,19 @@ app.get('/api/thumbnail/:fileId', async (req, res) => {
     
     if (response.data.msg === 'OK' && response.data.result) {
       const resultData = Array.isArray(response.data.result) ? response.data.result[0] : response.data.result;
-      const isValid = (url) => url && url.includes('doodcdn.com');
+      const isValid = (url) => url && url.includes('doodcdn') && !url.includes('blank');
       
+      const splash = isValid(resultData.splash_img) ? resultData.splash_img : null;
+      const single = isValid(resultData.single_img) ? resultData.single_img : null;
+
       return res.json({
         success: true,
-        result: {
-          splash_img: isValid(resultData.splash_img) ? resultData.splash_img : null,
-          single_img: isValid(resultData.single_img) ? resultData.single_img : null
-        }
+        has_thumbnail: !!(splash || single),
+        primary: splash,
+        fallback: single
       });
     }
-    res.status(404).json({ success: false, error: 'Thumbnail not found' });
+    res.json({ success: true, has_thumbnail: false });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }

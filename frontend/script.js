@@ -340,50 +340,26 @@ function createVideoCard(video) {
     const imgElement = card.querySelector(`#thumb-${fileId}`);
     if (imgElement) {
         let retryCount = 0;
-        const maxRetries = 8;
+        const maxRetries = 15; // increased retries
         let loadCheckTimeout;
         
-        // Monitor if image loads within timeout
-        loadCheckTimeout = setTimeout(() => {
-            // If image hasn't loaded within 2 seconds, check thumbnail via backend
-            if (imgElement.naturalWidth === 0 && !imgElement.hasAttribute('data-checking-thumbnail')) {
-                console.log(`[IMAGE-LOAD-CHECK] Image not loaded after 2s for ${fileId}, checking via backend...`);
-                imgElement.setAttribute('data-checking-thumbnail', '1');
-                checkAndRefreshThumbnail(fileId, imgElement, retryCount, maxRetries);
-            }
-        }, 2000);
-        
         imgElement.addEventListener('load', () => {
-            clearTimeout(loadCheckTimeout);
-            console.log(`✅ Thumbnail loaded for ${fileId}`);
-        });
-        
-        imgElement.addEventListener('error', async function() {
-            clearTimeout(loadCheckTimeout);
-            if (!this.hasAttribute('data-splash-tried')) {
-                // Try splash image first as it's often more reliable
-                this.setAttribute('data-splash-tried', '1');
-                const splash = this.getAttribute('data-splash');
-                if (splash && splash !== CONFIG.PLACEHOLDER_THUMBNAIL) {
-                    this.src = addCacheBuster(splash);
-                    return;
-                }
-            }
-            
-            if (!this.hasAttribute('data-fallback-tried')) {
-                // Try fallback thumbnail
-                this.setAttribute('data-fallback-tried', '1');
-                this.src = fallbackWithCache;
-            } else if (!this.hasAttribute('data-checking-thumbnail')) {
-                // If both fail, check if thumbnail is being generated via backend
-                this.setAttribute('data-checking-thumbnail', '1');
+            if (imgElement.naturalWidth > 10) { // Real image loaded
+                console.log(`✅ Thumbnail loaded for ${fileId}`);
+                imgElement.classList.remove('opacity-0');
+            } else {
+                console.log(`[IMAGE-SIZE-CHECK] Image too small for ${fileId}, retrying...`);
                 checkAndRefreshThumbnail(fileId, imgElement, retryCount, maxRetries);
             }
         });
         
-        // If initial load shows placeholder, immediately check if thumbnail exists on backend
+        imgElement.addEventListener('error', function() {
+            console.log(`[IMAGE-ERROR] Triggered for ${fileId}, checking availability...`);
+            checkAndRefreshThumbnail(fileId, imgElement, retryCount, maxRetries);
+        });
+        
+        // If placeholder, check immediately
         if (useFallback) {
-            clearTimeout(loadCheckTimeout);
             checkAndRefreshThumbnail(fileId, imgElement, retryCount, maxRetries);
         }
     }
