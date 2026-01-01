@@ -116,7 +116,7 @@ app.get('/api/proxy-thumb', async (req, res) => {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
         'Expires': '0',
-        'Referer': 'https://doodstream.com/'
+        'Referer': ''
       },
       timeout: 30000,
       maxRedirects: 10,
@@ -308,8 +308,26 @@ if (token) {
                 const apiKey = process.env.DOODSTREAM_API_KEY;
                 const uploadRes = await axios.get(`https://doodstream.com/api/upload/url?key=${apiKey}&url=${encodeURIComponent(fileLink)}&new_title=${encodeURIComponent(caption)}`);
                 
-                if (uploadRes.data.msg === 'OK') {
-                    bot.sendMessage(chatId, `✅ Berhasil! Video sedang diproses.\nJudul: ${caption}\nFileCode: ${uploadRes.data.result.filecode}`);
+        if (uploadRes.data.msg === 'OK') {
+                    const filecode = uploadRes.data.result.filecode;
+                    bot.sendMessage(chatId, `✅ Berhasil! Video sedang diproses.\nJudul: ${caption}\nFileCode: ${filecode}`);
+                    
+                    // Tambahan: Pantau thumbnail secara otomatis
+                    let attempts = 0;
+                    const checkInterval = setInterval(async () => {
+                        attempts++;
+                        try {
+                            const thumbRes = await axios.get(`https://doodapi.com/api/file/image?key=${apiKey}&file_code=${filecode}`);
+                            if (thumbRes.data.msg === 'OK' && thumbRes.data.result) {
+                                const resultData = Array.isArray(thumbRes.data.result) ? thumbRes.data.result[0] : thumbRes.data.result;
+                                if (resultData.splash_img || resultData.single_img) {
+                                    bot.sendMessage(chatId, `🖼️ Thumbnail untuk "${caption}" sudah tersedia!`);
+                                    clearInterval(checkInterval);
+                                }
+                            }
+                        } catch (e) {}
+                        if (attempts >= 10) clearInterval(checkInterval);
+                    }, 30000); // Cek setiap 30 detik
                 } else {
                     bot.sendMessage(chatId, '❌ Gagal upload ke Doodstream.');
                 }
