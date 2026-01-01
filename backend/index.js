@@ -103,6 +103,11 @@ app.get('/api/proxy-thumb', async (req, res) => {
         return res.status(400).send('Invalid URL');
     }
 
+    // List of common Doodstream image domains
+    const allowedDomains = ['postercdn.net', 'doodcdn.com', 'doodcdn.co', 'img.doodcdn.co'];
+    const urlDomain = new URL(url).hostname;
+    const isAllowed = allowedDomains.some(domain => urlDomain.includes(domain));
+
     const response = await axios.get(url, {
       responseType: 'arraybuffer',
       headers: {
@@ -118,22 +123,24 @@ app.get('/api/proxy-thumb', async (req, res) => {
       validateStatus: (status) => status < 500
     });
 
-  // Filter image blank (misal 560 bytes adalah gambar blank Doodstream)
-  if (response.data.length < 1000) {
-    console.log('[PROXY-FILTER] Image too small, possibly blank/processing. Returning 404 to trigger fallback.');
-    return res.status(404).send('Processing');
-  }
-
-    if (!response.data || response.data.length < 1000) {
-        return res.status(404).json({ error: 'Image too small or blank' });
+    // Check if image is blank white/gray (typically around 560-1500 bytes for small processing placeholders)
+    // AND it must be an image type
+    const contentType = response.headers['content-type'] || '';
+    if (response.data.length < 2500 && contentType.includes('image')) {
+      console.log(`[PROXY-FILTER] Image size ${response.data.length} is too small (likely blank). Returning 404.`);
+      return res.status(404).send('Still processing');
     }
 
-    const contentType = response.headers['content-type'] || 'image/jpeg';
-    res.set('Content-Type', contentType);
+    if (response.status >= 400) {
+        return res.status(404).send('Image not ready');
+    }
+
+    res.set('Content-Type', contentType || 'image/jpeg');
     res.set('Access-Control-Allow-Origin', '*');
-    res.set('Cache-Control', 'public, max-age=3600');
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.send(response.data);
   } catch (error) {
+    console.error(`[PROXY-ERROR] ${error.message}`);
     res.status(404).json({ error: 'Error proxying image' });
   }
 });
