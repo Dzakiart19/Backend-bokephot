@@ -14,7 +14,7 @@ function getApiBaseUrl() {
   }
   
   // Production / External (Firebase, etc)
-  const publicUrl = 'https://backend-bokephot--mio5ikd.replit.app/api';
+  const publicUrl = 'https://backend-bokephot-1--mio3ts.replit.app/api';
   console.log('[CONFIG] External Environment detected → using public URL:', publicUrl);
   return publicUrl;
 }
