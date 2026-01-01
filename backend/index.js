@@ -323,10 +323,8 @@ if (token) {
         if (msg.text === '/help') {
             const helpMsg = `🤖 **Panduan Bot Doodstream**\n\n` +
                            `1. **Upload Video**: Kirim file video atau dokumen video langsung ke sini.\n` +
-                           `2. **/list**: Lihat 5 video terbaru di website.\n` +
-                           `3. **/search [kata kunci]**: Cari video berdasarkan judul.\n` +
-                           `4. **/start**: Mulai ulang bot.\n\n` +
-                           `Website: https://backend-bokephot-1--m4j2vzehsbsbs.replit.app`;
+                           `2. **/start**: Mulai ulang bot.\n\n` +
+                           `Website: https://bokephot.web.app`;
             bot.sendMessage(chatId, helpMsg, { parse_mode: 'Markdown' });
             return;
         }
