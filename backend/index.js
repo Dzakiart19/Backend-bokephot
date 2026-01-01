@@ -110,7 +110,8 @@ app.get('/api/proxy-thumb', async (req, res) => {
         'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
-        'Expires': '0'
+        'Expires': '0',
+        'Referer': 'https://doodstream.com/'
       },
       timeout: 30000,
       maxRedirects: 10,
@@ -165,7 +166,10 @@ app.get('/api/thumbnail/:fileId', async (req, res) => {
       return res.status(500).json({ success: false, error: 'API Key not configured' });
     }
     
-    const response = await axios.get(`https://doodapi.co/api/file/image?key=${apiKey}&file_code=${fileId}`, { timeout: 15000 });
+    const response = await axios.get(`https://doodapi.com/api/file/image?key=${apiKey}&file_code=${fileId}`, { 
+      timeout: 15000,
+      headers: { 'Referer': 'https://doodstream.com/' }
+    });
     
     if (response.data.msg === 'OK' && response.data.result) {
       const resultData = Array.isArray(response.data.result) ? response.data.result[0] : response.data.result;

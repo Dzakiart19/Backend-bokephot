@@ -284,7 +284,8 @@ function createVideoCard(video) {
         if (cleanUrl.startsWith('//')) cleanUrl = 'https:' + cleanUrl;
         else if (!cleanUrl.startsWith('http')) cleanUrl = 'https://' + cleanUrl;
         
-        // Cache buster for new uploads - refresh every 30 seconds for first hour
+        // Use single_img if available, fallback to splash_img
+        // Doodstream snapshots are often faster than splash images
         const buster = video.uploaded && (Date.now() - new Date(video.uploaded).getTime() < 3600000) ? Math.floor(Date.now() / 30000) : Math.floor(Date.now() / 60000);
         return `${CONFIG.API_BASE_URL}/proxy-thumb?url=${encodeURIComponent(cleanUrl)}&t=${buster}${isFallback ? '&fallback=1' : ''}`;
     };
