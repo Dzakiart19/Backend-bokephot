@@ -222,8 +222,57 @@ if (token) {
 
     bot.on('message', async (msg) => {
         const chatId = msg.chat.id;
-        if (msg.text === '/start') {
-            bot.sendMessage(chatId, 'Selamat datang! Kirim video atau dokumen video untuk upload ke Doodstream.');
+        if (msg.text && msg.text.startsWith('/list')) {
+            try {
+                const apiKey = process.env.DOODSTREAM_API_KEY;
+                const response = await axios.get(`https://doodstream.com/api/file/list?key=${apiKey}&per_page=5`);
+                if (response.data.msg === 'OK' && response.data.result.files) {
+                    let message = '📺 **5 Video Terbaru:**\n\n';
+                    response.data.result.files.forEach((f, i) => {
+                        message += `${i+1}. ${f.title}\n🔗 https://bokepbot.web.app/detail?id=${f.file_code}\n\n`;
+                    });
+                    bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
+                } else {
+                    bot.sendMessage(chatId, '❌ Gagal mengambil daftar video.');
+                }
+            } catch (err) {
+                bot.sendMessage(chatId, '❌ Terjadi kesalahan.');
+            }
+            return;
+        }
+
+        if (msg.text && msg.text.startsWith('/search ')) {
+            const query = msg.text.replace('/search ', '').trim();
+            if (!query) return;
+            try {
+                const apiKey = process.env.DOODSTREAM_API_KEY;
+                const response = await axios.get(`https://doodstream.com/api/search?key=${apiKey}&search_term=${encodeURIComponent(query)}`);
+                if (response.data.msg === 'OK' && response.data.result) {
+                    const results = response.data.result.slice(0, 5);
+                    if (results.length === 0) {
+                        bot.sendMessage(chatId, '🔍 Tidak ditemukan video dengan kata kunci tersebut.');
+                        return;
+                    }
+                    let message = `🔍 **Hasil Pencarian: ${query}**\n\n`;
+                    results.forEach((f, i) => {
+                        message += `${i+1}. ${f.title}\n🔗 https://bokepbot.web.app/detail?id=${f.file_code}\n\n`;
+                    });
+                    bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
+                }
+            } catch (err) {
+                bot.sendMessage(chatId, '❌ Terjadi kesalahan saat mencari.');
+            }
+            return;
+        }
+
+        if (msg.text === '/help') {
+            const helpMsg = `🤖 **Panduan Bot Doodstream**\n\n` +
+                           `1. **Upload Video**: Kirim file video atau dokumen video langsung ke sini.\n` +
+                           `2. **/list**: Lihat 5 video terbaru di website.\n` +
+                           `3. **/search [kata kunci]**: Cari video berdasarkan judul.\n` +
+                           `4. **/start**: Mulai ulang bot.\n\n` +
+                           `Website: https://bokepbot.web.app`;
+            bot.sendMessage(chatId, helpMsg, { parse_mode: 'Markdown' });
             return;
         }
 
