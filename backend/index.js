@@ -296,46 +296,26 @@ if (token) {
             return;
         }
 
-        if (msg.video || msg.document || (msg.text && msg.text.startsWith('http'))) {
-            const isUrl = msg.text && msg.text.startsWith('http');
-            const fileId = isUrl ? null : (msg.video ? msg.video.file_id : msg.document.file_id);
-            const fileName = isUrl ? 'video_from_url' : (msg.document ? msg.document.file_name : `video_${Date.now()}.mp4`);
-            
-            // Format caption: "Judul Video [link thumbnail]"
-            const fullCaption = msg.caption || msg.text || fileName;
-            const thumbMatch = fullCaption.match(/\[(https?:\/\/[^\]]+)\]/);
-            const thumbUrl = thumbMatch ? thumbMatch[1] : '';
-            const caption = fullCaption.replace(/\[https?:\/\/[^\]]+\]/, '').trim();
+        if (msg.video || msg.document) {
+            const fileId = msg.video ? msg.video.file_id : msg.document.file_id;
+            const fileName = msg.document ? msg.document.file_name : `video_${Date.now()}.mp4`;
+            const caption = msg.caption || fileName;
 
-            bot.sendMessage(chatId, '⏳ Sedang memproses upload ke Doodstream...');
+            bot.sendMessage(chatId, '⏳ Sedang mengupload ke Doodstream...');
             
             try {
+                const fileLink = await bot.getFileLink(fileId);
                 const apiKey = process.env.DOODSTREAM_API_KEY;
-                let uploadUrl = '';
-                
-                if (isUrl) {
-                    const videoUrl = msg.text.split(/\s+/)[0];
-                    uploadUrl = `https://doodstream.com/api/upload/url?key=${apiKey}&url=${encodeURIComponent(videoUrl)}&new_title=${encodeURIComponent(caption)}`;
-                } else {
-                    const fileLink = await bot.getFileLink(fileId);
-                    uploadUrl = `https://doodstream.com/api/upload/url?key=${apiKey}&url=${encodeURIComponent(fileLink)}&new_title=${encodeURIComponent(caption)}`;
-                }
-                
-                const uploadRes = await axios.get(uploadUrl);
+                const uploadRes = await axios.get(`https://doodstream.com/api/upload/url?key=${apiKey}&url=${encodeURIComponent(fileLink)}&new_title=${encodeURIComponent(caption)}`);
                 
                 if (uploadRes.data.msg === 'OK') {
-                    let successMsg = `✅ **Berhasil!** Video sedang diproses.\n\n📌 **Judul**: ${caption}`;
-                    if (thumbUrl) {
-                        successMsg += `\n🖼️ **Custom Thumb**: Tautan thumbnail terdeteksi.\n_(Catatan: Thumbnail kustom akan diproses sistem)_`;
-                    }
-                    bot.sendMessage(chatId, successMsg, { parse_mode: 'Markdown' });
+                    bot.sendMessage(chatId, `✅ Berhasil! Video sedang diproses.\nJudul: ${caption}\nFileCode: ${uploadRes.data.result.filecode}`);
                 } else {
                     bot.sendMessage(chatId, '❌ Gagal upload ke Doodstream.');
                 }
             } catch (err) {
                 bot.sendMessage(chatId, '❌ Terjadi kesalahan saat upload.');
             }
-            return;
         }
     });
 }
