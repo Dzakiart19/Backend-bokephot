@@ -8,8 +8,8 @@ function getApiBaseUrl() {
   }
   
   // Replit-specific internal path for Web Preview
-  if (window.location.hostname.includes('replit.dev') || window.location.hostname === 'localhost') {
-    console.log('[CONFIG] Replit Preview detected → using relative /api');
+  if (window.location.hostname.includes('replit.dev') || window.location.hostname.includes('replit.app') || window.location.hostname === 'localhost') {
+    console.log('[CONFIG] Replit Environment detected → using relative /api');
     return '/api';
   }
   
