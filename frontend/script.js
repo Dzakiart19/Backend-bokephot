@@ -234,26 +234,46 @@ async function loadVideos(isLoadMore = false) {
         }
 
         const result = data.result || {};
-        const videos = Array.isArray(result) ? result : (result.files || []);
+        const allVideos = Array.isArray(result) ? result : (result.files || []);
         
-        if (!Array.isArray(videos) || videos.length === 0) {
+        if (!Array.isArray(allVideos) || allVideos.length === 0) {
             if (isLoadMore) elements.loadMoreContainer.classList.add('hidden');
             else showNoResults();
             hideLoading();
             return;
         }
 
+        // Validate videos existence in parallel
+        const validationPromises = allVideos.map(async (video) => {
+            try {
+                const valRes = await fetch(`${CONFIG.API_BASE_URL}/validate/${video.file_code || video.id}`);
+                const valData = await valRes.json();
+                return valData.valid ? video : null;
+            } catch (e) {
+                return video; // Fallback to show if validation fails
+            }
+        });
+
+        const validatedVideos = (await Promise.all(validationPromises)).filter(v => v !== null);
+
+        if (validatedVideos.length === 0 && allVideos.length > 0) {
+             if (isLoadMore) elements.loadMoreContainer.classList.add('hidden');
+             else showNoResults();
+             hideLoading();
+             return;
+        }
+
         // Update last video count for auto-refresh
         if (!isLoadMore && currentPage === 1) {
-            lastVideoCount = videos.length;
+            lastVideoCount = validatedVideos.length;
         }
 
         if (!isLoadMore) elements.videoGrid.innerHTML = '';
-        videos.forEach(video => {
+        validatedVideos.forEach(video => {
             elements.videoGrid.appendChild(createVideoCard(video));
         });
 
-        if (videos.length >= CONFIG.VIDEOS_PER_PAGE) {
+        if (allVideos.length >= CONFIG.VIDEOS_PER_PAGE) {
             elements.loadMoreContainer.classList.remove('hidden');
         } else {
             elements.loadMoreContainer.classList.add('hidden');

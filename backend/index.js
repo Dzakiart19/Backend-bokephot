@@ -219,7 +219,9 @@ app.get('/api/validate/:fileCode', async (req, res) => {
     const { fileCode } = req.params;
     const apiKey = process.env.DOODSTREAM_API_KEY;
     const response = await axios.get(`https://doodstream.com/api/file/info?key=${apiKey}&file_code=${fileCode}`, { timeout: 5000 });
-    const isValid = response.data.msg === 'OK';
+    
+    // Doodstream returns msg: "OK" only if file exists and is NOT deleted
+    const isValid = response.data.msg === 'OK' && response.data.result && response.data.result.length > 0;
     res.json({ status: 200, valid: isValid });
   } catch (error) {
     res.json({ status: 500, valid: false });

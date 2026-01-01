@@ -130,6 +130,15 @@ async function loadVideoDetail() {
 
 async function loadVideoPlayer(fileId) {
     try {
+        // First validate if video exists
+        const valRes = await fetch(`${CONFIG.API_BASE_URL}/validate/${fileId}`);
+        const valData = await valRes.json();
+        
+        if (!valData.valid) {
+            showVideoError('Video tidak tersedia atau telah dihapus.');
+            return;
+        }
+
         // Fetch fresh video details to get the thumbnail/splash for the poster
         const videoData = await fetchVideoDetails(fileId);
         const video = videoData.result;
@@ -148,7 +157,7 @@ async function loadVideoPlayer(fileId) {
                     frameborder="0" 
                     allowfullscreen
                     class="rounded-lg"
-                    style="aspect-ratio: 16/9;"
+                    style="aspect-ratio: 16/9; min-height: 300px; background: #000;"
                 ></iframe>
             `;
         } else {
