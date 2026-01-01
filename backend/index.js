@@ -290,35 +290,9 @@ if (token) {
                            `1. **Upload Video**: Kirim file video atau dokumen video langsung ke sini.\n` +
                            `2. **/list**: Lihat 5 video terbaru di website.\n` +
                            `3. **/search [kata kunci]**: Cari video berdasarkan judul.\n` +
-                           `4. **/setthumb [file_code] [url_gambar]**: Ganti thumbnail video pakai link gambar.\n` +
-                           `5. **/start**: Mulai ulang bot.\n\n` +
+                           `4. **/start**: Mulai ulang bot.\n\n` +
                            `Website: https://bokepbot.web.app`;
             bot.sendMessage(chatId, helpMsg, { parse_mode: 'Markdown' });
-            return;
-        }
-
-        if (msg.text && msg.text.startsWith('/setthumb ')) {
-            const parts = msg.text.split(' ');
-            if (parts.length < 3) {
-                bot.sendMessage(chatId, '❌ Format salah. Gunakan: `/setthumb [file_code] [url_gambar]`', { parse_mode: 'Markdown' });
-                return;
-            }
-            const fileCode = parts[1];
-            const thumbUrl = parts[2];
-            
-            try {
-                const apiKey = process.env.DOODSTREAM_API_KEY;
-                // Doodstream API: file/set_banner (sets a custom thumbnail from URL)
-                const res = await axios.get(`https://doodapi.com/api/file/set_banner?key=${apiKey}&file_code=${fileCode}&banner_url=${encodeURIComponent(thumbUrl)}`);
-                
-                if (res.data.msg === 'OK') {
-                    bot.sendMessage(chatId, `✅ Thumbnail berhasil diperbarui untuk file: ${fileCode}`);
-                } else {
-                    bot.sendMessage(chatId, `❌ Gagal: ${res.data.msg || 'Terjadi kesalahan'}`);
-                }
-            } catch (err) {
-                bot.sendMessage(chatId, '❌ Terjadi kesalahan saat menghubungi API.');
-            }
             return;
         }
 
