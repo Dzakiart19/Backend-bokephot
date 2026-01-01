@@ -191,7 +191,7 @@ app.get('/api/health', (req, res) => {
 
 // Config endpoint
 app.get('/api/config', (req, res) => {
-  const backendUrl = 'https://backend-bokephot.mio5ikd.replit.app';
+  const backendUrl = 'https://backend-bokephot--mio5ikd.replit.app';
   res.json({
     success: true,
     backendUrl: backendUrl,
