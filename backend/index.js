@@ -245,6 +245,15 @@ if (token) {
     bot.on('message', async (msg) => {
         console.log(`[BOT-MSG] Received from ${msg.chat.id}: ${msg.text ? msg.text : (msg.video ? 'Video' : (msg.document ? 'Document' : 'Other'))}`);
         const chatId = msg.chat.id;
+
+        if (msg.text === '/start') {
+            const welcomeMsg = `👋 **Halo! Selamat datang di Bot Doodstream.**\n\n` +
+                               `Gunakan bot ini untuk mencari video atau mengunggah video ke Doodstream.\n\n` +
+                               `Ketik **/help** untuk melihat daftar perintah yang tersedia.`;
+            bot.sendMessage(chatId, welcomeMsg, { parse_mode: 'Markdown' });
+            return;
+        }
+
         if (msg.text && msg.text.startsWith('/list')) {
             try {
                 const apiKey = process.env.DOODSTREAM_API_KEY;
@@ -269,11 +278,16 @@ if (token) {
             if (!query) return;
             try {
                 const apiKey = process.env.DOODSTREAM_API_KEY;
-                const response = await axios.get(`https://doodstream.com/api/search?key=${apiKey}&search_term=${encodeURIComponent(query)}`);
-                if (response.data.msg === 'OK' && response.data.result) {
-                    const results = response.data.result.slice(0, 5);
+                const searchUrl = `https://doodstream.com/api/search?key=${apiKey}&search_term=${encodeURIComponent(query)}`;
+                console.log(`[BOT-SEARCH] Searching: ${searchUrl}`);
+                const response = await axios.get(searchUrl);
+                
+                if (response.data && (response.data.msg === 'OK' || response.data.status === 200)) {
+                    const result = response.data.result || [];
+                    const results = Array.isArray(result) ? result.slice(0, 5) : [];
+                    
                     if (results.length === 0) {
-                        bot.sendMessage(chatId, '🔍 Tidak ditemukan video dengan kata kunci tersebut.');
+                        bot.sendMessage(chatId, `🔍 Tidak ditemukan video dengan kata kunci "${query}".`);
                         return;
                     }
                     let message = `🔍 **Hasil Pencarian: ${query}**\n\n`;
@@ -281,8 +295,11 @@ if (token) {
                         message += `${i+1}. ${f.title}\n🔗 https://bokepbot.web.app/detail?id=${f.file_code}\n\n`;
                     });
                     bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
+                } else {
+                    bot.sendMessage(chatId, '❌ Gagal mendapatkan hasil dari server.');
                 }
             } catch (err) {
+                console.error(`[BOT-SEARCH-ERROR] ${err.message}`);
                 bot.sendMessage(chatId, '❌ Terjadi kesalahan saat mencari.');
             }
             return;
