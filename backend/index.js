@@ -76,24 +76,18 @@ app.get('/api/bh/search', async (req, res) => {
   }
 });
 
-// GET /api/bh/video/:slug  — includes embed URL so user doesn't wait on click
+// GET /api/bh/video/:slug  — fast: scrape page data only, no embed resolution
 app.get('/api/bh/video/:slug', async (req, res) => {
   try {
     const { slug } = req.params;
     const data = await scrapeVideoDetail(slug);
-
-    // Eagerly resolve embed URL so the player is ready immediately on the detail page.
-    // resolveEmbedUrl is fast (uses cache after first call) and adds only ~1s first time.
-    if (!data.embedUrlFromPage) {
-      try {
-        const embedUrl = await resolveEmbedUrl(slug, data.thumbnail || '');
-        if (embedUrl) data.embedUrlFromPage = embedUrl;
-      } catch (e) {
-        console.warn('[BH-VIDEO] embed resolve failed (non-fatal):', e.message);
-      }
-    }
-
     res.json(data);
+
+    // After responding, resolve embed in background so it lands in cache.
+    // Next call to /embed (from frontend prefetch) will hit cache instantly.
+    if (!data.embedUrlFromPage) {
+      resolveEmbedUrl(slug, data.thumbnail || '').catch(() => {});
+    }
   } catch (e) {
     console.error('[BH-VIDEO]', e.message);
     res.status(500).json({ error: e.message });

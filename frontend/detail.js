@@ -143,29 +143,33 @@ function renderVideo(data) {
     descEl.classList.remove('hidden');
   }
 
-  // Player setup — lazy embed fetch on click
+  // Player setup
   const overlay = document.getElementById('playerOverlay');
   const frame   = document.getElementById('playerFrame');
   const noEmbed = document.getElementById('noEmbed');
   const playBtn = document.getElementById('playBtn');
 
-  overlay.addEventListener('click', async () => {
-    // If embed already in page (indoav direct), use it instantly
-    if (data.embedUrlFromPage) {
-      showEmbed(data.embedUrlFromPage);
-      return;
-    }
+  // Start prefetching embed URL immediately in background.
+  // By the time the user taps play (usually 2-5s after page load), it's ready.
+  let embedPromise = null;
+  if (data.embedUrlFromPage) {
+    embedPromise = Promise.resolve(data.embedUrlFromPage);
+  } else {
+    const qs = data.thumbnail ? `?thumbnail=${encodeURIComponent(data.thumbnail)}` : '';
+    embedPromise = fetchWithTimeout(`${API}/video/${encodeURIComponent(data.slug)}/embed${qs}`, 10000)
+      .then(r => r.json())
+      .then(r => r.embedUrl || null)
+      .catch(() => null);
+  }
 
-    // Show spinner on play button while fetching embed
+  overlay.addEventListener('click', async () => {
+    // Show spinner while waiting (usually already resolved by now)
     playBtn.innerHTML = `<svg class="w-8 h-8 text-white animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>`;
 
     try {
-      const qs = data.thumbnail ? `?thumbnail=${encodeURIComponent(data.thumbnail)}` : '';
-      const resp = await fetch(`${API}/video/${encodeURIComponent(data.slug)}/embed${qs}`);
-      const result = await resp.json();
-
-      if (result.embedUrl) {
-        showEmbed(result.embedUrl);
+      const embedUrl = await embedPromise;
+      if (embedUrl) {
+        showEmbed(embedUrl);
       } else {
         showNoEmbed(data.slug);
       }

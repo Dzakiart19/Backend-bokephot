@@ -20,4 +20,4 @@ description: Scrapes bokephunter.com; two embed source types with different reso
 - Thumbnails from `bokep.rest` must go through `/api/bh/proxy-thumb?url=...` — direct browser requests are hotlink-blocked.
 - Cache TTL: 5 minutes in-memory. Embed URLs cached under `embed_SLUG` key.
 
-**Why:** Without eager embed resolution, users had to click play and then wait ~800ms–7s (cold) for a second server round-trip. Eager resolution adds ~1s to initial page load but makes play instant.
+**Why:** Eager embed resolution inside the API response caused 10–17s page load times (scrape + embed = sequential). The pattern that works: return page data fast (~0.7s), fire embed resolution as a fire-and-forget background task after `res.json()`, and have the frontend immediately start prefetching `/embed` so the promise is already resolved by the time the user taps play.
