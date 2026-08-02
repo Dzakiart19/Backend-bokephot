@@ -1,81 +1,79 @@
-# Backend API Proxy - Doodstream Website
+# Backend — Kampung Bokep
 
-Server API proxy untuk menyembunyikan API Key Doodstream dan menangani CORS.
+Node.js + Express server yang men-scrape `bokepcolmek.me` dan menyajikannya sebagai API internal. Frontend di-serve sebagai static files dari folder `../frontend/`.
 
-## Cara Deploy di Replit
+## Menjalankan
 
-1. **Buat proyek baru di Replit**
-   - Pilih template "Node.js"
-   - Beri nama sesuai keinginan Anda
-
-2. **Upload file-file ini ke Replit**
-   - Upload semua file dalam folder `backend` ini
-
-3. **Konfigurasi Environment Variables**
-   - Di Replit, buka tab "Settings" (ikon gear)
-   - Klik "Secrets" atau "Environment Variables"
-   - Tambahkan variabel berikut:
-     - `DOODSTREAM_API_KEY`: API Key dari akun Doodstream Anda
-     - `FRONTEND_URL`: URL Firebase Hosting Anda (misal: `https://my-video-site.web.app`)
-     - `PORT`: 3000 (atau biarkan default)
-
-4. **Install Dependencies**
-   - Buka Shell di Replit
-   - Jalankan: `npm install`
-
-5. **Run Server**
-   - Klik tombol "Run" atau jalankan perintah: `npm start`
-   - Server akan berjalan di port yang ditentukan
-
-6. **Dapatkan URL Backend**
-   - Setelah server berjalan, Replit akan memberikan URL (misal: `https://your-project.repl.co`)
-   - Catat URL ini untuk dikonfigurasi di Frontend
-
-## Endpoint API
-
-### 1. List Video
+```bash
+npm install
+npm start        # node index.js
+npm run dev      # nodemon index.js (auto-reload)
 ```
-GET /api/videos?page=1&per_page=20
+
+Server berjalan di `http://localhost:5000` (atau sesuai `PORT` env var).
+
+## Struktur
+
 ```
-Mendapatkan daftar video dari akun Doodstream Anda.
-
-### 2. Search Video
+backend/
+├── index.js          # Express app, middleware, route mounting
+├── scraper.js        # Core scraper: homepage, kategori, search, detail, embed
+├── lib/
+│   ├── fetcher.js    # axios wrapper + in-memory cache (TTL 5 menit)
+│   ├── parser.js     # parseVideoCards (article.loop-video), parseTotalPages
+│   ├── cache.js      # Map-based TTL cache, max 300 entry
+│   ├── helpers.js    # decodeHtml, parseDuration (ISO 8601), formatRelativeDate
+│   └── categories.js # 47 kategori hardcoded (slug, name, icon, featured)
+└── routes/
+    ├── api.js        # /api/bh/* — semua endpoint data video
+    ├── proxy.js      # /api/bh/proxy-thumb — proxy gambar thumbnail
+    └── misc.js       # /api/health, /api/config, SPA page fallbacks
 ```
-GET /api/search?search_term=keyword
+
+## API Endpoints
+
+### Data Video (`/api/bh/`)
+
 ```
-Mencari video berdasarkan keyword.
-
-### 3. File Info
+GET /api/bh/videos?page=1
+GET /api/bh/categories
+GET /api/bh/category/:slug?page=1
+GET /api/bh/search?q=keyword&page=1
+GET /api/bh/video/:slug
+GET /api/bh/video/:slug/embed
 ```
-GET /api/file/:fileId
+
+### Utilitas
+
 ```
-Mendapatkan informasi detail tentang file video.
-
-### 4. Embed URL
+GET /api/bh/proxy-thumb?url=<image_url>    # Proxy thumbnail (bypass hotlink)
+GET /api/health                             # Health check
+GET /api/config                             # Resolve public backend URL
 ```
-GET /api/embed/:fileId
-```
-Mendapatkan URL embed untuk diputar di player.
 
-### 5. Health Check
-```
-GET /api/health
-```
-Memeriksa status server.
+## Scraping Logic
 
-## Keamanan
+- **Sumber**: `https://bokepcolmek.me` (WordPress + RetroTube theme)
+- **Fetch**: `axios.get` dengan User-Agent Chrome, cache otomatis per URL
+- **Parse video cards**: `<article class="loop-video thumb-block">` → regex slug, title, thumbnail, durasi
+- **Parse paginasi**: Link "Last" atau angka terbesar dari `/page/N` di HTML
+- **Embed URL**: `itemprop="embedURL"` dari structured data (tidak butuh decrypt)
+- **Kategori video**: `<body class="category-*">` → cocokkan ke `categories.js`
+- **Related videos**: Bagian `id="related-videos"` → di-parse ulang dengan `parseVideoCards`
 
-- API Key Doodstream disimpan di environment variables (bukan di kode)
-- CORS dikonfigurasi untuk hanya mengizinkan domain Firebase Anda
-- Semua error ditangani dan tidak menampilkan informasi sensitif
+## Caching
 
-## Troubleshooting
+- **Jenis**: In-memory (Map), per proses Node.js
+- **TTL**: 5 menit
+- **Max**: 300 entry (FIFO eviction)
+- **Key**: URL halaman untuk HTML; `embed_<slug>` untuk embed URL
 
-### CORS Error
-Pastikan `FRONTEND_URL` di Replit sudah diisi dengan benar (URL Firebase Anda).
+## Environment Variables
 
-### API Key Invalid
-Pastikan API Key Doodstream sudah benar dan aktif.
+| Variable | Default | Keterangan |
+|----------|---------|------------|
+| `PORT` | `5000` | Port server |
+| `REPLIT_DOMAINS` | — | Diset otomatis Replit |
+| `REPLIT_URL` | — | Override URL di `/api/config` |
 
-### Server Tidak Bisa Diakses
-Pastikan server di Replit sudah running dan URL-nya benar.
+Buat file `.env` dari `.env.example` untuk development lokal.

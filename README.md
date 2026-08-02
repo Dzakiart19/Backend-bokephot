@@ -1,304 +1,117 @@
-# Doodstream Video Website
+# Kampung Bokep
 
-Website video streaming lengkap menggunakan Doodstream API dengan arsitektur Firebase Hosting + Replit.
+Website video streaming 18+ dengan arsitektur scraper — backend Node.js/Express yang men-scrape `bokepcolmek.me` dan menyajikannya lewat API internal, plus frontend vanilla JS + Tailwind CSS yang di-serve oleh Express yang sama.
 
-## 📋 Daftar Isi
-
-- [Gambaran Proyek](#gambaran-proyek)
-- [Arsitektur Sistem](#arsitektur-sistem)
-- [Fitur Utama](#fitur-utama)
-- [Persiapan](#persiapan)
-- [Instalasi & Deploy](#instalasi--deploy)
-- [Konfigurasi](#konfigurasi)
-- [Troubleshooting](#troubleshooting)
-- [Kontribusi](#kontribusi)
-
-## 🎯 Gambaran Proyek
-
-Proyek ini adalah website video streaming lengkap yang terdiri dari:
-- **Backend API Proxy** (Node.js + Express.js) di Replit
-- **Frontend Website** (HTML + Tailwind CSS + JavaScript) di Firebase Hosting
-- **Integrasi Doodstream API** untuk video hosting
-
-## 🏗️ Arsitektur Sistem
+## 🏗️ Arsitektur
 
 ```
-User → Firebase Hosting (Frontend) → Replit (Backend API) → Doodstream API
-         ↓                              ↓                        ↓
-    Website UI                 API Proxy              Video Storage
-    (HTML/CSS/JS)          (Hide API Key)          & Streaming
+Browser → Express (port 5000)
+              ├── /api/bh/*   → scraper (axios → bokepcolmek.me)
+              ├── /api/health, /api/config
+              └── /*          → static frontend (frontend/)
 ```
 
-### Komponen Utama
+| Lapisan | Teknologi | Lokasi |
+|---------|-----------|--------|
+| Web server | Express.js | `backend/index.js` |
+| Scraper & parser | Axios + Regex | `backend/scraper.js`, `backend/lib/` |
+| In-memory cache | Map (TTL 5 menit) | `backend/lib/cache.js` |
+| Frontend | HTML + Tailwind CDN + Vanilla JS | `frontend/` |
 
-| Komponen | Lokasi | Teknologi | Fungsi |
-|----------|--------|-----------|--------|
-| Frontend | Firebase Hosting | HTML, Tailwind CSS, JS | UI/UX Website |
-| Backend | Replit | Node.js, Express.js | API Proxy & CORS |
-| Storage | Doodstream | Doodstream API | Video Hosting |
+## 📁 Struktur Proyek
 
-## ✨ Fitur Utama
-
-### Backend (Replit)
-- ✅ API Proxy untuk menyembunyikan API Key Doodstream
-- ✅ CORS handling
-- ✅ Endpoint untuk list video
-- ✅ Endpoint untuk search video
-- ✅ Endpoint untuk video details
-- ✅ Endpoint untuk embed URL
-- ✅ Error handling
-- ✅ Health check endpoint
-
-### Frontend (Firebase Hosting)
-- ✅ Desain modern & responsive
-- ✅ Video grid dengan thumbnail
-- ✅ Search functionality
-- ✅ Video player modal
-- ✅ Halaman detail video
-- ✅ Load more videos
-- ✅ Filter tabs (Latest, Trending, Popular)
-- ✅ Loading & error states
-
-## 📝 Persiapan
-
-### Akun yang Dibutuhkan
-
-1. **Doodstream Account**
-   - Daftar di https://doodstream.com
-   - Dapatkan API Key dari Settings
-
-2. **Replit Account**
-   - Daftar di https://replit.com
-   - Siapkan untuk hosting backend
-
-3. **Firebase Account**
-   - Daftar di https://firebase.google.com
-   - Buat project baru
-   - Aktifkan Firebase Hosting
-
-### Tools yang Dibutuhkan
-
-- Node.js (untuk testing lokal)
-- Firebase CLI
-- Code editor (VS Code recommended)
-- Git (optional)
-
-## 🚀 Instalasi & Deploy
-
-### Langkah 1: Deploy Backend di Replit
-
-1. Buat proyek baru di Replit
-   - Pilih template "Node.js"
-
-2. Upload file backend
-   - Upload semua file dari folder `backend/` ke Replit
-
-3. Konfigurasi Environment Variables di Replit
-   - Buka tab "Settings" → "Secrets"
-   - Tambahkan:
-     ```
-     DOODSTREAM_API_KEY=your_api_key_here
-     FRONTEND_URL=https://[PROJECT-ID].web.app
-     PORT=3000
-     ```
-
-4. Install dependencies
-   ```bash
-   npm install
-   ```
-
-5. Jalankan server
-   ```bash
-   npm start
-   ```
-
-6. Catat URL Replit Anda
-   - Contoh: `https://my-doodstream-api.repl.co`
-
-### Langkah 2: Deploy Frontend ke Firebase
-
-1. Install Firebase CLI
-   ```bash
-   npm install -g firebase-tools
-   ```
-
-2. Login ke Firebase
-   ```bash
-   firebase login
-   ```
-
-3. Masuk ke folder frontend
-   ```bash
-   cd frontend
-   ```
-
-4. Update API URL di JavaScript
-   - Buka `script.js` dan `detail.js`
-   - Ganti `API_BASE_URL` dengan URL Replit Anda
-
-5. Init Firebase (jika belum)
-   ```bash
-   firebase init hosting
-   ```
-
-6. Deploy
-   ```bash
-   firebase deploy
-   ```
-
-7. Catat URL Firebase Anda
-   - Contoh: `https://my-video-site.web.app`
-
-### Langkah 3: Update CORS Configuration
-
-1. Kembali ke Replit
-2. Update environment variable `FRONTEND_URL` dengan URL Firebase Anda
-3. Restart server Replit
-
-## ⚙️ Konfigurasi
-
-### Backend Configuration (.env)
-
-```env
-DOODSTREAM_API_KEY=your_doodstream_api_key
-FRONTEND_URL=https://your-firebase-url.web.app
-PORT=3000
+```
+├── backend/
+│   ├── index.js              # Entry point Express, port 5000
+│   ├── scraper.js            # Homepage, kategori, search, detail, embed resolver
+│   ├── lib/
+│   │   ├── fetcher.js        # axios + cache wrapper, BASE_URL sumber
+│   │   ├── parser.js         # parseVideoCards, parseTotalPages (regex)
+│   │   ├── cache.js          # In-memory TTL cache (5 menit, max 300 entry)
+│   │   ├── helpers.js        # decodeHtml, parseDuration, formatRelativeDate
+│   │   └── categories.js     # 47 kategori hardcoded (slug + icon + featured)
+│   ├── routes/
+│   │   ├── api.js            # GET /api/bh/videos, /categories, /category/:slug,
+│   │   │                     #     /search, /video/:slug, /video/:slug/embed
+│   │   ├── proxy.js          # GET /api/bh/proxy-thumb (proxy thumbnail hotlink)
+│   │   └── misc.js           # GET /api/health, /api/config, SPA page routes
+│   ├── package.json
+│   └── .env.example
+└── frontend/
+    ├── index.html            # Homepage (video grid + nav + search)
+    ├── detail.html           # Halaman video detail + player
+    ├── favicon.svg
+    └── js/
+        ├── script.js         # Logic homepage (state, load, pagination, search)
+        ├── detail.js         # Logic detail (player HLS/iframe, related videos)
+        └── lib/
+            ├── api.js        # fetch wrappers ke /api/bh/*
+            ├── cards.js      # buildCard, buildRelatedCardList/Grid, skeleton
+            ├── nav.js        # Render nav kategori + active state
+            ├── pagination.js # Render tombol pagination dengan ellipsis
+            ├── utils.js      # escHtml, escAttr
+            └── icons.js      # SVG icon library (fill="currentColor")
 ```
 
-### Frontend Configuration (script.js)
+## 🚀 Menjalankan
 
-```javascript
-const CONFIG = {
-    API_BASE_URL: 'https://your-replit-url.repl.co/api',
-    VIDEOS_PER_PAGE: 20,
-    PLACEHOLDER_THUMBNAIL: '...'
-};
+```bash
+# Install dependencies backend
+cd backend && npm install
+
+# Jalankan server
+node backend/index.js
+# → http://localhost:5000
 ```
 
-### Firebase Configuration (firebase.json)
+Atau gunakan workflow Replit: **Backend Server** (`node backend/index.js`).
+
+## 🌐 API Endpoints
+
+| Method | Path | Keterangan |
+|--------|------|------------|
+| GET | `/api/health` | Health check |
+| GET | `/api/config` | Backend URL (untuk auto-detect) |
+| GET | `/api/bh/videos?page=` | Daftar video homepage |
+| GET | `/api/bh/categories` | 47 kategori |
+| GET | `/api/bh/category/:slug?page=` | Video per kategori |
+| GET | `/api/bh/search?q=&page=` | Pencarian video |
+| GET | `/api/bh/video/:slug` | Detail video (title, embed, related) |
+| GET | `/api/bh/video/:slug/embed` | Resolve embed URL |
+| GET | `/api/bh/proxy-thumb?url=` | Proxy thumbnail (bypass hotlink) |
+
+## ⚙️ Environment Variables
+
+| Variable | Default | Keterangan |
+|----------|---------|------------|
+| `PORT` | `5000` | Port server |
+| `REPLIT_DOMAINS` | — | Diset otomatis Replit, dipakai `/api/config` |
+| `REPLIT_URL` | — | Override backend URL untuk `/api/config` |
+
+## 🎨 Frontend
+
+- **Tema**: Dark pink/rose (`bg-pink-950`)
+- **Font**: Plus Jakarta Sans (Google Fonts)
+- **CSS**: Tailwind CSS via CDN (tidak butuh build step)
+- **Player**: Native `<video>` untuk MP4/M3U8, HLS.js untuk stream, `<iframe>` untuk embed eksternal
+- **Routing**: SPA — URL `/video/:slug` di-handle Express → `detail.html`
+- **API calls**: Semua menggunakan relative URL `/api/bh/*` (tidak hardcode domain)
+
+## 📦 Dependencies Backend
 
 ```json
 {
-  "hosting": {
-    "public": ".",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-    "rewrites": [{"source": "**", "destination": "/index.html"}],
-    "headers": [...]
-  }
+  "axios":   "^1.x",   // HTTP client untuk scraping
+  "cors":    "^2.x",   // CORS middleware
+  "dotenv":  "^16.x",  // .env loader
+  "express": "^4.x"    // Web framework
 }
 ```
 
 ## 🔧 Troubleshooting
 
-### CORS Error
+**Video tidak muncul** → Cek koneksi ke `bokepcolmek.me`, lihat log backend untuk error scraping.
 
-**Masalah**: Browser memblokir request karena CORS
+**Thumbnail 404** → Gunakan endpoint `/api/bh/proxy-thumb?url=<thumb_url>` untuk bypass hotlink protection.
 
-**Solusi**:
-1. Pastikan `FRONTEND_URL` di Replit sudah benar
-2. Pastikan backend sudah running
-3. Cek console untuk error details
-
-### Video Tidak Muncul
-
-**Masalah**: Video grid kosong atau error
-
-**Solusi**:
-1. Cek API Key Doodstream sudah benar
-2. Cek URL backend di frontend script
-3. Cek console browser untuk error messages
-4. Test API dengan Postman/curl
-
-### Thumbnail Error
-
-**Masalah**: Thumbnail tidak tampil
-
-**Solusi**: Thumbnail placeholder akan otomatis muncul jika thumbnail tidak tersedia
-
-### Firebase Deploy Error
-
-**Masalah**: Gagal deploy ke Firebase
-
-**Solusi**:
-1. Pastikan Firebase CLI sudah login
-2. Cek project Firebase sudah benar
-3. Cek file `firebase.json` sudah benar
-4. Jalankan `firebase deploy --debug` untuk detail error
-
-## 📊 Performance
-
-Website ini sudah dioptimasi dengan:
-- ✅ Cache headers untuk static assets
-- ✅ Lazy loading untuk video player
-- ✅ Responsive images
-- ✅ Minified Tailwind CSS dari CDN
-- ✅ Optimized JavaScript
-
-## 🎨 Kustomisasi
-
-### Ganti Warna
-
-Edit kelas Tailwind di HTML:
-- `bg-red-600` untuk warna utama
-- `bg-gray-900` untuk background
-- `bg-gray-800` untuk cards
-
-### Ganti Logo
-
-Ganti SVG logo di header dengan logo Anda.
-
-### Tambah Fitur
-
-Ide untuk pengembangan lebih lanjut:
-- User authentication
-- Video categories
-- Comments system
-- Video upload
-- Analytics tracking
-- SEO optimization
-
-## 🗂️ Struktur Proyek
-
-```
-doodstream-website/
-├── backend/
-│   ├── index.js
-│   ├── package.json
-│   ├── .env.example
-│   └── README.md
-├── frontend/
-│   ├── index.html
-│   ├── detail.html
-│   ├── script.js
-│   ├── detail.js
-│   ├── firebase.json
-│   └── README.md
-└── README.md (this file)
-```
-
-## 🤝 Kontribusi
-
-1. Fork proyek ini
-2. Buat branch fitur Anda (`git checkout -b fitur/AmazingFeature`)
-3. Commit perubahan Anda (`git commit -m 'Add some AmazingFeature'`)
-4. Push ke branch (`git push origin fitur/AmazingFeature`)
-5. Buka Pull Request
-
-## 📄 Lisensi
-
-Proyek ini dilisensikan under MIT License.
-
-## 👨‍💻 Author
-
-Dibuat dengan ❤️ untuk komunitas developer.
-
-## 📞 Support
-
-Jika ada pertanyaan atau butuh bantuan:
-- Buka issue di repository ini
-- Email: your-email@example.com
-- Discord: YourDiscord#1234
-
----
-
-**Selamat mencoba dan happy coding! 🚀**
+**Embed tidak bisa diputar** → Source mungkin butuh iframe (xhamster, xvideos, dll) — player sudah handle otomatis.

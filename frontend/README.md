@@ -1,145 +1,74 @@
-# Frontend Website - Doodstream Video
+# Frontend — Kampung Bokep
 
-Website frontend untuk video streaming menggunakan Doodstream API, dihosting di Firebase Hosting.
+Static frontend yang di-serve langsung oleh Express backend. Tidak ada build step — semua berjalan di browser dengan Tailwind CSS dari CDN.
 
-## Fitur
-
-- ✅ Desain modern dengan Tailwind CSS
-- ✅ Responsive design untuk mobile dan desktop
-- ✅ Search functionality
-- ✅ Video grid dengan thumbnail
-- ✅ Video modal player
-- ✅ Halaman detail video (opsional)
-- ✅ Load more videos
-- ✅ Filter tabs (Latest, Trending, Popular)
-- ✅ Error handling dan loading states
-
-## Cara Deploy ke Firebase Hosting
-
-### 1. Install Firebase CLI
-
-Jika belum menginstall Firebase CLI:
-
-```bash
-npm install -g firebase-tools
-```
-
-### 2. Login ke Firebase
-
-```bash
-firebase login
-```
-
-### 3. Init Firebase Project
-
-```bash
-firebase init hosting
-```
-
-Pilih opsi:
-- ✅ Hosting: Configure files for Firebase Hosting
-- Pilih proyek Firebase Anda atau buat yang baru
-- Public directory: `.` (titik untuk root folder)
-- Configure as a single-page app: `Yes`
-- Set up automatic builds: `No`
-
-### 4. Konfigurasi API URL
-
-Buka file `script.js` dan `detail.js`, ganti URL API:
-
-```javascript
-const CONFIG = {
-    API_BASE_URL: 'https://[NAMA-PROYEK-REPLIT].repl.co/api',
-    // ...
-};
-```
-
-Ganti `[NAMA-PROYEK-REPLIT].repl.co` dengan URL Replit Anda yang sebenarnya.
-
-### 5. Deploy
-
-```bash
-firebase deploy
-```
-
-Setelah deploy berhasil, Firebase akan memberikan URL hosting Anda.
-
-### 6. Update CORS di Backend
-
-Jangan lupa update environment variable `FRONTEND_URL` di Replit dengan URL Firebase Hosting Anda:
-
-```
-FRONTEND_URL=https://[PROJECT-ID].web.app
-```
-
-## Struktur File
+## Struktur
 
 ```
 frontend/
-├── index.html          # Halaman utama dengan video grid
-├── detail.html         # Halaman detail video (opsional)
-├── script.js           # JavaScript untuk halaman utama
-├── detail.js           # JavaScript untuk halaman detail
-├── firebase.json       # Konfigurasi Firebase Hosting
-└── README.md           # Dokumentasi ini
+├── index.html        # Homepage: video grid, nav kategori, search, pagination
+├── detail.html       # Halaman detail: video player + info + related videos
+├── favicon.svg       # Favicon (SVG, logo KB)
+└── js/
+    ├── script.js     # Logic homepage (state, fetch, render, pagination)
+    ├── detail.js     # Logic detail page (player HLS/MP4/iframe, related)
+    └── lib/
+        ├── api.js        # fetch wrappers → /api/bh/* (relative URL)
+        ├── cards.js      # buildCard (grid), buildRelatedCard* (sidebar/mobile), skeleton
+        ├── nav.js        # Render nav desktop + sidebar mobile, active states
+        ├── pagination.js # Render tombol halaman dengan ellipsis
+        ├── utils.js      # escHtml, escAttr (XSS-safe rendering)
+        └── icons.js      # Koleksi SVG icon (fill="currentColor")
 ```
 
-## Kustomisasi
+## Halaman
 
-### Ganti Warna Tema
+### `index.html` + `script.js`
+- Grid video responsif: 2 → 3 → 4 → 5 → 6 kolom
+- Nav kategori featured (desktop) + sidebar semua kategori (mobile)
+- Search via URL param `?q=keyword`
+- Filter kategori via URL param `?cat=slug`
+- Pagination dengan `history.pushState` (no full reload)
+- Skeleton loading + empty state + error state
 
-Edit kelas Tailwind CSS di `index.html`:
-- `bg-red-600` untuk warna utama
-- `bg-gray-900` untuk background utama
-- `bg-gray-800` untuk card background
+### `detail.html` + `detail.js`
+- Slug dibaca dari URL `/video/:slug`
+- **Player**: klik overlay → resolve embed URL → pilih mode:
+  - `.m3u8` → HLS.js (atau native jika browser support)
+  - `.mp4` / `.webm` → native `<video>`
+  - URL lainnya → `<iframe>` (xvideos, xhamster, fbplay, dll)
+  - Tidak ada embed → fallback ke link "Tonton di Sumber Asli"
+- Related videos: sidebar desktop + grid 2 kolom mobile (max 8)
 
-### Ganti Logo
+## Routing
 
-Ganti SVG logo di header dengan logo Anda sendiri.
+Semua URL non-file di-handle Express → dikembalikan ke `index.html` atau `detail.html`:
 
-### Ganti Jumlah Video per Halaman
+```
+/                 → index.html
+/detail           → detail.html
+/video/:slug      → detail.html (slug dibaca JS dari location.pathname)
+/?q=...           → index.html (search)
+/?cat=...         → index.html (kategori)
+```
 
-Edit di `script.js`:
+## API
+
+Frontend memanggil backend via **relative URL** — tidak ada hardcode domain:
 
 ```javascript
-const CONFIG = {
-    VIDEOS_PER_PAGE: 20, // Ganti sesuai kebutuhan
-    // ...
-};
+const BASE = '/api/bh';
+fetch(`${BASE}/videos?page=1`)
+fetch(`${BASE}/video/${slug}`)
+// dst.
 ```
 
-## Troubleshooting
+## Design System
 
-### CORS Error
-
-Pastikan:
-1. URL Firebase Anda sudah benar di environment variable `FRONTEND_URL` di Replit
-2. Backend di Replit sudah running
-3. API Key Doodstream sudah benar
-
-### Video Tidak Muncul
-
-1. Cek console browser untuk error messages
-2. Pastikan API Base URL sudah benar
-3. Cek network tab untuk melihat API requests
-
-### Thumbnail Tidak Tampil
-
-Thumbnail default akan muncul jika thumbnail dari Doodstream tidak tersedia.
-
-## Performance Optimization
-
-File sudah dikonfigurasi dengan:
-- Cache headers untuk static assets (JS, CSS, images)
-- Lazy loading untuk video player
-- Responsive images
-- Minified Tailwind CSS dari CDN
-
-## Next Steps
-
-Setelah website berjalan, Anda bisa menambahkan:
-- User authentication
-- Video categories
-- Comments system
-- Video upload functionality
-- Analytics tracking
+- **Background**: `bg-pink-950` (#1a0010)
+- **Aksen**: `pink-500` – `pink-700`
+- **Font**: Plus Jakarta Sans (Google Fonts)
+- **CSS framework**: Tailwind CSS via `cdn.tailwindcss.com`
+- **Icon**: SVG inline custom (`frontend/js/lib/icons.js`)
+- **Scrollbar custom**: pink-950 track, pink-800 thumb
+- **Skeleton animation**: shimmer gradient
