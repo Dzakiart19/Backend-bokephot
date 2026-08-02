@@ -1,17 +1,20 @@
 const axios = require('axios');
 
-const BASE_URL = 'https://www.indoav.com';
+const BASE_URL = 'https://bokepcolmek.me';
 
-// Catatan: data-play-token di halaman indoav adalah token iklan (RC4-encrypted),
-// bukan stream URL. Stream video hanya bisa dimuat browser via iframe player indoav.
-
-// ── HTTP headers ─────────────────────────────────────────────────────────────
+// ── HTTP headers (browser-like untuk bypass Cloudflare) ───────────────────────
 const HEADERS = {
-  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
-  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-  'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7',
-  'Cookie': 'age_ok=1',
-  'Referer': 'https://www.indoav.com/',
+  'User-Agent':      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
+  'Accept':          'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8',
+  'Accept-Encoding': 'gzip, deflate, br',
+  'Sec-Ch-Ua':           '"Chromium";v="138", "Google Chrome";v="138"',
+  'Sec-Ch-Ua-Mobile':    '?0',
+  'Sec-Ch-Ua-Platform':  '"Windows"',
+  'Sec-Fetch-Dest': 'document',
+  'Sec-Fetch-Mode': 'navigate',
+  'Sec-Fetch-Site': 'none',
+  'Connection':     'keep-alive',
 };
 
 // ── In-memory cache ───────────────────────────────────────────────────────────
@@ -26,134 +29,96 @@ function getCached(key) {
 }
 
 function setCache(key, data) {
-  if (cache.size > 300) {
-    const firstKey = cache.keys().next().value;
-    cache.delete(firstKey);
-  }
+  if (cache.size > 300) { const k = cache.keys().next().value; cache.delete(k); }
   cache.set(key, { data, ts: Date.now() });
 }
 
 async function fetchPage(url) {
   const cached = getCached(url);
   if (cached) return cached;
-  const resp = await axios.get(url, { headers: HEADERS, timeout: 12000 });
+  const resp = await axios.get(url, { headers: HEADERS, timeout: 15000, maxRedirects: 5 });
   setCache(url, resp.data);
   return resp.data;
 }
 
-// ── Format durasi ─────────────────────────────────────────────────────────────
-function formatDuration(seconds) {
-  const s = parseInt(seconds) || 0;
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  const sec = s % 60;
-  if (h > 0) return `${h}j ${m}m ${sec}s`;
-  if (m > 0) return `${m}m ${sec}s`;
-  return `${sec}s`;
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function decodeHtml(str) {
+  return String(str)
+    .replace(/&#(\d+);/g, (_, c) => String.fromCharCode(parseInt(c)))
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, h) => String.fromCharCode(parseInt(h, 16)))
+    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"').replace(/&apos;/g, "'")
+    .replace(/&ndash;/g, '–').replace(/&hellip;/g, '…');
 }
 
-// ── Format tanggal relatif ────────────────────────────────────────────────────
+// Parse ISO 8601 duration P0DT0H7M0S → "7m 0s"
+function parseDuration(iso) {
+  if (!iso) return '';
+  const m = iso.match(/P(?:(\d+)D)?T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+  if (!m) return '';
+  const h   = parseInt(m[2] || 0);
+  const min = parseInt(m[3] || 0);
+  const s   = parseInt(m[4] || 0);
+  if (h > 0)   return `${h}j ${min}m ${s}s`;
+  if (min > 0) return `${min}m ${s}s`;
+  return `${s}s`;
+}
+
 function formatRelativeDate(isoDate) {
   if (!isoDate) return '';
   try {
-    const d = new Date(isoDate);
-    const now = Date.now();
-    const diff = now - d.getTime();
+    const diff  = Date.now() - new Date(isoDate).getTime();
     const mins  = Math.floor(diff / 60000);
     const hours = Math.floor(diff / 3600000);
     const days  = Math.floor(diff / 86400000);
-    const months= Math.floor(days / 30);
-    const years = Math.floor(days / 365);
-    if (mins < 60)   return `${mins} menit lalu`;
-    if (hours < 24)  return `${hours} jam lalu`;
-    if (days < 30)   return `${days} hari lalu`;
-    if (months < 12) return `${months} bulan lalu`;
+    const months = Math.floor(days / 30);
+    const years  = Math.floor(days / 365);
+    if (mins  < 60) return `${mins} menit lalu`;
+    if (hours < 24) return `${hours} jam lalu`;
+    if (days  < 30) return `${days} hari lalu`;
+    if (months< 12) return `${months} bulan lalu`;
     return `${years} tahun lalu`;
-  } catch (e) { return ''; }
+  } catch(e) { return ''; }
 }
 
-// ── Parse video cards dari HTML (format indoav.com) ───────────────────────────
+// ── Parse video cards dari HTML (format retrotube WordPress) ──────────────────
+// Struktur: <article class="loop-video thumb-block ...">
+//   <a href="URL/vids/SLUG" title="JUDUL">
+//     <img data-src="THUMBNAIL">
 function parseVideoCards(html) {
   const videos = [];
-  const cardRe = /<article class="video-card group">([\s\S]*?)<\/article>/g;
+  const cardRe = /<article[^>]+class="[^"]*thumb-block[^"]*"[^>]*>([\s\S]*?)<\/article>/g;
   let m;
   while ((m = cardRe.exec(html)) !== null) {
-    const inner = m[1];
+    const block = m[0];
 
     // Slug dari href
-    const slugMatch = inner.match(/href="https:\/\/www\.indoav\.com\/video\/([^"]+)"/);
+    const slugMatch = block.match(/href="https?:\/\/bokepcolmek\.me\/vids\/([^"\/]+)/);
     if (!slugMatch) continue;
     const slug = slugMatch[1];
 
-    // Thumbnail
-    const thumbMatch = inner.match(/class="video-card__image"\s+src="([^"]+)"/);
+    // Title dari atribut title="" pada <a>
+    const titleMatch = block.match(/<a[^>]+title="([^"]+)"/);
+    const title = titleMatch ? decodeHtml(titleMatch[1]) : slug;
+
+    // Thumbnail dari data-src
+    const thumbMatch = block.match(/data-src="([^"]+)"/);
     const thumbnail = thumbMatch ? thumbMatch[1] : '';
 
-    // Title dari h2 > a
-    const titleMatch = inner.match(/class="video-card__title">([\s\S]*?)<\/h2>/);
-    const title = titleMatch ? titleMatch[1].replace(/<[^>]+>/g, '').trim() : slug;
-
-    // Views (data-icon="eye")
-    const viewsMatch = inner.match(/data-icon="eye"[\s\S]*?<span class="text-xs">([\d.,k]+)<\/span>/);
-    const views = viewsMatch ? viewsMatch[1].replace(/,/g, '') : '0';
-
-    // Durasi (data-icon="clock")
-    const durMatch = inner.match(/data-icon="clock"[\s\S]*?<span class="text-xs">([^<]+)<\/span>/);
-    const duration = durMatch ? durMatch[1].trim() : '';
-
-    // Likes (data-icon="heart") ← BARU
-    const likesMatch = inner.match(/data-icon="heart"[\s\S]*?<span class="text-xs">([\d.,k]+)<\/span>/);
-    const likes = likesMatch ? likesMatch[1].replace(/,/g, '') : '0';
-
-    videos.push({ slug, title, thumbnail, views, duration, likes });
+    videos.push({ slug, title, thumbnail, views: '', duration: '', likes: '' });
   }
   return videos;
 }
 
-// ── Parse videos dari /site/feed JSON API ────────────────────────────────────
-function parseFeedVideos(data) {
-  const pools = Array.isArray(data.pools) ? data.pools : [];
-  const seen = new Set();
-  const videos = [];
+// ── Parse total pages dari pagination ─────────────────────────────────────────
+function parseTotalPages(html) {
+  // Link "Last" mengandung halaman terakhir
+  const lastMatch = html.match(/href="[^"]*\/page\/(\d+)[^"]*"[^>]*>Last<\/a>/);
+  if (lastMatch) return parseInt(lastMatch[1]);
 
-  for (const pool of pools) {
-    const poolVideos = Array.isArray(pool.videos) ? pool.videos : [];
-    for (const v of poolVideos) {
-      const id = v.id || v.title_slug;
-      if (seen.has(id)) continue;
-      seen.add(id);
-      videos.push({
-        slug:      v.title_slug || '',
-        title:     v.title || '',
-        thumbnail: v.thumbnail_image || '',
-        views:     String(v.views_count || 0),
-        duration:  v.duration ? formatDuration(v.duration) : '',
-        likes:     String(v.likes_count || 0),
-      });
-    }
-  }
-
-  // Fallback jika pools kosong tapi ada data.videos
-  if (videos.length === 0 && Array.isArray(data.videos)) {
-    for (const v of data.videos) {
-      videos.push({
-        slug:      v.title_slug || '',
-        title:     v.title || '',
-        thumbnail: v.thumbnail_image || '',
-        views:     String(v.views_count || 0),
-        duration:  v.duration ? formatDuration(v.duration) : '',
-        likes:     String(v.likes_count || 0),
-      });
-    }
-  }
-
-  return videos.filter(v => v.slug);
-}
-
-// ── Parse total pages dari pagination HTML ────────────────────────────────────
-function parseTotalPages(html, basePattern = /\/halaman\/(\d+)/) {
+  // Ambil angka terbesar dari semua link paginasi
   const pageNums = [];
-  const re = new RegExp(basePattern.source, 'g');
+  const re = /\/page\/(\d+)/g;
   let m;
   while ((m = re.exec(html)) !== null) {
     const n = parseInt(m[1]);
@@ -162,77 +127,33 @@ function parseTotalPages(html, basePattern = /\/halaman\/(\d+)/) {
   return pageNums.length > 0 ? Math.max(...pageNums) : 1;
 }
 
-// ── Map filter slug ke query param indoav ─────────────────────────────────────
-const FILTER_MAP = {
-  'terbaru':     '',
-  'dilihat':     'banyak-dilihat',
-  'disukai':     'banyak-disukai',
-  'dikomentari': 'banyak-dikomentari',
-  'panjang':     'durasi-panjang',
-  'random':      'random',
-  // legacy compat
-  'new':         '',
-  'popular':     'banyak-dilihat',
-};
-
 // ── Scrape homepage ───────────────────────────────────────────────────────────
 async function scrapeHomepage(page = 1, filter = 'terbaru') {
   page = parseInt(page);
-  const indoavFilter = FILTER_MAP[filter] !== undefined ? FILTER_MAP[filter] : '';
-
-  // Page 1 tanpa filter: gunakan /site/feed JSON API (lebih cepat)
-  if (page === 1 && !indoavFilter) {
-    try {
-      const cacheKey = `feed_terbaru`;
-      let data = getCached(cacheKey);
-      if (!data) {
-        const feedUrl = `${BASE_URL}/site/feed`;
-        const resp = await axios.get(feedUrl, {
-          headers: { ...HEADERS, Accept: 'application/json' },
-          timeout: 12000,
-        });
-        data = resp.data;
-        if (data && data.success) setCache(cacheKey, data);
-      }
-      if (data && data.success) {
-        const videos = parseFeedVideos(data);
-        if (videos.length > 0) {
-          return { videos, totalPages: 478, page: 1, filter };
-        }
-      }
-    } catch (e) {
-      console.error('[SCRAPER] /site/feed gagal, fallback ke /halaman/1:', e.message);
-    }
-  }
-
-  // Semua kasus lain: scrape HTML
-  const filterQuery = indoavFilter ? `?filter=${indoavFilter}` : '';
   const url = page === 1
-    ? `${BASE_URL}/${filterQuery}`
-    : `${BASE_URL}/halaman/${page}${filterQuery}`;
-
+    ? `${BASE_URL}/`
+    : `${BASE_URL}/page/${page}/`;
   const html = await fetchPage(url);
-  const videos = parseVideoCards(html);
-  const totalPages = parseTotalPages(html, /\/halaman\/(\d+)/);
+  const videos    = parseVideoCards(html);
+  const totalPages = parseTotalPages(html);
   return { videos, totalPages: Math.max(totalPages, 1), page, filter };
 }
 
 // ── Scrape category ───────────────────────────────────────────────────────────
 async function scrapeCategory(slug, page = 1, filter = 'terbaru') {
   page = parseInt(page);
-  const indoavFilter = FILTER_MAP[filter] !== undefined ? FILTER_MAP[filter] : '';
-  const filterQuery  = indoavFilter ? `?filter=${indoavFilter}` : '';
-
   const url = page === 1
-    ? `${BASE_URL}/kategori/${slug}${filterQuery}`
-    : `${BASE_URL}/kategori/${slug}/halaman/${page}${filterQuery}`;
-
+    ? `${BASE_URL}/kategori/${slug}/`
+    : `${BASE_URL}/kategori/${slug}/page/${page}`;
   const html = await fetchPage(url);
-  const videos = parseVideoCards(html);
-  const totalPages = parseTotalPages(html, /\/halaman\/(\d+)/);
+  const videos     = parseVideoCards(html);
+  const totalPages = parseTotalPages(html);
 
+  // Judul kategori dari <h1>
   const titleMatch = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/);
-  const title = titleMatch ? titleMatch[1].replace(/<[^>]+>/g, '').trim() : slug;
+  const title = titleMatch
+    ? decodeHtml(titleMatch[1].replace(/<[^>]+>/g, '').trim())
+    : slug;
 
   return { videos, totalPages: Math.max(totalPages, 1), page, filter, title, slug };
 }
@@ -240,101 +161,117 @@ async function scrapeCategory(slug, page = 1, filter = 'terbaru') {
 // ── Scrape search ─────────────────────────────────────────────────────────────
 async function scrapeSearch(q, page = 1) {
   page = parseInt(page);
+  // WordPress search: halaman 1 = /?s=QUERY, halaman N = /page/N/?s=QUERY
   const url = page === 1
-    ? `${BASE_URL}/cari?kata-kunci=${encodeURIComponent(q)}`
-    : `${BASE_URL}/cari/halaman/${page}?kata-kunci=${encodeURIComponent(q)}`;
-
+    ? `${BASE_URL}/?s=${encodeURIComponent(q)}`
+    : `${BASE_URL}/page/${page}/?s=${encodeURIComponent(q)}`;
   const html = await fetchPage(url);
-  const videos = parseVideoCards(html);
-  const totalPages = parseTotalPages(html, /\/cari\/halaman\/(\d+)/);
+  const videos     = parseVideoCards(html);
+  const totalPages = parseTotalPages(html);
   return { videos, totalPages: Math.max(totalPages, 1), page, q };
 }
 
 // ── Scrape video detail ───────────────────────────────────────────────────────
 async function scrapeVideoDetail(slug) {
-  const url = `${BASE_URL}/video/${slug}`;
+  const url  = `${BASE_URL}/vids/${slug}/`;
   const html = await fetchPage(url);
 
   // Title
-  const ogTitleMatch = html.match(/property="og:title"\s+content="([^"]+)"/);
-  const title = ogTitleMatch ? ogTitleMatch[1] : slug;
+  const ogTitle = html.match(/property="og:title"\s+content="([^"]+)"/);
+  const title   = ogTitle ? decodeHtml(ogTitle[1]) : slug;
 
   // Description
-  const descMatch = html.match(/property="og:description"\s+content="([^"]+)"/);
-  const description = descMatch ? descMatch[1] : '';
+  const ogDesc      = html.match(/property="og:description"\s+content="([^"]+)"/);
+  const description = ogDesc ? decodeHtml(ogDesc[1]) : '';
 
   // Thumbnail
-  const thumbMatch = html.match(/property="og:image"\s+content="([^"]+)"/);
-  const thumbnail = thumbMatch ? thumbMatch[1] : '';
+  const ogImg    = html.match(/itemprop="thumbnailUrl"\s+content="([^"]+)"/);
+  const thumbnail = ogImg ? ogImg[1] : '';
 
-  // Duration dari video:duration meta
-  const durMatch = html.match(/property="video:duration"\s+content="(\d+)"/);
-  const duration = durMatch ? formatDuration(parseInt(durMatch[1])) : '';
+  // Duration → parse ISO 8601 (P0DT0H7M0S)
+  const durMatch = html.match(/itemprop="duration"\s+content="([^"]+)"/);
+  const duration = parseDuration(durMatch ? durMatch[1] : '');
 
-  // Tanggal posting dari video:release_date ← BARU
-  const relDateMatch = html.match(/property="video:release_date"\s+content="([^"]+)"/);
-  const postedAt     = relDateMatch ? relDateMatch[1] : '';
-  const postedAgo    = formatRelativeDate(postedAt);
+  // Published date
+  const pubMatch = html.match(/property="article:published_time"\s+content="([^"]+)"/);
+  const postedAt  = pubMatch ? pubMatch[1] : '';
+  const postedAgo = formatRelativeDate(postedAt);
 
-  // Views (dari data-icon="eye" di detail)
-  const viewsMatch = html.match(/data-icon="eye"[\s\S]{0,200}<span[^>]*>([\d.,k]+)<\/span>/);
-  const views = viewsMatch ? viewsMatch[1].replace(/,/g, '') : '0';
+  // Embed URL dari itemprop (langsung tersedia, tanpa RC4 atau token)
+  const embedMatch = html.match(/itemprop="embedURL"\s+content="([^"]+)"/);
+  const embedUrl   = embedMatch ? embedMatch[1] : '';
+  if (embedUrl) setCache(`embed_${slug}`, embedUrl);
 
-  // Likes dari span#likes-count ← BARU
-  const likesEl = html.match(/<span id="likes-count"[^>]*>([\d.,k]+)<\/span>/);
-  const likes   = likesEl ? likesEl[1].replace(/,/g, '') : '0';
-
-  // Categories — skip nav categories
+  // Categories dari class body atau article
   const categories = [];
-  const navEnd = html.indexOf('</nav>');
-  const contentHtml = navEnd >= 0 ? html.substring(navEnd) : html;
-  const catRe = /href="https:\/\/www\.indoav\.com\/kategori\/([^"\/]+)"[^>]*>([^<]+)</g;
-  const catSeen = new Set();
-  let cm;
-  while ((cm = catRe.exec(contentHtml)) !== null) {
-    const catSlug = cm[1];
-    const catName = cm[2].trim();
-    if (!catSeen.has(catSlug) && catName && catName.length < 50) {
-      catSeen.add(catSlug);
-      categories.push({ slug: catSlug, name: catName });
+  const bodyClass  = html.match(/<body[^>]+class="([^"]+)"/);
+  if (bodyClass) {
+    const seen = new Set();
+    for (const cls of bodyClass[1].split(/\s+/)) {
+      if (cls.startsWith('category-')) {
+        const catSlug = cls.replace('category-', '');
+        if (!seen.has(catSlug)) {
+          seen.add(catSlug);
+          const catName = catSlug.split('-')
+            .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+            .join(' ');
+          categories.push({ slug: catSlug, name: catName });
+        }
+      }
     }
   }
 
-  // Related videos — parse dari HTML (article.video-card group setelah "Related Videos") ← BARU
+  // Related videos — dari <div id="related-videos">
   const related = [];
-  const relIdx = html.indexOf('Related Videos');
+  const relIdx  = html.indexOf('id="related-videos"');
   if (relIdx >= 0) {
     const relHtml = html.substring(relIdx);
     const relCards = parseVideoCards(relHtml);
     related.push(...relCards.slice(0, 12));
   }
 
-  return { slug, title, description, thumbnail, views, likes, duration, postedAgo, postedAt, categories, related };
+  return { slug, title, description, thumbnail, views: '', likes: '', duration, postedAgo, postedAt, categories, related, embedUrl };
 }
 
 // ── Resolve embed URL ─────────────────────────────────────────────────────────
-// Stream video indoav hanya bisa dimuat browser via iframe player mereka.
-// data-play-token berisi URL iklan (tsyndicate/xlink3/linkonclick), bukan stream.
+// Embed URL sudah tersedia di itemprop="embedURL" pada halaman video.
+// scrapeVideoDetail menyimpannya ke cache; fungsi ini melayani /embed endpoint.
 async function resolveEmbedUrl(slug, thumbnail) {
   const cacheKey = `embed_${slug}`;
-  const cached = getCached(cacheKey);
+  const cached   = getCached(cacheKey);
   if (cached) return cached;
-  const embedUrl = `${BASE_URL}/video/embed/${slug}`;
-  setCache(cacheKey, embedUrl);
-  return embedUrl;
+
+  // Belum di-cache — fetch halaman video untuk ambil embed URL
+  try {
+    const html       = await fetchPage(`${BASE_URL}/vids/${slug}/`);
+    const embedMatch = html.match(/itemprop="embedURL"\s+content="([^"]+)"/);
+    if (embedMatch) {
+      setCache(cacheKey, embedMatch[1]);
+      return embedMatch[1];
+    }
+    // Fallback: ambil src iframe langsung dari div.video-player
+    const iframeMatch = html.match(/<div[^>]+video-player[^>]*>[\s\S]*?<iframe[^>]+src="([^"]+)"/);
+    if (iframeMatch) {
+      setCache(cacheKey, iframeMatch[1]);
+      return iframeMatch[1];
+    }
+  } catch(e) {
+    console.error('[RESOLVE-EMBED]', e.message);
+  }
+  return null;
 }
 
-// ── Categories (real list dari indoav.com) ────────────────────────────────────
+// ── Kategori utama (dari nav bokepcolmek.me) ──────────────────────────────────
 function getCategories() {
   return [
-    { slug: 'bokep-indonesia', name: 'Bokep Indonesia', emoji: '🇮🇩' },
-    { slug: 'bokep-indo',      name: 'Bokep Indo',      emoji: '🔥' },
-    { slug: 'bokep-sin',       name: 'Bokep Sin',       emoji: '😈' },
-    { slug: 'bokep-dosa',      name: 'Bokep Dosa',      emoji: '💋' },
-    { slug: 'bokep-barat',     name: 'Bokep Barat',     emoji: '🌍' },
-    { slug: 'bokep-asia',      name: 'Bokep Asia',      emoji: '🌏' },
-    { slug: 'bokep-jepang',    name: 'Bokep Jepang',    emoji: '🇯🇵' },
-    { slug: 'tanpa-sensor',    name: 'Tanpa Sensor',    emoji: '🔞' },
+    { slug: 'bokep-indo',         name: 'Bokep Indo',      emoji: '🇮🇩' },
+    { slug: 'bokep-indonesia',    name: 'Indonesia',       emoji: '🔥' },
+    { slug: 'bokep-indo-terbaru', name: 'Indo Terbaru',    emoji: '🆕' },
+    { slug: 'bokep-indo-viral',   name: 'Indo Viral',      emoji: '📱' },
+    { slug: 'bokep-colmek',       name: 'Colmek',          emoji: '💦' },
+    { slug: 'bokep-jepang',       name: 'Jepang',          emoji: '🇯🇵' },
+    { slug: 'bokep-barat',        name: 'Barat',           emoji: '🌍' },
+    { slug: 'bokep-asia',         name: 'Asia',            emoji: '🌏' },
   ];
 }
 

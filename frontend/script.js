@@ -20,25 +20,16 @@ const pageInfo     = document.getElementById('pageInfo');
 const pageButtons  = document.getElementById('pageButtons');
 const pageTitle    = document.getElementById('pageTitle');
 
-// Category display names
+// Category display names (sinkron dengan getCategories() di scraper.js)
 const CAT_NAMES = {
-  'bokep-indonesia': '🇮🇩 Bokep Indonesia',
-  'bokep-indo':      '🔥 Bokep Indo',
-  'bokep-sin':       '😈 Bokep Sin',
-  'bokep-dosa':      '💋 Bokep Dosa',
-  'bokep-barat':     '🌍 Bokep Barat',
-  'bokep-asia':      '🌏 Bokep Asia',
-  'bokep-jepang':    '🇯🇵 Bokep Jepang',
-  'tanpa-sensor':    '🔞 Tanpa Sensor',
-};
-
-// Filter display names
-const FILTER_NAMES = {
-  'terbaru':  '🆕 Video Terbaru',
-  'dilihat':  '👁️ Terbanyak Dilihat',
-  'disukai':  '❤️ Terbanyak Disukai',
-  'panjang':  '⏱️ Durasi Panjang',
-  'random':   '🎲 Video Random',
+  'bokep-indo':         '🇮🇩 Bokep Indo',
+  'bokep-indonesia':    '🔥 Bokep Indonesia',
+  'bokep-indo-terbaru': '🆕 Indo Terbaru',
+  'bokep-indo-viral':   '📱 Indo Viral',
+  'bokep-colmek':       '💦 Bokep Colmek',
+  'bokep-jepang':       '🇯🇵 Bokep Jepang',
+  'bokep-barat':        '🌍 Bokep Barat',
+  'bokep-asia':         '🌏 Bokep Asia',
 };
 
 // Init from URL params
@@ -49,37 +40,25 @@ function initFromURL() {
   currentCat    = params.get('cat') || null;
   currentSearch = params.get('q') || null;
 
-  // Update active filter buttons (only show on homepage, not category/search)
+  // Filter hanya tampil di homepage (bukan kategori/search)
   const filterButtons = document.getElementById('filterButtons');
-  const showFilters   = !currentCat && !currentSearch;
-  filterButtons.style.display = showFilters ? '' : 'none';
+  filterButtons.style.display = (!currentCat && !currentSearch) ? '' : 'none';
 
-  document.querySelectorAll('.filter-btn').forEach(btn => {
-    const active = btn.dataset.filter === currentFilter;
-    btn.classList.toggle('bg-pink-600',    active);
-    btn.classList.toggle('text-white',     active);
-    btn.classList.toggle('border-pink-500',active);
-    btn.classList.toggle('bg-pink-900/40', !active);
-    btn.classList.toggle('text-pink-300',  !active);
-    btn.classList.toggle('border-pink-700/30', !active);
-    btn.classList.toggle('active', active);
-  });
-
-  // Update active category in desktop nav
+  // Active state kategori desktop nav
   document.querySelectorAll('.cat-link').forEach(a => {
     const active = a.dataset.cat === currentCat;
-    a.classList.toggle('bg-pink-800/60',   active);
-    a.classList.toggle('text-white',       active);
+    a.classList.toggle('bg-pink-800/60',     active);
+    a.classList.toggle('text-white',         active);
     a.classList.toggle('border-pink-500/50', active);
-    a.classList.toggle('bg-pink-900/40',   !active);
-    a.classList.toggle('text-pink-200/70', !active);
+    a.classList.toggle('bg-pink-900/40',     !active);
+    a.classList.toggle('text-pink-200/70',   !active);
     a.classList.toggle('border-pink-700/30', !active);
   });
 
-  // Update active in mobile bottom nav
+  // Active state mobile bottom nav
   document.querySelectorAll('.mobile-cat-link').forEach(a => {
     const active = a.dataset.cat === currentCat;
-    a.classList.toggle('text-pink-200', active);
+    a.classList.toggle('text-pink-200',    active);
     a.classList.toggle('text-pink-400/60', !active);
   });
 
@@ -87,7 +66,7 @@ function initFromURL() {
   const mobileHome = document.getElementById('mobileHomeLink');
   if (mobileHome) {
     const homeActive = !currentCat && !currentSearch;
-    mobileHome.classList.toggle('text-pink-200', homeActive);
+    mobileHome.classList.toggle('text-pink-200',    homeActive);
     mobileHome.classList.toggle('text-pink-400/60', !homeActive);
   }
 
@@ -97,42 +76,21 @@ function initFromURL() {
   } else if (currentCat) {
     pageTitle.textContent = CAT_NAMES[currentCat] || currentCat;
   } else {
-    pageTitle.textContent = FILTER_NAMES[currentFilter] || '🆕 Video Terbaru';
+    pageTitle.textContent = '🆕 Video Terbaru';
   }
-}
-
-// Proxy thumbnails
-function thumbSrc(url) {
-  return url || '';
-}
-
-// Format angka singkat: 12345 → 12.3k
-function fmtNum(val) {
-  const n = parseInt(String(val).replace(/[.,k]/gi, '')) || 0;
-  if (n >= 1000000) return (n/1000000).toFixed(1).replace(/\.0$/,'') + 'jt';
-  if (n >= 1000)    return (n/1000).toFixed(1).replace(/\.0$/,'') + 'k';
-  return String(n);
 }
 
 // Build video card HTML
 function buildCard(v) {
-  const thumb    = thumbSrc(v.thumbnail || '');
-  const title    = escHtml(v.title);
-  const views    = v.views    ? fmtNum(v.views)    : '';
-  const likes    = v.likes    ? fmtNum(v.likes)    : '';
-  const duration = v.duration || v.timeAgo || '';
+  const thumb = v.thumbnail || '';
+  const title = escHtml(v.title);
   return `
     <a href="/video/${v.slug}" class="group block hover-card">
       <div class="relative aspect-video rounded-lg sm:rounded-xl overflow-hidden border border-pink-800/50 group-hover:border-pink-600/60 transition-colors" style="background:#3b001a">
-        ${thumb ? `<img src="${escAttr(thumb)}" alt="${title}" class="thumb-img h-full w-full object-cover" loading="lazy" onerror="this.style.display='none'">` : ''}
+        ${thumb
+          ? `<img src="${escAttr(thumb)}" alt="${title}" class="thumb-img h-full w-full object-cover" loading="lazy" onerror="this.style.display='none'">`
+          : ''}
         <div class="absolute inset-0 bg-gradient-to-t from-pink-950/70 via-transparent to-transparent"></div>
-        <!-- Duration badge top-right -->
-        ${duration ? `<span class="absolute top-1.5 right-1.5 rounded-md bg-black/60 px-1.5 py-0.5 text-[9px] sm:text-[10px] font-semibold text-white/90">${duration}</span>` : ''}
-        <!-- Views + Likes bottom-left -->
-        <div class="absolute bottom-1.5 left-1.5 flex items-center gap-1.5">
-          ${views ? `<span class="flex items-center gap-0.5 rounded-md bg-pink-950/70 px-1 sm:px-1.5 py-0.5 text-[9px] sm:text-[10px] font-medium text-pink-200/80"><svg class="w-2.5 h-2.5 opacity-70" fill="currentColor" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>${views}</span>` : ''}
-          ${likes ? `<span class="flex items-center gap-0.5 rounded-md bg-pink-950/70 px-1 sm:px-1.5 py-0.5 text-[9px] sm:text-[10px] font-medium text-pink-300/80"><svg class="w-2.5 h-2.5 opacity-70" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>${likes}</span>` : ''}
-        </div>
         <!-- Play button hover -->
         <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
           <div class="w-10 h-10 rounded-full bg-pink-500/80 flex items-center justify-center">
@@ -170,8 +128,7 @@ function renderPagination(current, total) {
   pagination.classList.remove('hidden');
   pageInfo.textContent = `Halaman ${current} dari ${total}`;
 
-  const pages = [];
-  pages.push(1);
+  const pages = [1];
   if (current > 3) pages.push('...');
   for (let p = Math.max(2, current - 1); p <= Math.min(total - 1, current + 1); p++) pages.push(p);
   if (current < total - 2) pages.push('...');
@@ -232,7 +189,7 @@ async function loadVideos() {
       totalPages = data.totalPages || 1;
       renderPagination(currentPage, totalPages);
     }
-  } catch (e) {
+  } catch(e) {
     hideSkeleton();
     errorState.classList.remove('hidden');
     errorMsg.textContent = e.message;
@@ -260,7 +217,7 @@ function closeSidebar() {
   document.getElementById('mobileOverlay').classList.add('hidden');
 }
 
-// Search toggle (header)
+// Search toggle
 document.getElementById('searchToggle').addEventListener('click', () => {
   const bar = document.getElementById('searchBar');
   const si  = document.getElementById('searchIcon');
