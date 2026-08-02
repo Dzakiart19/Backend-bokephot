@@ -7,11 +7,14 @@ description: Scrapes bokephunter.com; two embed source types with different reso
 
 **bokeprest-XXXX** slugs:
 - Thumbnail from `bokep.rest/wp-content/uploads/...` — hotlink-blocked, must proxy via `/api/bh/proxy-thumb`
-- Embed resolved by fetching `https://bokep.rest/bokep/TITLE-SLUG/VIDEOID/.html` and extracting `luluvdo.com/e/` iframe src
-- Typically ~800ms to resolve
+- Embed resolved by: bokep.rest page → luluvdo.com/e/ID → unpack eval(p,a,c,k,e,d) JS → extract `file:"https://...master.m3u8"` → return direct HLS stream (no ads)
+- Luluvdo m3u8 tokens expire ~8h (e=28800 param); 5-min in-memory cache is fine
+- If Luluvdo direct fails, falls back to luluvdo iframe
 
 **indoav-XXXX** slugs:
-- Embed constructed directly: `https://www.indoav.com/video/embed/VIDEOID` — no extra fetch needed
+- Embed constructed as `https://www.indoav.com/video/embed/VIDEOID`
+- Loaded in sandboxed iframe (`sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"`) — no `allow-popups` blocks popup/popunder ads
+- RC4 `/video/v/` POST for direct stream blocked by Cloudflare server-side; sandbox is the best available approach
 
 ## Key decisions
 

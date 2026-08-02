@@ -2,6 +2,55 @@ const axios = require('axios');
 
 const BASE_URL = 'https://bokephunter.com';
 
+// ── Luluvdo direct stream resolver ───────────────────────────────────────────
+// Fetches the Luluvdo embed page, unpacks the obfuscated JS, extracts m3u8 URL
+async function resolveLuluvdoDirectUrl(embedUrl) {
+  const cacheKey = `lulu_direct_${embedUrl}`;
+  const cached = getCached(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const resp = await axios.get(embedUrl, {
+      headers: {
+        ...HEADERS,
+        Referer: 'https://bokep.rest/',
+        Cookie: '',
+      },
+      timeout: 12000,
+    });
+    const html = resp.data;
+
+    // Find the packed JS block
+    const scripts = html.match(/<script[^>]*>([\s\S]*?)<\/script>/g) || [];
+    for (const s of scripts) {
+      if (!s.includes('eval(function(p,a,c,k')) continue;
+      const inner = s.replace(/<\/?script[^>]*>/g, '').trim();
+
+      // Unpack by capturing eval output
+      const wrapped = inner.replace(/^eval\(/, '').replace(/\)$/, '');
+      let unpacked = '';
+      try {
+        const fn = new Function('return ' + wrapped);
+        unpacked = fn();
+      } catch (e) {
+        continue;
+      }
+
+      // Extract file:"..." (the m3u8 URL)
+      const fileMatch = unpacked.match(/file:"(https?:\/\/[^"]+\.m3u8[^"]*)"/);
+      if (fileMatch) {
+        const m3u8Url = fileMatch[1];
+        setCache(cacheKey, m3u8Url);
+        return m3u8Url;
+      }
+    }
+    return null;
+  } catch (e) {
+    console.error(`[SCRAPER] resolveLuluvdoDirectUrl failed: ${e.message}`);
+    return null;
+  }
+}
+
 // ── IndoAV RC4 decryption ────────────────────────────────────────────────────
 // Ported directly from indoav's minified JS (file.P0uWl5eB.js)
 function rc4(str, key) {
@@ -324,12 +373,24 @@ async function resolveEmbedUrl(slug, thumbnail) {
     return embedUrl;
   }
 
-  // For bokeprest: fetch bokep.rest page to get luluvdo embed
+  // For bokeprest: fetch bokep.rest page → get luluvdo URL → resolve to direct m3u8
   if (slug.startsWith('bokeprest-')) {
     const videoId = slug.replace('bokeprest-', '');
-    embedUrl = await getBokepRestEmbed(videoId, thumbnail || '');
-    if (embedUrl) setCache(cacheKey, embedUrl);
-    return embedUrl;
+    const luluvdoUrl = await getBokepRestEmbed(videoId, thumbnail || '');
+    if (luluvdoUrl) {
+      if (luluvdoUrl.includes('luluvdo.com')) {
+        // Resolve to direct HLS stream — no ads, no watermarks
+        const directUrl = await resolveLuluvdoDirectUrl(luluvdoUrl);
+        if (directUrl) {
+          setCache(cacheKey, directUrl);
+          return directUrl;
+        }
+      }
+      // Fallback: use luluvdo iframe if direct resolution fails
+      setCache(cacheKey, luluvdoUrl);
+      return luluvdoUrl;
+    }
+    return null;
   }
 
   // Generic: try page embed (already extracted in detail, passed in thumbnail=embedUrlFromPage)
