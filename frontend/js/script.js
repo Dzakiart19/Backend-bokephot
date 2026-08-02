@@ -30,6 +30,7 @@ function initFromURL() {
 
   updateActiveStates(currentCat);
 
+
   // Page title
   if (currentSearch) {
     pageTitle.textContent = `🔍 Hasil: "${currentSearch}"`;

@@ -30,19 +30,6 @@ export async function loadAndRenderCategories() {
       });
     }
 
-    // Mobile bottom nav — 3 featured teratas
-    const bottomNav = document.getElementById('mobileBottomNav');
-    if (bottomNav) {
-      const labels = ['Indo', 'Jepang', 'Colmek'];
-      featured.slice(0, 3).forEach((c, i) => {
-        const a       = document.createElement('a');
-        a.href        = `/?cat=${c.slug}`;
-        a.dataset.cat = c.slug;
-        a.className   = 'mobile-cat-link flex flex-col items-center gap-0.5 px-3 py-1 text-pink-400/60 hover:text-pink-200 transition-colors';
-        a.innerHTML   = `<span class="text-lg leading-none">${c.emoji}</span><span class="text-[10px] font-semibold">${labels[i] ?? c.name}</span>`;
-        bottomNav.appendChild(a);
-      });
-    }
   } catch (e) {
     console.warn('[nav] failed to load categories:', e.message);
   }
@@ -65,12 +52,6 @@ export function updateActiveStates(currentCat) {
     a.classList.toggle('text-pink-100',   on);
     a.classList.toggle('bg-pink-800/40',  on);
     a.classList.toggle('text-pink-200/70',!on);
-  });
-
-  document.querySelectorAll('.mobile-cat-link').forEach(a => {
-    const on = a.dataset.cat === currentCat;
-    a.classList.toggle('text-pink-200',   on);
-    a.classList.toggle('text-pink-400/60',!on);
   });
 
   const homeLink = document.getElementById('mobileHomeLink');
