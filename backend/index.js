@@ -9,14 +9,9 @@ const { scrapeHomepage, scrapeCategory, scrapeSearch, scrapeVideoDetail, resolve
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Startup environment validation
-const requiredEnvVars = [];
-const missingVars = requiredEnvVars.filter(v => !process.env[v]);
-if (missingVars.length > 0) {
-  console.warn(`⚠️  Missing environment variables: ${missingVars.join(', ')}`);
-} else {
-  console.log('✅ Environment variables OK');
-}
+// Startup info
+const port = process.env.PORT || 5000;
+console.log(`ℹ️  PORT=${port}`);
 
 // Middleware
 app.use(cors());

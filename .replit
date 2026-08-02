@@ -9,7 +9,6 @@ expertMode = true
 [userenv]
 
 [userenv.shared]
-DOODSTREAM_API_KEY = "552128erwuhfegfbojvpd8"
 FRONTEND_URL = "https://bokephot.web.app"
 PORT = "5000"
 
