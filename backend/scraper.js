@@ -1,58 +1,9 @@
 const axios = require('axios');
 
-const BASE_URL = 'https://bokephunter.com';
+const BASE_URL = 'https://www.indoav.com';
 
-// ── Luluvdo direct stream resolver ───────────────────────────────────────────
-// Fetches the Luluvdo embed page, unpacks the obfuscated JS, extracts m3u8 URL
-async function resolveLuluvdoDirectUrl(embedUrl) {
-  const cacheKey = `lulu_direct_${embedUrl}`;
-  const cached = getCached(cacheKey);
-  if (cached) return cached;
-
-  try {
-    const resp = await axios.get(embedUrl, {
-      headers: {
-        ...HEADERS,
-        Referer: 'https://bokep.rest/',
-        Cookie: '',
-      },
-      timeout: 12000,
-    });
-    const html = resp.data;
-
-    // Find the packed JS block
-    const scripts = html.match(/<script[^>]*>([\s\S]*?)<\/script>/g) || [];
-    for (const s of scripts) {
-      if (!s.includes('eval(function(p,a,c,k')) continue;
-      const inner = s.replace(/<\/?script[^>]*>/g, '').trim();
-
-      // Unpack by capturing eval output
-      const wrapped = inner.replace(/^eval\(/, '').replace(/\)$/, '');
-      let unpacked = '';
-      try {
-        const fn = new Function('return ' + wrapped);
-        unpacked = fn();
-      } catch (e) {
-        continue;
-      }
-
-      // Extract file:"..." (the m3u8 URL)
-      const fileMatch = unpacked.match(/file:"(https?:\/\/[^"]+\.m3u8[^"]*)"/);
-      if (fileMatch) {
-        const m3u8Url = fileMatch[1];
-        setCache(cacheKey, m3u8Url);
-        return m3u8Url;
-      }
-    }
-    return null;
-  } catch (e) {
-    console.error(`[SCRAPER] resolveLuluvdoDirectUrl failed: ${e.message}`);
-    return null;
-  }
-}
-
-// ── IndoAV RC4 decryption ────────────────────────────────────────────────────
-// Ported directly from indoav's minified JS (file.P0uWl5eB.js)
+// ── RC4 decryption ───────────────────────────────────────────────────────────
+// Ported from indoav's minified JS (same algorithm as before)
 function rc4(str, key) {
   let n, o = [], r = 0, l = '', a = 0;
   for (a = 0; a < 256; a++) o[a] = a;
@@ -81,7 +32,6 @@ function deriveIndoAVKey() {
   return p;
 }
 
-// Cache the derived key (it's static)
 let _indoavKey = null;
 function getIndoAVKey() {
   if (!_indoavKey) _indoavKey = deriveIndoAVKey();
@@ -99,50 +49,16 @@ function decryptIndoAVToken(token) {
   }
 }
 
-// Resolve direct video URL from IndoAV embed page (no ads!)
-async function resolveIndoAVDirect(videoSlug) {
-  const cacheKey = `indoav_direct_${videoSlug}`;
-  const cached = getCached(cacheKey);
-  if (cached) return cached;
-
-  const embedUrl = `https://www.indoav.com/video/embed/${videoSlug}`;
-  try {
-    const resp = await axios.get(embedUrl, {
-      headers: {
-        ...HEADERS,
-        Referer: 'https://bokephunter.com/',
-        Cookie: '',
-      },
-      timeout: 10000,
-    });
-    const html = resp.data;
-
-    // Extract data-play-token from video-container or player element
-    const tokenMatch = html.match(/data-play-token="([^"]+)"/);
-    if (!tokenMatch) return null;
-
-    const payload = decryptIndoAVToken(tokenMatch[1]);
-    if (!payload || !Array.isArray(payload.u) || payload.u.length === 0) return null;
-
-    // Pick best quality (last = highest res, or fallback to first)
-    const directUrl = payload.u[payload.u.length - 1] || payload.u[0];
-    if (!directUrl) return null;
-
-    setCache(cacheKey, directUrl);
-    return directUrl;
-  } catch (e) {
-    console.error(`[SCRAPER] resolveIndoAVDirect failed for ${videoSlug}: ${e.message}`);
-    return null;
-  }
-}
+// ── HTTP headers ─────────────────────────────────────────────────────────────
 const HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
   'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
   'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7',
   'Cookie': 'age_ok=1',
+  'Referer': 'https://www.indoav.com/',
 };
 
-// Simple in-memory cache
+// ── In-memory cache ───────────────────────────────────────────────────────────
 const cache = new Map();
 const CACHE_TTL = 5 * 60 * 1000; // 5 menit
 
@@ -154,7 +70,7 @@ function getCached(key) {
 }
 
 function setCache(key, data) {
-  if (cache.size > 200) {
+  if (cache.size > 300) {
     const firstKey = cache.keys().next().value;
     cache.delete(firstKey);
   }
@@ -164,245 +80,254 @@ function setCache(key, data) {
 async function fetchPage(url) {
   const cached = getCached(url);
   if (cached) return cached;
-  const resp = await axios.get(url, { headers: HEADERS, timeout: 10000 });
+  const resp = await axios.get(url, { headers: HEADERS, timeout: 12000 });
   setCache(url, resp.data);
   return resp.data;
 }
 
-// Parse video cards dari HTML (grid & sidebar)
+// ── Format durasi ─────────────────────────────────────────────────────────────
+function formatDuration(seconds) {
+  const s = parseInt(seconds) || 0;
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  if (h > 0) return `${h}j ${m}m ${sec}s`;
+  if (m > 0) return `${m}m ${sec}s`;
+  return `${sec}s`;
+}
+
+// ── Parse video cards dari HTML (format indoav.com) ───────────────────────────
+// Digunakan untuk: /halaman/N, /kategori/slug, /cari?kata-kunci=...
 function parseVideoCards(html) {
   const videos = [];
-  // Match grid video card pattern: <a href="https://bokephunter.com/video/SLUG" class="group block">
-  const cardRe = /<a href="https:\/\/bokephunter\.com\/video\/([^"]+)"[^>]*class="group block">([\s\S]*?)<\/a>/g;
+  // Match setiap <article class="video-card group">
+  const cardRe = /<article class="video-card group">([\s\S]*?)<\/article>/g;
   let m;
   while ((m = cardRe.exec(html)) !== null) {
-    const slug = m[1];
-    const inner = m[2];
+    const inner = m[1];
 
-    // thumbnail
-    const thumbMatch = inner.match(/src="([^"]+)"[^>]*class="thumb-img/);
+    // Slug dari href
+    const slugMatch = inner.match(/href="https:\/\/www\.indoav\.com\/video\/([^"]+)"/);
+    if (!slugMatch) continue;
+    const slug = slugMatch[1];
+
+    // Thumbnail
+    const thumbMatch = inner.match(/class="video-card__image"\s+src="([^"]+)"/);
     const thumbnail = thumbMatch ? thumbMatch[1] : '';
 
-    // title from h3
-    const titleMatch = inner.match(/<h3[^>]*>([\s\S]*?)<\/h3>/);
+    // Title dari h2 > a
+    const titleMatch = inner.match(/class="video-card__title">([\s\S]*?)<\/h2>/);
     const title = titleMatch ? titleMatch[1].replace(/<[^>]+>/g, '').trim() : slug;
 
-    // views
-    const viewsMatch = inner.match(/([\d,]+)\s*views/i);
-    const views = viewsMatch ? viewsMatch[1].replace(',', '') : '0';
+    // Views (data-icon="eye")
+    const viewsMatch = inner.match(/data-icon="eye"[\s\S]*?<span class="text-xs">([\d.,]+)<\/span>/);
+    const views = viewsMatch ? viewsMatch[1].replace(/,/g, '') : '0';
 
-    // time ago
-    const timeMatch = inner.match(/<p[^>]*text-pink[^>]*>([^<]+ago[^<]*)<\/p>/i);
-    const timeAgo = timeMatch ? timeMatch[1].trim() : '';
+    // Durasi (data-icon="clock")
+    const durMatch = inner.match(/data-icon="clock"[\s\S]*?<span class="text-xs">([^<]+)<\/span>/);
+    const timeAgo = durMatch ? durMatch[1].trim() : '';
 
     videos.push({ slug, title, thumbnail, views, timeAgo });
   }
   return videos;
 }
 
-// Parse total pages dari pagination HTML
-function parseTotalPages(html) {
-  // Look for last page number in pagination
-  const pagesMatch = html.match(/Page\s+1\s+of\s+(\d+)/i);
-  if (pagesMatch) return parseInt(pagesMatch[1]);
-  // fallback: find highest page number in links
+// ── Parse videos dari /site/feed JSON API ────────────────────────────────────
+function parseFeedVideos(data) {
+  const pools = Array.isArray(data.pools) ? data.pools : [];
+  const seen = new Set();
+  const videos = [];
+
+  for (const pool of pools) {
+    const poolVideos = Array.isArray(pool.videos) ? pool.videos : [];
+    for (const v of poolVideos) {
+      const id = v.id || v.title_slug;
+      if (seen.has(id)) continue;
+      seen.add(id);
+
+      // Jika ada data.videos flat (fallback)
+      videos.push({
+        slug: v.title_slug || '',
+        title: v.title || '',
+        thumbnail: v.thumbnail_image || '',
+        views: String(v.views_count || 0),
+        timeAgo: v.duration ? formatDuration(v.duration) : '',
+      });
+    }
+  }
+
+  // Fallback jika pools kosong tapi ada data.videos
+  if (videos.length === 0 && Array.isArray(data.videos)) {
+    for (const v of data.videos) {
+      videos.push({
+        slug: v.title_slug || '',
+        title: v.title || '',
+        thumbnail: v.thumbnail_image || '',
+        views: String(v.views_count || 0),
+        timeAgo: v.duration ? formatDuration(v.duration) : '',
+      });
+    }
+  }
+
+  return videos.filter(v => v.slug);
+}
+
+// ── Parse total pages dari pagination HTML ────────────────────────────────────
+function parseTotalPages(html, basePattern = /\/halaman\/(\d+)/) {
   const pageNums = [];
-  const re = /\?page=(\d+)/g;
+  const re = new RegExp(basePattern.source, 'g');
   let m;
   while ((m = re.exec(html)) !== null) {
-    pageNums.push(parseInt(m[1]));
+    const n = parseInt(m[1]);
+    if (!isNaN(n)) pageNums.push(n);
   }
   return pageNums.length > 0 ? Math.max(...pageNums) : 1;
 }
 
-// Scrape homepage
+// ── Scrape homepage ───────────────────────────────────────────────────────────
 async function scrapeHomepage(page = 1, sort = 'new') {
-  const url = `${BASE_URL}?page=${page}&sort=${sort}`;
+  page = parseInt(page);
+
+  // Page 1: gunakan /site/feed JSON API (lebih cepat, tidak perlu scrape HTML)
+  if (page === 1) {
+    try {
+      const cacheKey = `feed_${sort}`;
+      let data = getCached(cacheKey);
+      if (!data) {
+        const feedUrl = `${BASE_URL}/site/feed`;
+        const resp = await axios.get(feedUrl, {
+          headers: { ...HEADERS, Accept: 'application/json' },
+          timeout: 12000,
+        });
+        data = resp.data;
+        if (data && data.success) setCache(cacheKey, data);
+      }
+      if (data && data.success) {
+        const videos = parseFeedVideos(data);
+        if (videos.length > 0) {
+          return { videos, totalPages: 478, page: 1, sort };
+        }
+      }
+    } catch (e) {
+      console.error('[SCRAPER] /site/feed gagal, fallback ke /halaman/1:', e.message);
+    }
+  }
+
+  // Page 2+: scrape HTML dari /halaman/N
+  const filterParam = sort === 'popular' ? '?filter=terpopuler' : '';
+  const url = page === 1
+    ? `${BASE_URL}/${filterParam}`
+    : `${BASE_URL}/halaman/${page}${filterParam}`;
+
   const html = await fetchPage(url);
   const videos = parseVideoCards(html);
-  const totalPages = parseTotalPages(html);
-  return { videos, totalPages, page: parseInt(page), sort };
+  const totalPages = parseTotalPages(html, /\/halaman\/(\d+)/);
+  return { videos, totalPages: Math.max(totalPages, 1), page, sort };
 }
 
-// Scrape category page
+// ── Scrape category ───────────────────────────────────────────────────────────
 async function scrapeCategory(slug, page = 1, sort = 'new') {
-  const url = `${BASE_URL}/category/${slug}?page=${page}&sort=${sort}`;
+  page = parseInt(page);
+  const url = page === 1
+    ? `${BASE_URL}/kategori/${slug}`
+    : `${BASE_URL}/kategori/${slug}/halaman/${page}`;
+
   const html = await fetchPage(url);
   const videos = parseVideoCards(html);
-  const totalPages = parseTotalPages(html);
+  const totalPages = parseTotalPages(html, /\/halaman\/(\d+)/);
 
-  // Get category title
+  // Title dari h1
   const titleMatch = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/);
   const title = titleMatch ? titleMatch[1].replace(/<[^>]+>/g, '').trim() : slug;
 
-  return { videos, totalPages, page: parseInt(page), sort, title, slug };
+  return { videos, totalPages: Math.max(totalPages, 1), page, sort, title, slug };
 }
 
-// Scrape search
+// ── Scrape search ─────────────────────────────────────────────────────────────
 async function scrapeSearch(q, page = 1) {
-  const url = `${BASE_URL}/search?q=${encodeURIComponent(q)}&page=${page}`;
+  page = parseInt(page);
+  // Page 1: /cari?kata-kunci=...
+  // Page 2+: /cari/halaman/N?kata-kunci=...
+  const url = page === 1
+    ? `${BASE_URL}/cari?kata-kunci=${encodeURIComponent(q)}`
+    : `${BASE_URL}/cari/halaman/${page}?kata-kunci=${encodeURIComponent(q)}`;
+
   const html = await fetchPage(url);
   const videos = parseVideoCards(html);
-  const totalPages = parseTotalPages(html);
-  return { videos, totalPages, page: parseInt(page), q };
+  // Search pagination uses /cari/halaman/N
+  const totalPages = parseTotalPages(html, /\/cari\/halaman\/(\d+)/);
+  return { videos, totalPages: Math.max(totalPages, 1), page, q };
 }
 
-// Ambil embed URL untuk bokeprest dari bokep.rest
-async function getBokepRestEmbed(videoId, thumbnailUrl) {
-  try {
-    // Dari thumbnail URL extract title slug
-    // e.g. https://bokep.rest/wp-content/uploads/2026/08/Bokepkurir-pasrah-digoyang-pacar-tocil-hot-320x180.jpg
-    const thumbFile = thumbnailUrl.split('/').pop().replace(/-\d+x\d+\.(jpg|jpeg|webp|png)$/i, '');
-    const titleSlug = thumbFile.toLowerCase();
-    const bokepRestUrl = `https://bokep.rest/bokep/${titleSlug}/${videoId}/.html`;
-
-    const cacheKey = `luluvdo_${videoId}`;
-    const cached = getCached(cacheKey);
-    if (cached) return cached;
-
-    const resp = await axios.get(bokepRestUrl, {
-      headers: { ...HEADERS, Referer: 'https://bokep.rest/' },
-      timeout: 7000,
-      maxRedirects: 5
-    });
-    const html = resp.data;
-
-    // Cari luluvdo embed
-    const embedMatch = html.match(/src="(https:\/\/luluvdo\.com\/e\/[^"]+)"/);
-    if (embedMatch) {
-      setCache(cacheKey, embedMatch[1]);
-      return embedMatch[1];
-    }
-
-    // Fallback: cari iframe src lain
-    const iframeMatch = html.match(/iframe[^>]+src="(https?:\/\/[^"]+)"/);
-    if (iframeMatch) {
-      setCache(cacheKey, iframeMatch[1]);
-      return iframeMatch[1];
-    }
-    return null;
-  } catch (e) {
-    console.error(`[SCRAPER] getBokepRestEmbed failed for ${videoId}: ${e.message}`);
-    return null;
-  }
-}
-
-// Parse related videos (sidebar) - different pattern, flex layout
-function parseRelatedVideos(html) {
-  const related = [];
-  // sidebar/related uses flex cards: <a href="https://bokephunter.com/video/SLUG" class="flex ...group...">
-  const re = /<a href="https:\/\/bokephunter\.com\/video\/([^"]+)"[^>]*class="flex[^"]*group[^"]*">([\s\S]*?)<\/a>/g;
-  let m;
-  while ((m = re.exec(html)) !== null) {
-    const slug = m[1];
-    const inner = m[2];
-    const thumbMatch = inner.match(/src="([^"]+)"/);
-    const thumbnail = thumbMatch ? thumbMatch[1] : '';
-    const titleMatch = inner.match(/<h4[^>]*>([\s\S]*?)<\/h4>/);
-    const title = titleMatch ? titleMatch[1].replace(/<[^>]+>/g, '').trim() : slug;
-    const viewsMatch = inner.match(/([\d,]+)\s*views/i);
-    const views = viewsMatch ? viewsMatch[1] : '0';
-    const timeMatch = inner.match(/<p[^>]*text-pink[^>]*>([^<]*ago[^<]*)<\/p>/i);
-    const timeAgo = timeMatch ? timeMatch[1].trim() : '';
-    related.push({ slug, title, thumbnail, views, timeAgo });
-  }
-  return related.slice(0, 12);
-}
-
-// Scrape video detail — FAST, no embed resolution
+// ── Scrape video detail ───────────────────────────────────────────────────────
 async function scrapeVideoDetail(slug) {
   const url = `${BASE_URL}/video/${slug}`;
   const html = await fetchPage(url);
 
-  // Title
-  const titleMatch = html.match(/<title>([^<]+)<\/title>/);
-  const fullTitle = titleMatch ? titleMatch[1].replace(/\s*[—–-]\s*BokepHunter.*$/i, '').trim() : slug;
+  // Title dari og:title
+  const ogTitleMatch = html.match(/property="og:title"\s+content="([^"]+)"/);
+  const title = ogTitleMatch ? ogTitleMatch[1] : slug;
 
-  // Description from og:description
+  // Description dari og:description
   const descMatch = html.match(/property="og:description"\s+content="([^"]+)"/);
   const description = descMatch ? descMatch[1] : '';
 
-  // Thumbnail from overlay img
-  const thumbMatch = html.match(/id="xepoOverlay"[\s\S]*?<img src="([^"]+)"/);
+  // Thumbnail dari og:image
+  const thumbMatch = html.match(/property="og:image"\s+content="([^"]+)"/);
   const thumbnail = thumbMatch ? thumbMatch[1] : '';
 
+  // Duration dari video:duration meta
+  const durMatch = html.match(/property="video:duration"\s+content="(\d+)"/);
+  const timeAgo = durMatch ? formatDuration(parseInt(durMatch[1])) : '';
+
   // Views
-  const viewsMatch = html.match(/([\d,]+)\s*views/i);
-  const views = viewsMatch ? viewsMatch[1] : '0';
+  const viewsMatch = html.match(/data-icon="eye"[\s\S]{0,200}<span[^>]*>([\d.,]+)<\/span>/);
+  const views = viewsMatch ? viewsMatch[1].replace(/,/g, '') : '0';
 
-  // Time ago
-  const timeMatch = html.match(/\d+\s+(hour|minute|day|week|month|year)s?\s+ago/i);
-  const timeAgo = timeMatch ? timeMatch[0] : '';
-
-  // Category tags
-  const categories = [];
-  const catRe = /href="https:\/\/bokephunter\.com\/category\/([^"]+)"[^>]*class="[^"]*rounded[^"]*"[^>]*>([^<]+)</g;
-  let cm;
-  while ((cm = catRe.exec(html)) !== null) {
-    categories.push({ slug: cm[1], name: cm[2].trim() });
+  // data-play-token → simpan di cache untuk resolveEmbedUrl
+  const tokenMatch = html.match(/data-play-token="([^"]+)"/);
+  if (tokenMatch) {
+    setCache(`token_${slug}`, tokenMatch[1]);
   }
 
-  // Check if embed is already in the bokephunter page (indoav type)
-  let embedUrlFromPage = null;
-  const frameSection = html.match(/id="xepoFrame"([\s\S]*?)(?=<\/div>\s*<\/div>\s*<\/div>)/);
-  if (frameSection) {
-    const iframeMatch = frameSection[1].match(/src="(https?:\/\/[^"]+)"/);
-    if (iframeMatch && !iframeMatch[1].includes('xhunter') && !iframeMatch[1].includes('bokep.rest/wp-content')) {
-      embedUrlFromPage = iframeMatch[1];
+  // Categories — cari setelah </nav> untuk skip nav categories
+  const categories = [];
+  const navEnd = html.indexOf('</nav>');
+  const contentHtml = navEnd >= 0 ? html.substring(navEnd) : html;
+  const catRe = /href="https:\/\/www\.indoav\.com\/kategori\/([^"\/]+)"[^>]*>([^<]+)</g;
+  const catSeen = new Set();
+  let cm;
+  while ((cm = catRe.exec(contentHtml)) !== null) {
+    const catSlug = cm[1];
+    const catName = cm[2].trim();
+    if (!catSeen.has(catSlug) && catName && catName.length < 50) {
+      catSeen.add(catSlug);
+      categories.push({ slug: catSlug, name: catName });
     }
   }
 
-  // Related videos
-  const related = parseRelatedVideos(html);
+  // Related videos — indoav load via JS, tidak ada di SSR HTML
+  const related = [];
 
-  return { slug, title: fullTitle, description, thumbnail, views, timeAgo, categories, related, embedUrlFromPage };
+  return { slug, title, description, thumbnail, views, timeAgo, categories, related, embedUrlFromPage: null };
 }
 
-// Resolve embed URL — LAZY, called only when user clicks play
+// ── Resolve embed URL ─────────────────────────────────────────────────────────
+// IndoAV token sekarang berisi ad redirect URLs (bukan direct stream).
+// Solusi: gunakan indoav embed page sebagai iframe — player JS indoav yang handle video.
+// Sandbox di frontend akan block popup ads.
 async function resolveEmbedUrl(slug, thumbnail) {
   const cacheKey = `embed_${slug}`;
   const cached = getCached(cacheKey);
   if (cached) return cached;
 
-  let embedUrl = null;
-
-  // For indoav: return embed URL — the frontend uses a sandboxed iframe to block popup ads
-  if (slug.startsWith('indoav-')) {
-    embedUrl = `https://www.indoav.com/video/embed/${slug.replace('indoav-', '')}`;
-    setCache(cacheKey, embedUrl);
-    return embedUrl;
-  }
-
-  // For bokeprest: fetch bokep.rest page → get luluvdo URL → resolve to direct m3u8
-  if (slug.startsWith('bokeprest-')) {
-    const videoId = slug.replace('bokeprest-', '');
-    const luluvdoUrl = await getBokepRestEmbed(videoId, thumbnail || '');
-    if (luluvdoUrl) {
-      if (luluvdoUrl.includes('luluvdo.com')) {
-        // Resolve to direct HLS stream — no ads, no watermarks
-        const directUrl = await resolveLuluvdoDirectUrl(luluvdoUrl);
-        if (directUrl) {
-          setCache(cacheKey, directUrl);
-          return directUrl;
-        }
-      }
-      // Fallback: use luluvdo iframe if direct resolution fails
-      setCache(cacheKey, luluvdoUrl);
-      return luluvdoUrl;
-    }
-    return null;
-  }
-
-  // Generic: try page embed (already extracted in detail, passed in thumbnail=embedUrlFromPage)
-  if (thumbnail && thumbnail.startsWith('http') && !thumbnail.includes('wp-content')) {
-    setCache(cacheKey, thumbnail);
-    return thumbnail;
-  }
-
-  return null;
+  // Return embed page URL — frontend akan load sebagai sandboxed iframe
+  const embedUrl = `${BASE_URL}/video/embed/${slug}`;
+  setCache(cacheKey, embedUrl);
+  return embedUrl;
 }
 
-// Get all categories (static list from sitemap + nav)
+// ── Categories ────────────────────────────────────────────────────────────────
 function getCategories() {
   return [
     { slug: 'bokep-indonesia', name: 'Bokep Indonesia', emoji: '🇮🇩' },

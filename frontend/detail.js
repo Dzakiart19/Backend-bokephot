@@ -18,12 +18,9 @@ function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// Proxy thumbnails that block hotlinking
+// Proxy thumbnails yang block hotlinking (indoav thumbnails bisa langsung)
 function thumbSrc(url) {
   if (!url) return '';
-  if (url.includes('bokep.rest') || url.includes('bokep31.mom') || url.includes('bokepkurir')) {
-    return `/api/bh/proxy-thumb?url=${encodeURIComponent(url)}`;
-  }
   return url;
 }
 
@@ -149,19 +146,13 @@ function renderVideo(data) {
   const noEmbed = document.getElementById('noEmbed');
   const playBtn = document.getElementById('playBtn');
 
-  // For IndoAV slugs, always call /embed to get the direct decrypted URL (no ads).
-  // For others, use embedUrlFromPage if available to skip an extra round-trip.
-  const isIndoAV = data.slug && data.slug.startsWith('indoav-');
+  // Semua video dari indoav — selalu fetch /embed untuk dapat direct URL (RC4 decrypt)
   let embedPromise = null;
-  if (data.embedUrlFromPage && !isIndoAV) {
-    embedPromise = Promise.resolve({ embedUrl: data.embedUrlFromPage, type: 'iframe' });
-  } else {
-    const qs = data.thumbnail ? `?thumbnail=${encodeURIComponent(data.thumbnail)}` : '';
-    embedPromise = fetchWithTimeout(`${API}/video/${encodeURIComponent(data.slug)}/embed${qs}`, 15000)
-      .then(r => r.json())
-      .then(r => ({ embedUrl: r.embedUrl || null, type: r.type || 'iframe' }))
-      .catch(() => ({ embedUrl: null, type: 'iframe' }));
-  }
+  const qs = data.thumbnail ? `?thumbnail=${encodeURIComponent(data.thumbnail)}` : '';
+  embedPromise = fetchWithTimeout(`${API}/video/${encodeURIComponent(data.slug)}/embed${qs}`, 15000)
+    .then(r => r.json())
+    .then(r => ({ embedUrl: r.embedUrl || null, type: r.type || 'direct' }))
+    .catch(() => ({ embedUrl: null, type: 'direct' }));
 
   overlay.addEventListener('click', async () => {
     // Show spinner while waiting (usually already resolved by now)
@@ -187,8 +178,10 @@ function renderVideo(data) {
     const isMP4  = url.includes('.mp4') || url.includes('.webm');
     const isIndoAvEmbed = url.includes('indoav.com/video/embed');
 
+    const isIndoAvEmbed = url.includes('indoav.com/video/embed');
+
     if (type === 'direct' || isM3U8 || isMP4) {
-      // Direct video — play with HLS.js (for m3u8) or native <video>
+      // Direct video — play dengan HLS.js atau native <video>
       const video = document.createElement('video');
       video.controls = true;
       video.autoplay = true;
@@ -202,7 +195,6 @@ function renderVideo(data) {
         hls.loadSource(url);
         hls.attachMedia(video);
       } else {
-        // Native HLS (Safari) or plain mp4
         video.src = url;
       }
 
@@ -210,11 +202,10 @@ function renderVideo(data) {
       frame.appendChild(video);
       video.play().catch(() => {});
     } else if (isIndoAvEmbed) {
-      // IndoAV embed — use sandbox to block popup/popunder ads.
-      // allow-scripts: HLS player needs JS
-      // allow-same-origin: player XHR to indoav.com needs same-origin context
-      // allow-forms: video load POST
-      // NO allow-popups / allow-top-navigation → ads can't open new tabs/windows
+      // IndoAV embed — sandboxed iframe.
+      // allow-popups-to-escape-sandbox: player indoav butuh buka link ad (tidak di tab kita)
+      // allow-scripts + allow-same-origin: player HLS/Plyr butuh JS dan XHR ke indoav.com
+      // NO allow-top-navigation → ad tidak bisa redirect halaman utama kita
       frame.innerHTML = `<iframe
         src="${url}"
         width="100%" height="100%"
@@ -222,10 +213,10 @@ function renderVideo(data) {
         allowfullscreen
         allow="autoplay; fullscreen"
         scrolling="no"
-        sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
+        sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-popups allow-popups-to-escape-sandbox"
       ></iframe>`;
     } else {
-      // Regular iframe embed (luluvdo, etc.)
+      // Regular iframe
       frame.innerHTML = `<iframe src="${url}" width="100%" height="100%" frameborder="0" allowfullscreen allow="autoplay; fullscreen" scrolling="no"></iframe>`;
     }
   }
@@ -234,7 +225,7 @@ function renderVideo(data) {
     overlay.style.display = 'none';
     noEmbed.classList.remove('hidden');
     noEmbed.classList.add('flex');
-    document.getElementById('watchExternalLink').href = `https://bokephunter.com/video/${slug}`;
+    document.getElementById('watchExternalLink').href = `https://www.indoav.com/video/${slug}`;
   }
 
   // Related videos

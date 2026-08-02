@@ -69,12 +69,10 @@ function initFromURL() {
   }
 }
 
-// Proxy thumbnails that block hotlinking (e.g. bokep.rest images)
+// Proxy thumbnails yang block hotlinking
 function thumbSrc(url) {
   if (!url) return '';
-  if (url.includes('bokep.rest') || url.includes('bokep31.mom') || url.includes('bokepkurir')) {
-    return `/api/bh/proxy-thumb?url=${encodeURIComponent(url)}`;
-  }
+  // a.embedan.com (indoav thumbnails) bisa diakses langsung
   return url;
 }
 

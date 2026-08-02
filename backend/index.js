@@ -83,12 +83,8 @@ app.get('/api/bh/video/:slug', async (req, res) => {
     const data = await scrapeVideoDetail(slug);
     res.json(data);
 
-    // After responding, resolve embed in background so it lands in cache.
-    // Always resolve for indoav (need to decrypt RC4 for direct URL, even if embedUrlFromPage is set).
-    const needsResolve = !data.embedUrlFromPage || slug.startsWith('indoav-');
-    if (needsResolve) {
-      resolveEmbedUrl(slug, data.thumbnail || '').catch(() => {});
-    }
+    // Resolve embed di background agar siap saat user klik play
+    resolveEmbedUrl(slug, data.thumbnail || '').catch(() => {});
   } catch (e) {
     console.error('[BH-VIDEO]', e.message);
     res.status(500).json({ error: e.message });
@@ -101,13 +97,8 @@ app.get('/api/bh/video/:slug/embed', async (req, res) => {
     const { slug } = req.params;
     const { thumbnail } = req.query;
     const embedUrl = await resolveEmbedUrl(slug, thumbnail || '');
-    // Detect if the resolved URL is a direct video (m3u8/mp4) or an iframe src
-    const isDirect = embedUrl && (
-      embedUrl.includes('.m3u8') ||
-      embedUrl.includes('.mp4') ||
-      embedUrl.includes('cdn.') ||
-      embedUrl.includes('stream.')
-    );
+    // Tentukan type: direct (m3u8/mp4) atau iframe
+    const isDirect = embedUrl && (embedUrl.includes('.m3u8') || embedUrl.includes('.mp4'));
     const type = isDirect ? 'direct' : 'iframe';
     res.json({ embedUrl: embedUrl || null, type });
   } catch (e) {
@@ -126,7 +117,7 @@ app.get('/api/bh/proxy-thumb', async (req, res) => {
       responseType: 'arraybuffer',
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        'Referer': 'https://bokep.rest/',
+        'Referer': 'https://www.indoav.com/',
         'Accept': 'image/*,*/*',
       },
       timeout: 10000,
