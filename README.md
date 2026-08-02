@@ -53,7 +53,7 @@ Browser → Express (port 5000)
             └── icons.js      # SVG icon library (fill="currentColor")
 ```
 
-## 🚀 Menjalankan
+## 🚀 Menjalankan (Development — Replit)
 
 ```bash
 # Install dependencies backend
@@ -64,7 +64,38 @@ node backend/index.js
 # → http://localhost:5000
 ```
 
-Atau gunakan workflow Replit: **Backend Server** (`node backend/index.js`).
+Workflow Replit: **Backend Server** (`node backend/index.js`).
+
+Frontend diakses via Replit preview — Express men-serve `frontend/` sebagai static files. `config.js` otomatis set `BACKEND_URL = ''` (relative) karena hostname-nya `*.replit.dev`.
+
+## 🔥 Deploy Frontend ke Firebase
+
+Frontend dapat di-deploy terpisah ke Firebase Hosting (project: **kampung-bokep**) sementara backend tetap jalan di Replit.
+
+```
+Browser (Firebase) → kampung-bokep.web.app
+                          ↓ (API calls ke BACKEND_URL)
+              Replit Backend → xxx.replit.app/api/bh/*
+                          ↓ (scrape)
+                    bokepcolmek.me
+```
+
+### Cara deploy:
+
+```bash
+# Set URL publik Replit backend (lihat di: Replit → Share → Invite Link / domain)
+export REPLIT_BACKEND_URL=https://<nama-proyek>.<user>.replit.app
+
+# Jalankan deploy script
+./deploy.sh
+```
+
+Script `deploy.sh` secara otomatis:
+1. Patch `frontend/config.js` — isi placeholder `__REPLIT_BACKEND_URL__` dengan URL backend
+2. Jalankan `firebase deploy --only hosting --project kampung-bokep`
+3. Restore `config.js` kembali ke placeholder setelah deploy selesai
+
+> **Catatan**: `REPLIT_BACKEND_URL` bukan secret — ini URL publik. Set sebagai env var biasa di Replit (bukan Secrets).
 
 ## 🌐 API Endpoints
 

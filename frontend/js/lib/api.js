@@ -1,5 +1,8 @@
 // ── API wrappers — semua fetch ke backend ─────────────────────────────────────
-const BASE = '/api/bh';
+// window.BACKEND_URL di-set oleh /config.js:
+//   '' (relative) saat di Replit dev/preview
+//   'https://xxx.replit.app' saat frontend di Firebase production
+const BASE = (window.BACKEND_URL || '') + '/api/bh';
 
 async function get(url, ms = 20_000) {
   const ctrl  = new AbortController();

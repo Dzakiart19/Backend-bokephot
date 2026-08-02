@@ -55,12 +55,49 @@ Browser → Express :5000
 
 **Backend Server**: `node backend/index.js` → port 5000
 
+## Deployment Architecture
+
+```
+[Development]
+  Browser → Replit preview (*.replit.dev)
+               ↓ Express :5000
+          /api/bh/*  →  scraper  →  bokepcolmek.me
+          /*         →  static frontend/
+
+[Production]
+  Browser → Firebase Hosting (kampung-bokep.web.app)
+               ↓ fetch ke BACKEND_URL
+          Replit backend (*.replit.app)
+               ↓ /api/bh/*  →  scraper  →  bokepcolmek.me
+```
+
+### Deploy ke Firebase
+
+```bash
+export REPLIT_BACKEND_URL=https://<nama-proyek>.<user>.replit.app
+./deploy.sh
+```
+
+`deploy.sh` patch `frontend/config.js` (inject URL), deploy ke Firebase, lalu restore config.js ke placeholder.
+
+### `frontend/config.js` — Runtime Config
+
+```js
+// Di Replit dev/preview (*.replit.dev, *.replit.app, localhost)
+window.BACKEND_URL = ''          // → pakai relative URL /api/bh/*
+
+// Di Firebase production
+window.BACKEND_URL = 'https://xxx.replit.app'   // di-inject deploy.sh
+```
+
+Semua fetch di `frontend/js/lib/api.js` pakai `(window.BACKEND_URL || '') + '/api/bh'`.
+
 ## Key Decisions
 
-- **Relative API URL**: Frontend pakai `/api/bh/*` — tidak pernah hardcode domain. Otomatis bekerja di dev (localhost) maupun production (Replit deploy).
-- **Scraping bukan API resmi**: Data diambil langsung dari HTML sumber menggunakan regex, bukan API eksternal dengan key. Tidak butuh secret key apapun untuk core functionality.
-- **No build step**: Tailwind dari CDN, JS native ES modules. Deploy = `node backend/index.js`.
-- **SPA routing di Express**: Route `/video/:slug` di-handle backend → kirim `detail.html`, slug dibaca JS dari `location.pathname`.
+- **`config.js` + `deploy.sh` pattern** (dari Vdry repo): config.js menyimpan placeholder `__REPLIT_BACKEND_URL__`; deploy.sh inject URL sebelum firebase deploy, restore sesudahnya. Tidak ada hardcode domain di source.
+- **Scraping bukan API resmi**: Data diambil dari HTML sumber via regex. Tidak butuh secret key apapun untuk core functionality.
+- **No build step**: Tailwind dari CDN, JS native ES modules. Tidak perlu bundler.
+- **SPA routing**: Di Replit → Express handle `/video/:slug` → `detail.html`. Di Firebase → `firebase.json` rewrites handle hal yang sama.
 - **Player multi-mode**: M3U8 → HLS.js, MP4/WebM → `<video>`, sisanya → `<iframe>`.
 
 ## Environment Variables
@@ -69,5 +106,13 @@ Browser → Express :5000
 |----------|------------|
 | `PORT` | Port server (default: 5000) |
 | `REPLIT_DOMAINS` | Diset otomatis Replit — dipakai `/api/config` |
-| `REPLIT_URL` | Override manual URL publik backend |
-| `SESSION_SECRET` | Tersedia di env tapi belum digunakan (reserved) |
+| `REPLIT_URL` | Override manual URL publik backend di `/api/config` |
+| `REPLIT_BACKEND_URL` | URL publik backend untuk `deploy.sh` (bukan secret) |
+| `SESSION_SECRET` | Tersedia di env, belum digunakan (reserved) |
+
+## Firebase
+
+- **Project ID**: `kampung-bokep`
+- **Live URL**: `https://kampung-bokep.web.app`
+- **Config file**: `firebase.json` (root), `.firebaserc`
+- **Deploy**: `./deploy.sh`
