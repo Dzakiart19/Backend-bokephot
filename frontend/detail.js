@@ -178,8 +178,6 @@ function renderVideo(data) {
     const isMP4  = url.includes('.mp4') || url.includes('.webm');
     const isIndoAvEmbed = url.includes('indoav.com/video/embed');
 
-    const isIndoAvEmbed = url.includes('indoav.com/video/embed');
-
     if (type === 'direct' || isM3U8 || isMP4) {
       // Direct video — play dengan HLS.js atau native <video>
       const video = document.createElement('video');
