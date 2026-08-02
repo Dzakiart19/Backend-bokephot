@@ -53,7 +53,24 @@ echo "[2/3] config.js sudah di-patch dengan URL backend."
 
 # ── Deploy ke Firebase Hosting ────────────────────────────────────────
 echo "[3/3] Deploying ke Firebase Hosting (project: kampung-bokep)..."
-npx firebase-tools deploy --only hosting --project kampung-bokep
+
+# FIREBASE_TOKEN dibutuhkan untuk autentikasi non-interactive (CI/Replit).
+# Dapatkan token dengan menjalankan: firebase login:ci
+# lalu simpan hasilnya sebagai secret FIREBASE_TOKEN di Replit.
+if [ -z "$FIREBASE_TOKEN" ]; then
+  echo ""
+  echo " ❌ ERROR: FIREBASE_TOKEN tidak ditemukan."
+  echo ""
+  echo " Cara mendapatkan token:"
+  echo "   1. Di terminal lokal (bukan Replit), jalankan: npx firebase-tools login:ci"
+  echo "   2. Login ke akun Google yang punya akses project kampung-bokep"
+  echo "   3. Salin token yang muncul (1//<xxx>...)"
+  echo "   4. Simpan sebagai Secret di Replit dengan nama: FIREBASE_TOKEN"
+  echo ""
+  exit 1
+fi
+
+npx firebase-tools deploy --only hosting --project kampung-bokep --token "$FIREBASE_TOKEN"
 
 echo ""
 echo "================================================"
