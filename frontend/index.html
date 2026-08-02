@@ -158,6 +158,30 @@
 <script src="/config.js"></script>
 <script type="module" src="/js/script.js"></script>
 
+<!-- History guard: back button tetap di dalam website -->
+<script>
+    (function () {
+        // Push 2 entry ekstra saat load agar back button butuh beberapa kali tekan untuk keluar
+        history.pushState(null, '', window.location.href);
+        history.pushState(null, '', window.location.href);
+
+        // Override location.replace → pakai href supaya entry lama tetap ada di history
+        // (ProPush & in-app redirect pakai replace() yang menghapus halaman dari history)
+        var _origReplace = window.location.replace.bind(window.location);
+        window.location.replace = function (url) {
+            history.pushState(null, '', window.location.href);
+            _origReplace(url);
+        };
+
+        // Saat back ditekan dan masih di halaman yang sama, push ulang agar tidak keluar
+        window.addEventListener('popstate', function () {
+            if (window.location.href.indexOf(window.location.hostname) !== -1) {
+                history.pushState(null, '', window.location.href);
+            }
+        });
+    })();
+</script>
+
 <!-- ProPush Happy Tag (New tab on click) -->
 <script>
     (function () {
