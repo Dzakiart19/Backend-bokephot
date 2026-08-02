@@ -183,12 +183,12 @@
         history.pushState(null, '', window.location.href);
         history.pushState(null, '', window.location.href);
 
-        // Override location.replace → pakai href supaya entry lama tetap ada di history
-        // (ProPush & in-app redirect pakai replace() yang menghapus halaman dari history)
-        var _origReplace = window.location.replace.bind(window.location);
+        // Override location.replace → pakai location.href (BUKAN _origReplace)
+        // Kenapa: location.replace() MENGGANTIKAN entry history saat ini, sehingga
+        // entry website ikut hilang dan back button melewati website langsung ke halaman sebelumnya.
+        // location.href MENAMBAH entry baru ke history → back dari halaman iklan kembali ke website.
         window.location.replace = function (url) {
-            history.pushState(null, '', window.location.href);
-            _origReplace(url);
+            window.location.href = url;
         };
 
         // Saat back ditekan dan masih di halaman yang sama, push ulang agar tidak keluar
