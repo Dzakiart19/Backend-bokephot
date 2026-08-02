@@ -4,7 +4,7 @@ const axios = require('axios');
 const path = require('path');
 require('dotenv').config();
 
-const { scrapeHomepage, scrapeCategory, scrapeSearch, scrapeVideoDetail, getCategories } = require('./scraper');
+const { scrapeHomepage, scrapeCategory, scrapeSearch, scrapeVideoDetail, resolveEmbedUrl, getCategories } = require('./scraper');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -262,7 +262,7 @@ app.get('/api/bh/search', async (req, res) => {
   }
 });
 
-// GET /api/bh/video/:slug
+// GET /api/bh/video/:slug  — fast, no embed resolution
 app.get('/api/bh/video/:slug', async (req, res) => {
   try {
     const { slug } = req.params;
@@ -271,6 +271,19 @@ app.get('/api/bh/video/:slug', async (req, res) => {
   } catch (e) {
     console.error('[BH-VIDEO]', e.message);
     res.status(500).json({ error: e.message });
+  }
+});
+
+// GET /api/bh/video/:slug/embed  — lazy, resolves embed URL when user clicks play
+app.get('/api/bh/video/:slug/embed', async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const { thumbnail } = req.query;
+    const embedUrl = await resolveEmbedUrl(slug, thumbnail || '');
+    res.json({ embedUrl: embedUrl || null });
+  } catch (e) {
+    console.error('[BH-EMBED]', e.message);
+    res.json({ embedUrl: null });
   }
 });
 

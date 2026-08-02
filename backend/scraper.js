@@ -175,7 +175,7 @@ function parseRelatedVideos(html) {
   return related.slice(0, 12);
 }
 
-// Scrape video detail
+// Scrape video detail — FAST, no embed resolution
 async function scrapeVideoDetail(slug) {
   const url = `${BASE_URL}/video/${slug}`;
   const html = await fetchPage(url);
@@ -192,7 +192,7 @@ async function scrapeVideoDetail(slug) {
   const thumbMatch = html.match(/id="xepoOverlay"[\s\S]*?<img src="([^"]+)"/);
   const thumbnail = thumbMatch ? thumbMatch[1] : '';
 
-  // Views from video detail area
+  // Views
   const viewsMatch = html.match(/([\d,]+)\s*views/i);
   const views = viewsMatch ? viewsMatch[1] : '0';
 
@@ -208,33 +208,52 @@ async function scrapeVideoDetail(slug) {
     categories.push({ slug: cm[1], name: cm[2].trim() });
   }
 
-  // Embed URL - check xepoFrame for iframe
-  let embedUrl = null;
-  const frameSection = html.match(/id="xepoFrame"([\s\S]*?)(?=<\/div>\s*<\/div>\s*<\/div>\s*<div class="(?:absolute|relative))/);
-
+  // Check if embed is already in the bokephunter page (indoav type)
+  let embedUrlFromPage = null;
+  const frameSection = html.match(/id="xepoFrame"([\s\S]*?)(?=<\/div>\s*<\/div>\s*<\/div>)/);
   if (frameSection) {
     const iframeMatch = frameSection[1].match(/src="(https?:\/\/[^"]+)"/);
     if (iframeMatch && !iframeMatch[1].includes('xhunter') && !iframeMatch[1].includes('bokep.rest/wp-content')) {
-      embedUrl = iframeMatch[1];
+      embedUrlFromPage = iframeMatch[1];
     }
-  }
-
-  // For bokeprest slugs: resolve embed from bokep.rest
-  if (!embedUrl && slug.startsWith('bokeprest-')) {
-    const videoId = slug.replace('bokeprest-', '');
-    embedUrl = await getBokepRestEmbed(videoId, thumbnail);
-  }
-
-  // For indoav slugs: construct embed URL
-  if (!embedUrl && slug.startsWith('indoav-')) {
-    const indoavSlug = slug.replace('indoav-', '');
-    embedUrl = `https://www.indoav.com/video/embed/${indoavSlug}`;
   }
 
   // Related videos
   const related = parseRelatedVideos(html);
 
-  return { slug, title: fullTitle, description, thumbnail, views, timeAgo, categories, embedUrl, related };
+  return { slug, title: fullTitle, description, thumbnail, views, timeAgo, categories, related, embedUrlFromPage };
+}
+
+// Resolve embed URL — LAZY, called only when user clicks play
+async function resolveEmbedUrl(slug, thumbnail) {
+  const cacheKey = `embed_${slug}`;
+  const cached = getCached(cacheKey);
+  if (cached) return cached;
+
+  let embedUrl = null;
+
+  // For indoav: construct directly (no extra fetch needed)
+  if (slug.startsWith('indoav-')) {
+    embedUrl = `https://www.indoav.com/video/embed/${slug.replace('indoav-', '')}`;
+    setCache(cacheKey, embedUrl);
+    return embedUrl;
+  }
+
+  // For bokeprest: fetch bokep.rest page to get luluvdo embed
+  if (slug.startsWith('bokeprest-')) {
+    const videoId = slug.replace('bokeprest-', '');
+    embedUrl = await getBokepRestEmbed(videoId, thumbnail || '');
+    if (embedUrl) setCache(cacheKey, embedUrl);
+    return embedUrl;
+  }
+
+  // Generic: try page embed (already extracted in detail, passed in thumbnail=embedUrlFromPage)
+  if (thumbnail && thumbnail.startsWith('http') && !thumbnail.includes('wp-content')) {
+    setCache(cacheKey, thumbnail);
+    return thumbnail;
+  }
+
+  return null;
 }
 
 // Get all categories (static list from sitemap + nav)
@@ -256,4 +275,4 @@ function getCategories() {
   ];
 }
 
-module.exports = { scrapeHomepage, scrapeCategory, scrapeSearch, scrapeVideoDetail, getCategories };
+module.exports = { scrapeHomepage, scrapeCategory, scrapeSearch, scrapeVideoDetail, resolveEmbedUrl, getCategories };

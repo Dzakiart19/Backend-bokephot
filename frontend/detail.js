@@ -127,26 +127,49 @@ function renderVideo(data) {
     descEl.classList.remove('hidden');
   }
 
-  // Player setup
+  // Player setup — lazy embed fetch on click
   const overlay = document.getElementById('playerOverlay');
   const frame   = document.getElementById('playerFrame');
   const noEmbed = document.getElementById('noEmbed');
+  const playBtn = document.getElementById('playBtn');
 
-  overlay.addEventListener('click', () => {
-    if (data.embedUrl) {
-      overlay.style.display = 'none';
-      frame.classList.remove('hidden');
-      frame.innerHTML = `<iframe src="${data.embedUrl}" width="100%" height="100%" frameborder="0" allowfullscreen allow="autoplay; fullscreen" scrolling="no"></iframe>`;
-    } else {
-      // No embed — show external link
-      overlay.style.display = 'none';
-      noEmbed.classList.remove('hidden');
-      noEmbed.classList.add('flex');
-      const extLink = document.getElementById('watchExternalLink');
-      const bhUrl = `https://bokephunter.com/video/${data.slug}`;
-      extLink.href = bhUrl;
+  overlay.addEventListener('click', async () => {
+    // If embed already in page (indoav direct), use it instantly
+    if (data.embedUrlFromPage) {
+      showEmbed(data.embedUrlFromPage);
+      return;
+    }
+
+    // Show spinner on play button while fetching embed
+    playBtn.innerHTML = `<svg class="w-8 h-8 text-white animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>`;
+
+    try {
+      const qs = data.thumbnail ? `?thumbnail=${encodeURIComponent(data.thumbnail)}` : '';
+      const resp = await fetch(`${API}/video/${encodeURIComponent(data.slug)}/embed${qs}`);
+      const result = await resp.json();
+
+      if (result.embedUrl) {
+        showEmbed(result.embedUrl);
+      } else {
+        showNoEmbed(data.slug);
+      }
+    } catch (e) {
+      showNoEmbed(data.slug);
     }
   });
+
+  function showEmbed(url) {
+    overlay.style.display = 'none';
+    frame.classList.remove('hidden');
+    frame.innerHTML = `<iframe src="${url}" width="100%" height="100%" frameborder="0" allowfullscreen allow="autoplay; fullscreen" scrolling="no"></iframe>`;
+  }
+
+  function showNoEmbed(slug) {
+    overlay.style.display = 'none';
+    noEmbed.classList.remove('hidden');
+    noEmbed.classList.add('flex');
+    document.getElementById('watchExternalLink').href = `https://bokephunter.com/video/${slug}`;
+  }
 
   // Related videos
   const relatedList   = document.getElementById('relatedList');
