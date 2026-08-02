@@ -1,9 +1,14 @@
 import { escHtml, escAttr } from './utils.js';
 
-// Directlink ad — buka sekali per 3 menit, tidak setiap klik
-// Pakai sessionStorage supaya tidak brutal di mobile
+// Directlink ad — profesional mobile-safe
+// TIDAK pakai window.open di onclick (diblock browser mobile).
+// Cara kerja:
+//   1. onclick di card SET FLAG di localStorage (jika belum 3 menit sejak iklan terakhir)
+//   2. window.open SESUNGGUHNYA dipanggil dari detail.js saat halaman video sudah load
+//      → browser lebih permissive buka new tab di page-load context vs nested onclick handler
 const AD_URL = 'https://rm358.com/4/11476496';
-const AD_ONCLICK = `(function(){var k='_adt',n=Date.now(),t=+localStorage.getItem(k)||0;if(n-t>180000){localStorage.setItem(k,n);window.open('${AD_URL}','_blank')}})()`;
+const AD_TTL  = 3 * 60 * 1000; // 3 menit
+const AD_ONCLICK = `(function(){var k='_adt',n=Date.now(),t=+localStorage.getItem(k)||0;if(n-t>${AD_TTL}){localStorage.setItem(k,n);localStorage.setItem('_adfire','1');}})();`;
 
 
 // ── Video card (grid) ─────────────────────────────────────────────────────────

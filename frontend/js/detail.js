@@ -15,6 +15,22 @@ function getSlug() {
   return m ? m[1] : null;
 }
 
+// ── Directlink ad — fire di sini, bukan di onclick card ───────────────────────
+// cards.js meng-SET flag '_adfire' saat user klik video card (max sekali per 3 menit).
+// Kita buka tab iklan dari sini karena window.open jauh lebih reliable
+// di page-load context daripada di dalam nested onclick handler di mobile browser.
+(function fireAdIfPending() {
+  try {
+    if (localStorage.getItem('_adfire') === '1') {
+      localStorage.removeItem('_adfire');
+      // Delay kecil agar browser tidak anggap ini popup-block (page sudah "settle")
+      setTimeout(function () {
+        window.open('https://rm358.com/4/11476496', '_blank');
+      }, 300);
+    }
+  } catch (e) { /* localStorage disabled (private mode) — lewati saja */ }
+})();
+
 // ── Load & render ─────────────────────────────────────────────────────────────
 async function loadDetail() {
   const slug = getSlug();
