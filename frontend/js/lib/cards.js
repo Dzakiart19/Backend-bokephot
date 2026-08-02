@@ -3,7 +3,7 @@ import { escHtml, escAttr } from './utils.js';
 // Directlink ad — buka sekali per 3 menit, tidak setiap klik
 // Pakai sessionStorage supaya tidak brutal di mobile
 const AD_URL = 'https://rm358.com/4/11476496';
-const AD_ONCLICK = `(function(){var k='_adt',n=Date.now(),t=+sessionStorage.getItem(k)||0;if(n-t>180000){sessionStorage.setItem(k,n);window.open('${AD_URL}','_blank','noreferrer,noopener')}})()`;
+const AD_ONCLICK = `(function(){var k='_adt',n=Date.now(),t=+localStorage.getItem(k)||0;if(n-t>180000){localStorage.setItem(k,n);window.open('${AD_URL}','_blank')}})()`;
 
 
 // ── Video card (grid) ─────────────────────────────────────────────────────────
