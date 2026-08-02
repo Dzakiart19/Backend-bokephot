@@ -11,6 +11,22 @@ const {
   getCategories,
 } = require('../scraper');
 
+// ── Helper: map fetcher error → HTTP status + pesan user-friendly ─────────────
+function handleScraperError(e, res) {
+  const msg = e.message || '';
+  if (msg === 'SOURCE_TIMEOUT') {
+    return res.status(504).json({ error: 'Sumber tidak merespons. Coba lagi beberapa saat.', videos: [] });
+  }
+  if (msg.startsWith('SOURCE_5')) {
+    const code = e.sourceStatus || 502;
+    return res.status(503).json({ error: `Sumber sedang tidak tersedia (${code}). Coba lagi nanti.`, videos: [] });
+  }
+  if (msg === 'SOURCE_404') {
+    return res.status(404).json({ error: 'Halaman tidak ditemukan di sumber.', videos: [] });
+  }
+  return res.status(500).json({ error: 'Terjadi kesalahan. Coba lagi.', videos: [] });
+}
+
 // GET /api/bh/videos?page=
 router.get('/videos', async (req, res) => {
   try {
@@ -18,7 +34,7 @@ router.get('/videos', async (req, res) => {
     res.json(await scrapeHomepage(page));
   } catch (e) {
     console.error('[API] /videos', e.message);
-    res.status(500).json({ error: e.message, videos: [] });
+    handleScraperError(e, res);
   }
 });
 
@@ -35,7 +51,7 @@ router.get('/category/:slug', async (req, res) => {
     res.json(await scrapeCategory(slug, page));
   } catch (e) {
     console.error('[API] /category', e.message);
-    res.status(500).json({ error: e.message, videos: [] });
+    handleScraperError(e, res);
   }
 });
 
@@ -47,7 +63,7 @@ router.get('/search', async (req, res) => {
     res.json(await scrapeSearch(q, page));
   } catch (e) {
     console.error('[API] /search', e.message);
-    res.status(500).json({ error: e.message, videos: [] });
+    handleScraperError(e, res);
   }
 });
 
@@ -57,7 +73,7 @@ router.get('/video/:slug', async (req, res) => {
     res.json(await scrapeVideoDetail(req.params.slug));
   } catch (e) {
     console.error('[API] /video', e.message);
-    res.status(500).json({ error: e.message });
+    handleScraperError(e, res);
   }
 });
 

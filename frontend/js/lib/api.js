@@ -9,7 +9,15 @@ async function get(url, ms = 20_000) {
   const timer = setTimeout(() => ctrl.abort(), ms);
   try {
     const resp = await fetch(url, { signal: ctrl.signal });
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    if (!resp.ok) {
+      // Baca pesan error dari body JSON backend kalau ada
+      let msg = `HTTP ${resp.status}`;
+      try {
+        const body = await resp.json();
+        if (body?.error) msg = body.error;
+      } catch { /* ignore */ }
+      throw new Error(msg);
+    }
     return await resp.json();
   } finally {
     clearTimeout(timer);
