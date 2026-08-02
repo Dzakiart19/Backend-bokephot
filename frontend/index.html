@@ -46,17 +46,10 @@
         <div class="h-7 w-7 rounded-lg bg-gradient-to-br from-pink-500 to-pink-700 flex items-center justify-center text-white font-black text-sm shadow-lg">B</div>
         <span class="font-extrabold text-base sm:text-lg text-white tracking-tight">BokepHunter</span>
       </a>
-      <!-- Desktop Nav Categories -->
-      <nav class="hidden sm:flex items-center gap-1 overflow-x-auto scrollbar-hide flex-1">
+      <!-- Desktop Nav Categories (diisi oleh JS) -->
+      <nav class="hidden sm:flex items-center gap-1 overflow-x-auto scrollbar-hide flex-1" id="desktopNav">
         <a href="/" class="shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all border border-pink-700/30 bg-pink-800/60 text-white" id="homeLink">🏠 Home</a>
-        <a href="/?cat=bokep-indo"         class="cat-link shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all border border-pink-700/30 bg-pink-900/40 text-pink-200/70 hover:bg-pink-800/40" data-cat="bokep-indo">🇮🇩 Indo</a>
-        <a href="/?cat=bokep-indonesia"    class="cat-link shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all border border-pink-700/30 bg-pink-900/40 text-pink-200/70 hover:bg-pink-800/40" data-cat="bokep-indonesia">🔥 Indonesia</a>
-        <a href="/?cat=bokep-indo-terbaru" class="cat-link shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all border border-pink-700/30 bg-pink-900/40 text-pink-200/70 hover:bg-pink-800/40" data-cat="bokep-indo-terbaru">🆕 Terbaru</a>
-        <a href="/?cat=bokep-indo-viral"   class="cat-link shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all border border-pink-700/30 bg-pink-900/40 text-pink-200/70 hover:bg-pink-800/40" data-cat="bokep-indo-viral">📱 Viral</a>
-        <a href="/?cat=bokep-colmek"       class="cat-link shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all border border-pink-700/30 bg-pink-900/40 text-pink-200/70 hover:bg-pink-800/40" data-cat="bokep-colmek">💦 Colmek</a>
-        <a href="/?cat=bokep-jepang"       class="cat-link shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all border border-pink-700/30 bg-pink-900/40 text-pink-200/70 hover:bg-pink-800/40" data-cat="bokep-jepang">🇯🇵 Jepang</a>
-        <a href="/?cat=bokep-barat"        class="cat-link shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all border border-pink-700/30 bg-pink-900/40 text-pink-200/70 hover:bg-pink-800/40" data-cat="bokep-barat">🌍 Barat</a>
-        <a href="/?cat=bokep-asia"         class="cat-link shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all border border-pink-700/30 bg-pink-900/40 text-pink-200/70 hover:bg-pink-800/40" data-cat="bokep-asia">🌏 Asia</a>
+        <!-- kategori featured akan dirender JS -->
       </nav>
       <!-- Search Toggle -->
       <div class="ml-auto sm:ml-0 shrink-0">
@@ -81,19 +74,12 @@
 <div id="mobileOverlay" class="fixed inset-0 z-[60] bg-black/60 hidden sm:hidden" onclick="closeSidebar()"></div>
 <div id="mobileSidebar" class="fixed inset-y-0 left-0 z-[70] w-72 bg-pink-950 border-r border-pink-800/50 shadow-2xl transform -translate-x-full transition-transform duration-250 sm:hidden overflow-y-auto">
   <div class="flex items-center justify-between p-4 border-b border-pink-800/50">
-    <span class="font-extrabold text-white">Kategori</span>
+    <span class="font-extrabold text-white">Semua Kategori</span>
     <button onclick="closeSidebar()" class="text-pink-400 hover:text-white p-1">✕</button>
   </div>
-  <div class="p-3 space-y-1">
-    <a href="/"                           class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-pink-200 hover:bg-pink-800/40 transition-colors">🏠 Home</a>
-    <a href="/?cat=bokep-indo"            class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-pink-200/70 hover:bg-pink-800/40 transition-colors">🇮🇩 Bokep Indo</a>
-    <a href="/?cat=bokep-indonesia"       class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-pink-200/70 hover:bg-pink-800/40 transition-colors">🔥 Bokep Indonesia</a>
-    <a href="/?cat=bokep-indo-terbaru"    class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-pink-200/70 hover:bg-pink-800/40 transition-colors">🆕 Indo Terbaru</a>
-    <a href="/?cat=bokep-indo-viral"      class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-pink-200/70 hover:bg-pink-800/40 transition-colors">📱 Indo Viral</a>
-    <a href="/?cat=bokep-colmek"          class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-pink-200/70 hover:bg-pink-800/40 transition-colors">💦 Bokep Colmek</a>
-    <a href="/?cat=bokep-jepang"          class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-pink-200/70 hover:bg-pink-800/40 transition-colors">🇯🇵 Bokep Jepang</a>
-    <a href="/?cat=bokep-barat"           class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-pink-200/70 hover:bg-pink-800/40 transition-colors">🌍 Bokep Barat</a>
-    <a href="/?cat=bokep-asia"            class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-pink-200/70 hover:bg-pink-800/40 transition-colors">🌏 Bokep Asia</a>
+  <div class="p-3 space-y-1" id="sidebarNav">
+    <a href="/" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-pink-200 hover:bg-pink-800/40 transition-colors">🏠 Home</a>
+    <!-- semua kategori dirender JS -->
   </div>
 </div>
 
@@ -143,26 +129,15 @@
   </div>
 </main>
 
-<!-- Mobile Bottom Nav -->
-<nav class="sm:hidden fixed bottom-0 inset-x-0 z-50 bg-pink-950/95 backdrop-blur-2xl border-t border-pink-800/50 flex items-center justify-around py-2">
+<!-- Mobile Bottom Nav (diisi JS) -->
+<nav class="sm:hidden fixed bottom-0 inset-x-0 z-50 bg-pink-950/95 backdrop-blur-2xl border-t border-pink-800/50 flex items-center justify-around py-2" id="mobileBottomNav">
   <a href="/" class="flex flex-col items-center gap-0.5 px-3 py-1 text-pink-200 transition-colors" id="mobileHomeLink">
     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
     <span class="text-[10px] font-semibold">Home</span>
   </a>
-  <a href="/?cat=bokep-indo" class="flex flex-col items-center gap-0.5 px-3 py-1 text-pink-400/60 hover:text-pink-200 transition-colors mobile-cat-link" data-cat="bokep-indo">
-    <span class="text-lg leading-none">🇮🇩</span>
-    <span class="text-[10px] font-semibold">Indo</span>
-  </a>
-  <a href="/?cat=bokep-jepang" class="flex flex-col items-center gap-0.5 px-3 py-1 text-pink-400/60 hover:text-pink-200 transition-colors mobile-cat-link" data-cat="bokep-jepang">
-    <span class="text-lg leading-none">🇯🇵</span>
-    <span class="text-[10px] font-semibold">Jepang</span>
-  </a>
-  <a href="/?cat=bokep-colmek" class="flex flex-col items-center gap-0.5 px-3 py-1 text-pink-400/60 hover:text-pink-200 transition-colors mobile-cat-link" data-cat="bokep-colmek">
-    <span class="text-lg leading-none">💦</span>
-    <span class="text-[10px] font-semibold">Colmek</span>
-  </a>
+  <!-- 3 kategori top dirender JS -->
 </nav>
 
-<script src="script.js"></script>
+<script type="module" src="/js/script.js"></script>
 </body>
 </html>
