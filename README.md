@@ -39,16 +39,17 @@ Browser → Express (port 5000 dev / PORT env prod)
 │   ├── package.json
 │   └── .env.example
 ├── frontend/
-│   ├── index.html            # Homepage (video grid + nav + search)
-│   ├── detail.html           # Halaman video detail + player
+│   ├── index.html            # Homepage (video grid + nav + search + monetization)
+│   ├── detail.html           # Halaman video detail + player + monetization
 │   ├── favicon.svg
 │   ├── config.js             # Runtime config (inject BACKEND_URL)
+│   ├── sw-check-permissions-d17db.js  # ProPush service worker (push notifications)
 │   └── js/
 │       ├── script.js         # Logic homepage (state, load, pagination, search)
 │       ├── detail.js         # Logic detail (player HLS/iframe, related videos)
 │       └── lib/
 │           ├── api.js        # fetch wrappers ke /api/bh/*
-│           ├── cards.js      # buildCard, buildRelatedCardList/Grid, skeleton
+│           ├── cards.js      # buildCard (+directlink onclick), related cards, skeleton
 │           ├── nav.js        # Render nav kategori + active state
 │           ├── pagination.js # Render tombol pagination dengan ellipsis
 │           ├── utils.js      # escHtml, escAttr (XSS prevention)
@@ -85,15 +86,14 @@ Backend di-deploy langsung dari Replit sebagai autoscale service.
 - **Deploy**: Klik Publish di Replit UI
 - **Build command**: `cd backend && npm install --omit=dev`
 - **Run command**: `node backend/index.js`
+- **Port**: Cloud Run inject PORT otomatis (jangan set PORT di `[userenv.shared]`)
 
 Verify:
 ```bash
 curl https://backend-bokephot--akjgwylm.replit.app/api/health
 ```
 
-### Frontend (Firebase Hosting — opsional)
-
-Frontend dapat di-deploy terpisah ke Firebase Hosting sementara backend tetap di Replit.
+### Frontend (Firebase Hosting)
 
 ```
 Browser → kampung-bokep.web.app (Firebase)
@@ -104,12 +104,11 @@ Browser → kampung-bokep.web.app (Firebase)
 ```
 
 ```bash
-# REPLIT_BACKEND_URL sudah diset di env Replit
-./deploy.sh
+bash deploy.sh
 ```
 
 Script `deploy.sh`:
-1. Baca `REPLIT_BACKEND_URL` dari env (sudah diset di `.replit`)
+1. Baca `REPLIT_BACKEND_URL` — prioritas: env var → `.replit` file → config.js terpatch
 2. Patch `frontend/config.js` — isi `__REPLIT_BACKEND_URL__` dengan URL backend
 3. `firebase deploy --only hosting --project kampung-bokep`
 4. Restore `config.js` ke placeholder
@@ -152,6 +151,29 @@ window.BACKEND_URL = 'https://backend-bokephot--akjgwylm.replit.app'  // di-inje
 
 > `PORT` hanya di-set untuk development. Di production (autoscale), Cloud Run inject PORT-nya sendiri.
 
+## 💰 Monetisasi (ProPush.me)
+
+Semua monetisasi di-load di `frontend/index.html` dan `frontend/detail.html`.
+
+| Script / File | Fungsi | Zone / ID |
+|---------------|--------|-----------|
+| `<meta name="pushsdk">` | Verifikasi domain ProPush | `074da8d33ed888fb7f717174880a7a87` |
+| `sw-check-permissions-d17db.js` | Service worker push notification | zone `11484184` |
+| ProPush SDK (`mw.min.js`) | Push notification subscriber | zone `11484184` |
+| Replace trafficback | Redirect user yg allow/deny push ke offer | `rm358.com/4/11484237` |
+| In-app redirect | Buka Chrome dari Facebook/in-app browser | `rm358.com/4/11484237` |
+| Card `onclick` (cards.js) | Buka directlink di tab baru setiap klik video | `rm358.com/4/11476496` |
+| History guard | Override `location.replace` + push state agar back button tidak keluar website | — |
+
+### Urutan load script di HTML (bawah `</body>`):
+1. **History guard** — harus pertama, override `location.replace` sebelum ProPush load
+2. **ProPush SDK** — push notification + trafficback
+3. **In-app redirect** — handle Facebook/WebView browser
+
+### Catatan penting:
+- **Tidak ada duplikat directlink**: Happy Tag dihapus karena sama URL dengan card `onclick`. Card `onclick` lebih baik (synchronous, langsung, spesifik video saja).
+- **History guard wajib ada sebelum ProPush**: ProPush memanggil `window.location.replace()` saat permission event — tanpa guard, halaman terhapus dari history dan back button keluar website.
+
 ## 🎨 Frontend
 
 - **Tema**: Dark pink/rose (`bg-pink-950`)
@@ -168,11 +190,15 @@ window.BACKEND_URL = 'https://backend-bokephot--akjgwylm.replit.app'  // di-inje
   "axios":   "^1.13.x",  // HTTP client untuk scraping
   "cors":    "^2.8.x",   // CORS middleware
   "dotenv":  "^17.2.x",  // .env loader
-  "express": "^4.22.x"   // Web framework
+  "express": "^5.2.x"    // Web framework
 }
 ```
 
+> Root `package.json` juga punya express/cors/dotenv/axios untuk dev convenience, tapi yang dipakai server adalah `backend/package.json`. Versi Express di root adalah 4.x, di backend 5.x — konsisten saat production deploy (`cd backend && npm install`).
+
 ## 🔧 Troubleshooting
+
+**`bash deploy.sh` error REPLIT_BACKEND_URL tidak ditemukan** → Pastikan `.replit` punya `REPLIT_BACKEND_URL = "https://..."` di `[userenv.shared]`. Script otomatis baca dari sana jika env var tidak ter-export ke shell.
 
 **Video tidak muncul** → Cek koneksi ke `bokepcolmek.me`, lihat log backend untuk error scraping.
 
@@ -183,3 +209,5 @@ window.BACKEND_URL = 'https://backend-bokephot--akjgwylm.replit.app'  // di-inje
 **Deploy gagal (E403 / CVE blocked)** → Pastikan tidak ada package dengan Critical CVE di `package.json`. Root `package.json` hanya boleh berisi package yang benar-benar dipakai.
 
 **Health check gagal saat publish** → Pastikan `PORT` tidak di-set di `[userenv.shared]` — biarkan Cloud Run inject PORT-nya sendiri.
+
+**Back button langsung keluar website** → Pastikan history guard script ada di atas ProPush SDK di HTML. Jika hilang, tambahkan kembali sebelum `<!-- ProPush Push Notification SDK -->`.
