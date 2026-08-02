@@ -8,26 +8,37 @@ echo "================================================"
 CONFIG="frontend/config.js"
 
 # ── Tentukan REPLIT_BACKEND_URL ──────────────────────────────────────
-# Prioritas: env var REPLIT_BACKEND_URL → baca dari config.js yang sudah terpatch
+# Prioritas 1: env var sudah di-set di shell
+# Prioritas 2: baca dari .replit [userenv.shared] (tidak ter-export otomatis ke terminal)
+# Prioritas 3: baca dari config.js yang sudah terpatch sebelumnya
 if [ -n "$REPLIT_BACKEND_URL" ]; then
   BACKEND_URL="$REPLIT_BACKEND_URL"
   BACKEND_LABEL="env var REPLIT_BACKEND_URL"
 else
-  # Fallback: ekstrak URL yang sudah ada di config.js (jika sebelumnya sudah di-patch)
-  BACKEND_URL=$(grep -o "https://[a-zA-Z0-9._-]*\.replit\.app" "$CONFIG" 2>/dev/null | head -1)
+  # Baca dari .replit → REPLIT_BACKEND_URL = "https://..."
+  BACKEND_URL=$(grep -A5 '\[userenv' .replit 2>/dev/null \
+    | grep 'REPLIT_BACKEND_URL' \
+    | sed 's/.*= *"\(.*\)"/\1/' \
+    | head -1)
   if [ -n "$BACKEND_URL" ]; then
-    BACKEND_LABEL="config.js (sudah terpatch)"
+    BACKEND_LABEL=".replit [userenv]"
   else
-    echo ""
-    echo " ❌ ERROR: REPLIT_BACKEND_URL tidak ditemukan."
-    echo ""
-    echo " Set env var berikut di Replit (bukan secret, ini nilai publik):"
-    echo "   REPLIT_BACKEND_URL=https://<nama-proyek>.<user>.replit.app"
-    echo ""
-    echo " Atau set via shell sebelum menjalankan script ini:"
-    echo "   export REPLIT_BACKEND_URL=https://... && ./deploy.sh"
-    echo ""
-    exit 1
+    # Fallback: ekstrak URL dari config.js yang sudah terpatch
+    BACKEND_URL=$(grep -o "https://[a-zA-Z0-9._-]*\.replit\.app" "$CONFIG" 2>/dev/null | head -1)
+    if [ -n "$BACKEND_URL" ]; then
+      BACKEND_LABEL="config.js (sudah terpatch)"
+    else
+      echo ""
+      echo " ❌ ERROR: REPLIT_BACKEND_URL tidak ditemukan."
+      echo ""
+      echo " Pastikan .replit punya entry berikut di [userenv.shared]:"
+      echo "   REPLIT_BACKEND_URL = \"https://<nama-proyek>.replit.app\""
+      echo ""
+      echo " Atau jalankan dengan:"
+      echo "   REPLIT_BACKEND_URL=https://... bash deploy.sh"
+      echo ""
+      exit 1
+    fi
   fi
 fi
 
