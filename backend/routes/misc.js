@@ -7,7 +7,7 @@ const FRONTEND = path.join(__dirname, '../../frontend');
 
 // GET /api/health
 router.get('/api/health', (_req, res) => {
-  res.json({ success: true, message: 'BokepHunter API is running (source: bokepcolmek.me)' });
+  res.json({ success: true, message: 'Kampung Bokep API is running (source: bokepcolmek.me)' });
 });
 
 // GET /api/config — resolves public backend URL

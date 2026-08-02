@@ -33,12 +33,12 @@ function initFromURL() {
 
   // Page title
   if (currentSearch) {
-    pageTitle.textContent = `🔍 Hasil: "${currentSearch}"`;
+    pageTitle.textContent = `Hasil: "${currentSearch}"`;
   } else if (currentCat) {
     const c = catMap[currentCat];
-    pageTitle.textContent = c ? `${c.emoji} ${c.name}` : currentCat;
+    pageTitle.textContent = c ? c.name : currentCat;
   } else {
-    pageTitle.textContent = '🆕 Video Terbaru';
+    pageTitle.textContent = 'Video Terbaru';
   }
 }
 
