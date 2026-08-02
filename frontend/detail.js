@@ -200,10 +200,12 @@ function renderVideo(data) {
       frame.appendChild(video);
       video.play().catch(() => {});
     } else if (isIndoAvEmbed) {
-      // IndoAV embed — sandboxed iframe.
-      // allow-popups-to-escape-sandbox: player indoav butuh buka link ad (tidak di tab kita)
-      // allow-scripts + allow-same-origin: player HLS/Plyr butuh JS dan XHR ke indoav.com
-      // NO allow-top-navigation → ad tidak bisa redirect halaman utama kita
+      // IndoAV embed — sandboxed iframe langsung dari indoav.com.
+      // Harus load dari indoav.com agar XHR /video/load/ bisa kirim cookie Cloudflare.
+      // NO allow-popups / allow-popups-to-escape-sandbox → semua popup/tab ad diblokir.
+      //   (indoav player pakai window.open() untuk ad; tanpa allow-popups → null → ad gagal silent)
+      // NO allow-top-navigation → ad tidak bisa redirect halaman utama kita.
+      // NO allow-forms → block form-based redirect ads.
       frame.innerHTML = `<iframe
         src="${url}"
         width="100%" height="100%"
@@ -211,7 +213,7 @@ function renderVideo(data) {
         allowfullscreen
         allow="autoplay; fullscreen"
         scrolling="no"
-        sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-popups allow-popups-to-escape-sandbox"
+        sandbox="allow-scripts allow-same-origin allow-presentation"
       ></iframe>`;
     } else {
       // Regular iframe

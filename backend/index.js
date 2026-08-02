@@ -107,6 +107,76 @@ app.get('/api/bh/video/:slug/embed', async (req, res) => {
   }
 });
 
+// GET /api/bh/proxy-embed/:slug  — proxy embed page with ad scripts stripped
+app.get('/api/bh/proxy-embed/:slug', async (req, res) => {
+  try {
+    const { slug } = req.params;
+    if (!slug) return res.status(400).send('Missing slug');
+
+    const embedUrl = `https://www.indoav.com/video/embed/${encodeURIComponent(slug)}`;
+    const resp = await axios.get(embedUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8',
+        'Referer': 'https://www.indoav.com/',
+        'Cookie': 'age_ok=1',
+      },
+      timeout: 15000,
+    });
+
+    let html = resp.data;
+
+    // ── Strip ad network scripts ──────────────────────────────────────────
+    const AD_DOMAINS = [
+      'tsyndicate\\.com',
+      'xlink3\\.com',
+      'xlink2\\.com',
+      'linkonclick\\.com',
+      'adspeed\\.com',
+      'popads\\.net',
+      'popcash\\.net',
+      'propellerads\\.com',
+      'trafficjunky\\.com',
+      'juicyads\\.com',
+      'exoclick\\.com',
+      'trafficstars\\.com',
+      'clickadu\\.com',
+      'hilltopads\\.net',
+      'plugrush\\.com',
+      'adsterra\\.com',
+      's\\.xlink',
+    ];
+    const adPattern = new RegExp(
+      `<script[^>]*src=["'][^"']*(?:${AD_DOMAINS.join('|')})[^"']*["'][^>]*>.*?</script>|` +
+      `<script[^>]*src=["'][^"']*(?:${AD_DOMAINS.join('|')})[^"']*["']\\s*/?>`,
+      'gis'
+    );
+    html = html.replace(adPattern, '<!-- ad removed -->');
+
+    // Also strip inline scripts that call popunder / ad APIs by content pattern
+    html = html.replace(
+      /<script(?![^>]*src=)[^>]*>[\s\S]*?(?:tsyndicate|xlink3|linkonclick|popads|popcash|propellerads|adsterra)[\s\S]*?<\/script>/gi,
+      '<!-- ad removed -->'
+    );
+
+    // Inject CSP meta tag to block ad domains at browser level
+    const cspContent = `default-src * data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.indoav.com https://cdn.plyr.io https://cdn.jsdelivr.net https://static.cloudflareinsights.com; connect-src 'self' https://www.indoav.com; img-src * data: blob:; media-src * blob:; frame-src 'none';`;
+    html = html.replace(
+      '<head>',
+      `<head>\n  <meta http-equiv="Content-Security-Policy" content="${cspContent}">`
+    );
+
+    res.set('Content-Type', 'text/html; charset=utf-8');
+    res.set('Cache-Control', 'no-store');
+    res.send(html);
+  } catch (e) {
+    console.error('[PROXY-EMBED]', e.message);
+    // Fallback: redirect to original embed page
+    res.redirect(`https://www.indoav.com/video/embed/${req.params.slug}`);
+  }
+});
+
 // GET /api/bh/proxy-thumb?url=  — proxy thumbnails that block hotlinking
 app.get('/api/bh/proxy-thumb', async (req, res) => {
   try {
