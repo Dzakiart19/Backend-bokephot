@@ -117,13 +117,39 @@ function renderVideo(data) {
   // Title
   document.getElementById('videoTitle').textContent = data.title;
 
+  // Format angka singkat
+  function fmtNum(val) {
+    const n = parseInt(String(val || 0).replace(/[.,k]/gi,'')) || 0;
+    if (n >= 1000000) return (n/1000000).toFixed(1).replace(/\.0$/,'') + 'jt';
+    if (n >= 1000)    return (n/1000).toFixed(1).replace(/\.0$/,'') + 'k';
+    return String(n);
+  }
+
   // Views
   const viewsEl = document.querySelector('#videoViews span');
-  viewsEl.textContent = data.views ? `${parseInt(data.views).toLocaleString('id-ID')} views` : '';
+  viewsEl.textContent = data.views ? `${fmtNum(data.views)} views` : '';
 
-  // Time
+  // Likes ← BARU
+  const likesEl = document.getElementById('videoLikes');
+  if (likesEl) {
+    const likeSpan = likesEl.querySelector('span');
+    if (likeSpan) likeSpan.textContent = data.likes ? `${fmtNum(data.likes)} likes` : '';
+    if (data.likes && data.likes !== '0') likesEl.classList.remove('hidden');
+    else likesEl.classList.add('hidden');
+  }
+
+  // Duration ← BARU (ganti timeAgo → duration)
   const timeEl = document.querySelector('#videoTime span');
-  timeEl.textContent = data.timeAgo || '';
+  timeEl.textContent = data.duration || data.timeAgo || '';
+
+  // Posted date ← BARU
+  const postedEl = document.getElementById('videoPosted');
+  if (postedEl) {
+    const postedSpan = postedEl.querySelector('span');
+    if (postedSpan) postedSpan.textContent = data.postedAgo || '';
+    if (data.postedAgo) postedEl.classList.remove('hidden');
+    else postedEl.classList.add('hidden');
+  }
 
   // Categories
   const catEl = document.getElementById('videoCategories');

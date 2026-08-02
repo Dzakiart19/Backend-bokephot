@@ -52,12 +52,14 @@ app.get('/api/bh/categories', (req, res) => {
   res.json(getCategories());
 });
 
-// GET /api/bh/category/:slug?page=&sort=
+// GET /api/bh/category/:slug?page=&filter=
 app.get('/api/bh/category/:slug', async (req, res) => {
   try {
     const { slug } = req.params;
-    const { page = 1, sort = 'new' } = req.query;
-    const data = await scrapeCategory(slug, page, sort);
+    const { page = 1, filter = 'terbaru', sort } = req.query;
+    // support legacy ?sort= param
+    const effectiveFilter = filter !== 'terbaru' ? filter : (sort || 'terbaru');
+    const data = await scrapeCategory(slug, page, effectiveFilter);
     res.json(data);
   } catch (e) {
     console.error('[BH-CATEGORY]', e.message);
