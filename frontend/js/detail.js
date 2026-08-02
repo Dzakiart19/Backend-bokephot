@@ -1,4 +1,4 @@
-// Detail page — BokepHunter
+// Detail page — Kampung Bokep
 import { fetchVideoDetail, fetchEmbed }             from './lib/api.js';
 import { buildRelatedCardGrid, buildRelatedCardList } from './lib/cards.js';
 import { escHtml, escAttr }                          from './lib/utils.js';
@@ -45,7 +45,7 @@ function renderVideo(data) {
   videoContent.classList.remove('hidden');
 
   // Meta
-  document.getElementById('pageTitle').textContent   = `${data.title} — BokepHunter`;
+  document.getElementById('pageTitle').textContent   = `${data.title} — Kampung Bokep`;
   document.getElementById('pageMeta').setAttribute('content', data.description || data.title);
 
   // Thumbnail

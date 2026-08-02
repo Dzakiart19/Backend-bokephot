@@ -8,6 +8,7 @@ const { getCategories } = require('./lib/categories');
 // ── Homepage ──────────────────────────────────────────────────────────────────
 async function scrapeHomepage(page = 1) {
   page = parseInt(page);
+  if (isNaN(page) || page < 1) page = 1;
   const url  = page === 1 ? `${BASE_URL}/` : `${BASE_URL}/page/${page}/`;
   const html = await fetchPage(url);
   return {
@@ -20,6 +21,7 @@ async function scrapeHomepage(page = 1) {
 // ── Category ──────────────────────────────────────────────────────────────────
 async function scrapeCategory(slug, page = 1) {
   page = parseInt(page);
+  if (isNaN(page) || page < 1) page = 1;
   const url  = page === 1
     ? `${BASE_URL}/kategori/${slug}/`
     : `${BASE_URL}/kategori/${slug}/page/${page}/`;
@@ -38,6 +40,7 @@ async function scrapeCategory(slug, page = 1) {
 // ── Search ────────────────────────────────────────────────────────────────────
 async function scrapeSearch(q, page = 1) {
   page = parseInt(page);
+  if (isNaN(page) || page < 1) page = 1;
   const url  = page === 1
     ? `${BASE_URL}/?s=${encodeURIComponent(q)}`
     : `${BASE_URL}/page/${page}/?s=${encodeURIComponent(q)}`;

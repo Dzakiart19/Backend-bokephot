@@ -2,11 +2,13 @@
 
 function decodeHtml(str) {
   return String(str)
-    .replace(/&#(\d+);/g,       (_, c) => String.fromCharCode(parseInt(c)))
+    .replace(/&#(\d+);/g,           (_, c) => String.fromCharCode(parseInt(c)))
     .replace(/&#x([0-9a-fA-F]+);/g, (_, h) => String.fromCharCode(parseInt(h, 16)))
-    .replace(/&amp;/g,  '&').replace(/&lt;/g,   '<').replace(/&gt;/g,  '>')
-    .replace(/&quot;/g, '"').replace(/&apos;/g, "'")
-    .replace(/&ndash;/g,'–').replace(/&hellip;/g,'…');
+    .replace(/&amp;/g,   '&').replace(/&lt;/g,    '<').replace(/&gt;/g,   '>')
+    .replace(/&quot;/g,  '"').replace(/&apos;/g,  "'").replace(/&nbsp;/g, ' ')
+    .replace(/&ndash;/g, '–').replace(/&mdash;/g, '—').replace(/&hellip;/g, '…')
+    .replace(/&laquo;/g, '«').replace(/&raquo;/g, '»').replace(/&bull;/g,  '•')
+    .replace(/&copy;/g,  '©').replace(/&reg;/g,   '®').replace(/&trade;/g, '™');
 }
 
 // ISO 8601 duration → human readable (P0DT0H7M0S → "7m 0s")

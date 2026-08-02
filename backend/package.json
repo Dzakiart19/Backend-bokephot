@@ -1,7 +1,7 @@
 {
-  "name": "bokephunter-backend",
+  "name": "kampung-bokep-backend",
   "version": "1.0.0",
-  "description": "Backend scraper & API proxy untuk BokepHunter",
+  "description": "Backend scraper & API proxy untuk Kampung Bokep",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
@@ -18,8 +18,8 @@
   "dependencies": {
     "axios": "^1.13.2",
     "cors": "^2.8.5",
-    "dotenv": "^16.6.1",
-    "express": "^4.22.1"
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"

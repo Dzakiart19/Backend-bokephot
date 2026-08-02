@@ -2,7 +2,7 @@
 set -e
 
 echo "================================================"
-echo "  VIDOREY — Install Script"
+echo "  KAMPUNG BOKEP — Install Script"
 echo "================================================"
 
 # Node.js dependencies
@@ -33,7 +33,7 @@ echo "================================================"
 echo "  Semua dependencies berhasil diinstall!"
 echo ""
 echo "  Perintah tersedia:"
-echo "  - node server.js                  : Jalankan backend"
+echo "  - node backend/index.js           : Jalankan backend"
 echo "  - firebase login --no-localhost   : Login Firebase"
 echo "  - bash deploy.sh                  : Deploy ke Firebase Hosting"
 echo "================================================"

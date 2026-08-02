@@ -132,7 +132,7 @@ window.BACKEND_URL = 'https://backend-bokephot--akjgwylm.replit.app'  // di-inje
 |--------|------|------------|
 | GET | `/api/health` | Health check |
 | GET | `/api/config` | Backend URL (untuk auto-detect) |
-| GET | `/api/bh/videos?page=` | Daftar video homepage |
+| GET | `/api/bh/videos?page=` | Daftar video homepage (tanpa filter) |
 | GET | `/api/bh/categories` | 47 kategori |
 | GET | `/api/bh/category/:slug?page=` | Video per kategori |
 | GET | `/api/bh/search?q=&page=` | Pencarian video |

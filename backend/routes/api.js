@@ -11,7 +11,7 @@ const {
   getCategories,
 } = require('../scraper');
 
-// GET /api/bh/videos?page=&filter=
+// GET /api/bh/videos?page=
 router.get('/videos', async (req, res) => {
   try {
     const { page = 1 } = req.query;
