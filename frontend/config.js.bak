@@ -14,5 +14,5 @@
     h === '127.0.0.1' ||
     h.endsWith('.replit.dev') ||
     h.endsWith('.replit.app');
-  window.BACKEND_URL = isSelfHosted ? '' : 'https://excitable-idle-astrophysics--pataameb.replit.app';
+  window.BACKEND_URL = isSelfHosted ? '' : '__REPLIT_BACKEND_URL__';
 })();
