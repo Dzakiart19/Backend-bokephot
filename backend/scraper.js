@@ -2,50 +2,8 @@ const axios = require('axios');
 
 const BASE_URL = 'https://www.indoav.com';
 
-// ── RC4 decryption ───────────────────────────────────────────────────────────
-function rc4(str, key) {
-  let n, o = [], r = 0, l = '', a = 0;
-  for (a = 0; a < 256; a++) o[a] = a;
-  for (a = 0; a < 256; a++) {
-    r = (r + o[a] + key.charCodeAt(a % key.length)) % 256;
-    n = o[a]; o[a] = o[r]; o[r] = n;
-  }
-  a = 0; r = 0;
-  for (let i = 0; i < str.length; i++) {
-    r = (r + o[a = (a + 1) % 256]) % 256;
-    n = o[a]; o[a] = o[r]; o[r] = n;
-    l += String.fromCharCode(str.charCodeAt(i) ^ o[(o[a] + o[r]) % 256]);
-  }
-  return l;
-}
-
-function reverseStr(s) { return s.split('').reverse().join(''); }
-
-const INDOAV_STATIC_KEY = 'rqpSaEddZ156f342cjwOD8vc4/SYtI0ILIo5UUj45apkqA06FzRKvr92GErrdKGZozMV1L52EueOl7B7yO1efjk8uBhSzLOf';
-
-function deriveIndoAVKey() {
-  let p = Buffer.from(INDOAV_STATIC_KEY, 'base64').toString('binary');
-  p = rc4(p, '');
-  p = Buffer.from(p, 'base64').toString('binary');
-  return p;
-}
-
-let _indoavKey = null;
-function getIndoAVKey() {
-  if (!_indoavKey) _indoavKey = deriveIndoAVKey();
-  return _indoavKey;
-}
-
-function decryptIndoAVToken(token) {
-  try {
-    const key = getIndoAVKey();
-    const decoded = Buffer.from(reverseStr(token), 'base64').toString('binary');
-    const decrypted = rc4(decoded, key);
-    return JSON.parse(decrypted);
-  } catch (e) {
-    return null;
-  }
-}
+// Catatan: data-play-token di halaman indoav adalah token iklan (RC4-encrypted),
+// bukan stream URL. Stream video hanya bisa dimuat browser via iframe player indoav.
 
 // ── HTTP headers ─────────────────────────────────────────────────────────────
 const HEADERS = {
@@ -326,10 +284,6 @@ async function scrapeVideoDetail(slug) {
   const likesEl = html.match(/<span id="likes-count"[^>]*>([\d.,k]+)<\/span>/);
   const likes   = likesEl ? likesEl[1].replace(/,/g, '') : '0';
 
-  // data-play-token → simpan di cache untuk resolveEmbedUrl
-  const tokenMatch = html.match(/data-play-token="([^"]+)"/);
-  if (tokenMatch) setCache(`token_${slug}`, tokenMatch[1]);
-
   // Categories — skip nav categories
   const categories = [];
   const navEnd = html.indexOf('</nav>');
@@ -359,6 +313,8 @@ async function scrapeVideoDetail(slug) {
 }
 
 // ── Resolve embed URL ─────────────────────────────────────────────────────────
+// Stream video indoav hanya bisa dimuat browser via iframe player mereka.
+// data-play-token berisi URL iklan (tsyndicate/xlink3/linkonclick), bukan stream.
 async function resolveEmbedUrl(slug, thumbnail) {
   const cacheKey = `embed_${slug}`;
   const cached = getCached(cacheKey);
