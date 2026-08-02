@@ -30,7 +30,7 @@ function setCache(key, data) {
 async function fetchPage(url) {
   const cached = getCached(url);
   if (cached) return cached;
-  const resp = await axios.get(url, { headers: HEADERS, timeout: 15000 });
+  const resp = await axios.get(url, { headers: HEADERS, timeout: 10000 });
   setCache(url, resp.data);
   return resp.data;
 }
@@ -128,7 +128,7 @@ async function getBokepRestEmbed(videoId, thumbnailUrl) {
 
     const resp = await axios.get(bokepRestUrl, {
       headers: { ...HEADERS, Referer: 'https://bokep.rest/' },
-      timeout: 12000,
+      timeout: 7000,
       maxRedirects: 5
     });
     const html = resp.data;

@@ -18,6 +18,22 @@ function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+// Proxy thumbnails that block hotlinking
+function thumbSrc(url) {
+  if (!url) return '';
+  if (url.includes('bokep.rest') || url.includes('bokep31.mom') || url.includes('bokepkurir')) {
+    return `/api/bh/proxy-thumb?url=${encodeURIComponent(url)}`;
+  }
+  return url;
+}
+
+// Fetch with timeout
+function fetchWithTimeout(url, ms = 12000) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), ms);
+  return fetch(url, { signal: ctrl.signal }).finally(() => clearTimeout(timer));
+}
+
 // Build related card (grid style for mobile)
 function buildRelatedCardGrid(v) {
   const thumb = v.thumbnail || '';
@@ -70,7 +86,7 @@ async function loadDetail() {
   errorState.classList.add('hidden');
 
   try {
-    const resp = await fetch(`${API}/video/${encodeURIComponent(slug)}`);
+    const resp = await fetchWithTimeout(`${API}/video/${encodeURIComponent(slug)}`, 15000);
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const data = await resp.json();
     if (!data || !data.title) throw new Error('Data video tidak valid');
@@ -98,7 +114,7 @@ function renderVideo(data) {
 
   // Thumbnail
   const thumbEl = document.getElementById('playerThumb');
-  if (data.thumbnail) { thumbEl.src = data.thumbnail; thumbEl.alt = data.title; }
+  if (data.thumbnail) { thumbEl.src = thumbSrc(data.thumbnail); thumbEl.alt = data.title; }
   else thumbEl.style.display = 'none';
 
   // Title

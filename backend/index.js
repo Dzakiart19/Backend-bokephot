@@ -9,6 +9,15 @@ const { scrapeHomepage, scrapeCategory, scrapeSearch, scrapeVideoDetail, resolve
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Startup environment validation
+const requiredEnvVars = [];
+const missingVars = requiredEnvVars.filter(v => !process.env[v]);
+if (missingVars.length > 0) {
+  console.warn(`⚠️  Missing environment variables: ${missingVars.join(', ')}`);
+} else {
+  console.log('✅ Environment variables OK');
+}
+
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -18,201 +27,6 @@ app.use(express.static(path.join(__dirname, '../frontend')));
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
   next();
-});
-
-// Endpoint 1: List Video
-app.get('/api/videos', async (req, res) => {
-  try {
-    const { page = 1, per_page = 20 } = req.query;
-    const apiKey = process.env.DOODSTREAM_API_KEY;
-    
-    if (!apiKey) {
-      return res.status(500).json({ 
-        success: true, 
-        result: { files: [] },
-        error: 'API Key tidak dikonfigurasi' 
-      });
-    }
-
-    console.log(`[API-LIST] Fetching videos page ${page}`);
-    const response = await axios.get(`https://doodstream.com/api/file/list?key=${apiKey}&page=${page}&per_page=${per_page}`, { timeout: 10000 });
-    
-    const filesCount = response.data?.result?.files?.length || 0;
-    console.log(`[API-LIST] Doodstream returned ${filesCount} files`);
-
-    if (response.data && response.data.status === 200) {
-      res.json(response.data);
-    } else {
-      res.json({
-        success: true,
-        result: { files: [] },
-        msg: response.data ? response.data.msg : 'Doodstream API error'
-      });
-    }
-  } catch (error) {
-    console.error('Error fetching videos:', error.message);
-    res.json({ 
-      success: true, 
-      result: { files: [] },
-      error: 'Gagal mengambil daftar video' 
-    });
-  }
-});
-
-// Endpoint 2: Search Video
-app.get('/api/search', async (req, res) => {
-  try {
-    const { search_term } = req.query;
-    const apiKey = process.env.DOODSTREAM_API_KEY;
-    
-    if (!apiKey) {
-      return res.status(500).json({ success: false, error: 'API Key tidak dikonfigurasi' });
-    }
-
-    const response = await axios.get(`https://doodstream.com/api/search?key=${apiKey}&search_term=${search_term}`);
-    res.json(response.data);
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// Endpoint 3: Get File Info
-app.get('/api/file/:fileId', async (req, res) => {
-  try {
-    const { fileId } = req.params;
-    const apiKey = process.env.DOODSTREAM_API_KEY;
-    
-    if (!apiKey) {
-      return res.status(500).json({ success: false, error: 'API Key tidak dikonfigurasi' });
-    }
-
-    console.log(`[API-INFO] Fetching info for: ${fileId}`);
-    const response = await axios.get(`https://doodstream.com/api/file/info?key=${apiKey}&file_code=${fileId}`, { timeout: 10000 });
-    
-    if (response.data && response.data.msg === 'OK') {
-      // Doodstream API result for file/info is often an array or single object
-      const result = Array.isArray(response.data.result) ? response.data.result[0] : response.data.result;
-      res.json({
-        success: true,
-        result: result
-      });
-    } else {
-      res.json({
-        success: false,
-        error: response.data ? response.data.msg : 'Doodstream API error'
-      });
-    }
-  } catch (error) {
-    console.error(`[API-INFO-ERROR] ${error.message}`);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// Proxy for thumbnails
-app.get('/api/proxy-thumb', async (req, res) => {
-  try {
-    const { url } = req.query;
-    if (!url) return res.status(400).send('URL is required');
-
-    console.log(`[PROXY] Fetching thumb: ${url}`);
-    
-    if (!url.startsWith('http')) {
-        return res.status(400).send('Invalid URL');
-    }
-
-    // List of common Doodstream image domains
-    const allowedDomains = ['postercdn.net', 'doodcdn.com', 'doodcdn.co', 'img.doodcdn.co'];
-    const urlDomain = new URL(url).hostname;
-    const isAllowed = allowedDomains.some(domain => urlDomain.includes(domain));
-
-    const response = await axios.get(url, {
-      responseType: 'arraybuffer',
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0',
-        'Referer': ''
-      },
-      timeout: 30000,
-      maxRedirects: 10,
-      validateStatus: (status) => status < 500
-    });
-
-    // Check if image is blank white/gray (typically around 560-1500 bytes for small processing placeholders)
-    // AND it must be an image type
-    const contentType = response.headers['content-type'] || '';
-    if (response.data.length < 2500 && contentType.includes('image')) {
-      console.log(`[PROXY-FILTER] Image size ${response.data.length} is too small (likely blank). Returning 404.`);
-      return res.status(404).send('Still processing');
-    }
-
-    if (response.status >= 400) {
-        return res.status(404).send('Image not ready');
-    }
-
-    res.set('Content-Type', contentType || 'image/jpeg');
-    res.set('Access-Control-Allow-Origin', '*');
-    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.send(response.data);
-  } catch (error) {
-    console.error(`[PROXY-ERROR] ${error.message}`);
-    res.status(404).json({ error: 'Error proxying image' });
-  }
-});
-
-// Endpoint 4: Get Embed URL
-app.get('/api/embed/:fileId', async (req, res) => {
-  try {
-    const { fileId } = req.params;
-    const { poster } = req.query;
-    let embedUrl = `https://doodstream.com/e/${fileId}`;
-    
-    if (poster) {
-      let posterUrl = poster.startsWith('http') ? poster : `https://${poster}`;
-      embedUrl += `?c_poster=${encodeURIComponent(posterUrl)}`;
-    }
-    
-    res.status(200).json({ success: true, embed_url: embedUrl });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// Endpoint: Get Proper Thumbnails from Doodstream API
-app.get('/api/thumbnail/:fileId', async (req, res) => {
-  try {
-    const { fileId } = req.params;
-    const apiKey = process.env.DOODSTREAM_API_KEY;
-    
-    if (!apiKey) {
-      return res.status(500).json({ success: false, error: 'API Key not configured' });
-    }
-    
-    const response = await axios.get(`https://doodapi.com/api/file/image?key=${apiKey}&file_code=${fileId}`, { 
-      timeout: 15000,
-      headers: { 'Referer': 'https://doodstream.com/' }
-    });
-    
-    if (response.data.msg === 'OK' && response.data.result) {
-      const resultData = Array.isArray(response.data.result) ? response.data.result[0] : response.data.result;
-      const isValid = (url) => url && url.includes('doodcdn') && !url.includes('blank');
-      
-      const splash = isValid(resultData.splash_img) ? resultData.splash_img : null;
-      const single = isValid(resultData.single_img) ? resultData.single_img : null;
-
-      return res.json({
-        success: true,
-        has_thumbnail: !!(splash || single),
-        primary: splash,
-        fallback: single
-      });
-    }
-    res.json({ success: true, has_thumbnail: false });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
 });
 
 // ============================================================
@@ -262,11 +76,23 @@ app.get('/api/bh/search', async (req, res) => {
   }
 });
 
-// GET /api/bh/video/:slug  — fast, no embed resolution
+// GET /api/bh/video/:slug  — includes embed URL so user doesn't wait on click
 app.get('/api/bh/video/:slug', async (req, res) => {
   try {
     const { slug } = req.params;
     const data = await scrapeVideoDetail(slug);
+
+    // Eagerly resolve embed URL so the player is ready immediately on the detail page.
+    // resolveEmbedUrl is fast (uses cache after first call) and adds only ~1s first time.
+    if (!data.embedUrlFromPage) {
+      try {
+        const embedUrl = await resolveEmbedUrl(slug, data.thumbnail || '');
+        if (embedUrl) data.embedUrlFromPage = embedUrl;
+      } catch (e) {
+        console.warn('[BH-VIDEO] embed resolve failed (non-fatal):', e.message);
+      }
+    }
+
     res.json(data);
   } catch (e) {
     console.error('[BH-VIDEO]', e.message);
@@ -274,7 +100,7 @@ app.get('/api/bh/video/:slug', async (req, res) => {
   }
 });
 
-// GET /api/bh/video/:slug/embed  — lazy, resolves embed URL when user clicks play
+// GET /api/bh/video/:slug/embed  — fallback lazy endpoint (still available)
 app.get('/api/bh/video/:slug/embed', async (req, res) => {
   try {
     const { slug } = req.params;
@@ -287,177 +113,60 @@ app.get('/api/bh/video/:slug/embed', async (req, res) => {
   }
 });
 
-// ============================================================
-
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.json({ success: true, message: 'Doodstream API Proxy is running' });
-});
-
-// Config endpoint
-app.get('/api/config', (req, res) => {
-  const backendUrl = 'https://backend-bokephot-1--m4j2vzehsbsbs.replit.app';
-  res.json({
-    success: true,
-    backendUrl: backendUrl,
-    apiUrl: `${backendUrl}/api`
-  });
-});
-
-// Validate video endpoint
-app.get('/api/validate/:fileCode', async (req, res) => {
+// GET /api/bh/proxy-thumb?url=  — proxy thumbnails that block hotlinking
+app.get('/api/bh/proxy-thumb', async (req, res) => {
   try {
-    const { fileCode } = req.params;
-    const apiKey = process.env.DOODSTREAM_API_KEY;
-    const response = await axios.get(`https://doodstream.com/api/file/info?key=${apiKey}&file_code=${fileCode}`, { timeout: 5000 });
-    
-    // Doodstream returns msg: "OK" only if file exists and is NOT deleted
-    const isValid = response.data.msg === 'OK' && response.data.result && response.data.result.length > 0;
-    res.json({ status: 200, valid: isValid });
-  } catch (error) {
-    res.json({ status: 500, valid: false });
+    const { url } = req.query;
+    if (!url || !url.startsWith('http')) return res.status(400).send('Bad URL');
+
+    const resp = await axios.get(url, {
+      responseType: 'arraybuffer',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Referer': 'https://bokep.rest/',
+        'Accept': 'image/*,*/*',
+      },
+      timeout: 10000,
+      maxRedirects: 5,
+    });
+
+    const ct = resp.headers['content-type'] || 'image/jpeg';
+    res.set('Content-Type', ct);
+    res.set('Cache-Control', 'public, max-age=86400'); // cache 1 day
+    res.send(resp.data);
+  } catch (e) {
+    console.error('[PROXY-THUMB]', e.message);
+    res.status(404).send('Not found');
   }
 });
 
-// Telegram Bot Integration
-const TelegramBot = require('node-telegram-bot-api');
-const token = process.env.TELEGRAM_BOT_TOKEN;
+// ============================================================
 
-if (token) {
-    const bot = new TelegramBot(token, { 
-        polling: {
-            interval: 3000,
-            autoStart: true,
-            params: { timeout: 10 }
-        }
-    });
-    console.log('🤖 Telegram Bot is running...');
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({ success: true, message: 'BokepHunter API is running' });
+});
 
-    bot.on('message', async (msg) => {
-        console.log(`[BOT-MSG] Received from ${msg.chat.id}: ${msg.text ? msg.text : (msg.video ? 'Video' : (msg.document ? 'Document' : 'Other'))}`);
-        const chatId = msg.chat.id;
+// Config endpoint — resolves the current backend's public URL dynamically
+app.get('/api/config', (req, res) => {
+  const replitDomains = process.env.REPLIT_DOMAINS;
+  const primaryDomain = replitDomains ? replitDomains.split(',')[0].trim() : null;
+  const backendUrl = process.env.REPLIT_URL ||
+    (primaryDomain ? `https://${primaryDomain}` : `${req.protocol}://${req.get('host')}`);
+  res.json({ success: true, backendUrl, apiUrl: `${backendUrl}/api` });
+});
 
-        if (msg.text === '/start') {
-            const welcomeMsg = `👋 **Halo! Selamat datang di Bot Doodstream.**\n\n` +
-                               `Gunakan bot ini untuk mencari video atau mengunggah video ke Doodstream.\n\n` +
-                               `Ketik **/help** untuk melihat daftar perintah yang tersedia.`;
-            bot.sendMessage(chatId, welcomeMsg, { parse_mode: 'Markdown' });
-            return;
-        }
-
-        if (msg.text && msg.text.startsWith('/list')) {
-            try {
-                const apiKey = process.env.DOODSTREAM_API_KEY;
-                const response = await axios.get(`https://doodstream.com/api/file/list?key=${apiKey}&per_page=5`);
-                if (response.data.msg === 'OK' && response.data.result.files) {
-                    let message = '📺 **5 Video Terbaru:**\n\n';
-                    response.data.result.files.forEach((f, i) => {
-                        message += `${i+1}. ${f.title}\n🔗 https://backend-bokephot-1--m4j2vzehsbsbs.replit.app/detail?id=${f.file_code}\n\n`;
-                    });
-                    bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
-                } else {
-                    bot.sendMessage(chatId, '❌ Gagal mengambil daftar video.');
-                }
-            } catch (err) {
-                bot.sendMessage(chatId, '❌ Terjadi kesalahan.');
-            }
-            return;
-        }
-
-        if (msg.text && msg.text.startsWith('/search ')) {
-            const query = msg.text.replace('/search ', '').trim();
-            if (!query) return;
-            try {
-                const apiKey = process.env.DOODSTREAM_API_KEY;
-                const searchUrl = `https://doodstream.com/api/search?key=${apiKey}&search_term=${encodeURIComponent(query)}`;
-                console.log(`[BOT-SEARCH] Searching: ${searchUrl}`);
-                const response = await axios.get(searchUrl);
-                
-                if (response.data && (response.data.msg === 'OK' || response.data.status === 200)) {
-                    const result = response.data.result || [];
-                    const results = Array.isArray(result) ? result.slice(0, 5) : [];
-                    
-                    if (results.length === 0) {
-                        bot.sendMessage(chatId, `🔍 Tidak ditemukan video dengan kata kunci "${query}".`);
-                        return;
-                    }
-                    let message = `🔍 **Hasil Pencarian: ${query}**\n\n`;
-                    results.forEach((f, i) => {
-                        message += `${i+1}. ${f.title}\n🔗 https://backend-bokephot-1--m4j2vzehsbsbs.replit.app/detail?id=${f.file_code}\n\n`;
-                    });
-                    bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
-                } else {
-                    bot.sendMessage(chatId, '❌ Gagal mendapatkan hasil dari server.');
-                }
-            } catch (err) {
-                console.error(`[BOT-SEARCH-ERROR] ${err.message}`);
-                bot.sendMessage(chatId, '❌ Terjadi kesalahan saat mencari.');
-            }
-            return;
-        }
-
-        if (msg.text === '/help') {
-            const helpMsg = `🤖 **Panduan Bot Doodstream**\n\n` +
-                           `1. **Upload Video**: Kirim file video atau dokumen video langsung ke sini.\n` +
-                           `2. **/start**: Mulai ulang bot.\n\n` +
-                           `Website: https://bokephot.web.app`;
-            bot.sendMessage(chatId, helpMsg, { parse_mode: 'Markdown' });
-            return;
-        }
-
-        if (msg.video || msg.document) {
-            const fileId = msg.video ? msg.video.file_id : msg.document.file_id;
-            const fileName = msg.document ? msg.document.file_name : `video_${Date.now()}.mp4`;
-            const caption = msg.caption || fileName;
-
-            bot.sendMessage(chatId, '⏳ Sedang mengupload ke Doodstream...');
-            
-            try {
-                const fileLink = await bot.getFileLink(fileId);
-                const apiKey = process.env.DOODSTREAM_API_KEY;
-                const uploadRes = await axios.get(`https://doodstream.com/api/upload/url?key=${apiKey}&url=${encodeURIComponent(fileLink)}&new_title=${encodeURIComponent(caption)}`);
-                
-        if (uploadRes.data.msg === 'OK') {
-                    const filecode = uploadRes.data.result.filecode;
-                    bot.sendMessage(chatId, `✅ Berhasil! Video sedang diproses.\nJudul: ${caption}\nFileCode: ${filecode}`);
-                    
-                    // Tambahan: Pantau thumbnail secara otomatis
-                    let attempts = 0;
-                    const checkInterval = setInterval(async () => {
-                        attempts++;
-                        try {
-                            const thumbRes = await axios.get(`https://doodapi.com/api/file/image?key=${apiKey}&file_code=${filecode}`);
-                            if (thumbRes.data.msg === 'OK' && thumbRes.data.result) {
-                                const resultData = Array.isArray(thumbRes.data.result) ? thumbRes.data.result[0] : thumbRes.data.result;
-                                if (resultData.splash_img || resultData.single_img) {
-                                    bot.sendMessage(chatId, `🖼️ Thumbnail untuk "${caption}" sudah tersedia!`);
-                                    clearInterval(checkInterval);
-                                }
-                            }
-                        } catch (e) {}
-                        if (attempts >= 10) clearInterval(checkInterval);
-                    }, 30000); // Cek setiap 30 detik
-                } else {
-                    bot.sendMessage(chatId, '❌ Gagal upload ke Doodstream.');
-                }
-            } catch (err) {
-                bot.sendMessage(chatId, '❌ Terjadi kesalahan saat upload.');
-            }
-        }
-    });
-}
-
-// Root route to serve index.html
+// Root route → frontend
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
 
-// Detail route to serve detail.html
+// Detail route → frontend
 app.get('/detail', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/detail.html'));
 });
 
-// Video detail page route (new slug-based)
+// Video slug-based route → frontend
 app.get('/video/:slug', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/detail.html'));
 });

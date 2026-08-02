@@ -1,31 +1,23 @@
 ---
 name: BokepHunter scraper
-description: How the bokephunter.com scraper works — embed URL resolution per video source type
+description: Scrapes bokephunter.com; two embed source types with different resolution strategies. Thumbnail hotlink notes included.
 ---
 
-## Embed URL Resolution
+## Embed source types
 
-Two video slug types exist:
+**bokeprest-XXXX** slugs:
+- Thumbnail from `bokep.rest/wp-content/uploads/...` — hotlink-blocked, must proxy via `/api/bh/proxy-thumb`
+- Embed resolved by fetching `https://bokep.rest/bokep/TITLE-SLUG/VIDEOID/.html` and extracting `luluvdo.com/e/` iframe src
+- Typically ~800ms to resolve
 
-1. `bokeprest-{ID}` — from bokep.rest (WordPress, post ID numeric)
-   - Construct URL: `https://bokep.rest/bokep/{title-slug-from-thumbnail}/{ID}/.html`
-   - Title slug: extracted from thumbnail filename (e.g. `Bokepkurir-pasrah-digoyang-pacar-tocil-hot-320x180.jpg` → `bokepkurir-pasrah-digoyang-pacar-tocil-hot`)
-   - Actual player: `luluvdo.com/e/{code}` — found in the bokep.rest page HTML
-   
-2. `indoav-{slug}` — from indoav.com
-   - Embed URL: `https://www.indoav.com/video/embed/{slug-without-indoav-prefix}`
-   - Sometimes also present directly in bokephunter.com video detail HTML
+**indoav-XXXX** slugs:
+- Embed constructed directly: `https://www.indoav.com/video/embed/VIDEOID` — no extra fetch needed
 
-**Why:** bokephunter.com is server-rendered Laravel; bokeprest video embed iframe is empty fallback in their HTML — must resolve from bokep.rest directly.
+## Key decisions
 
-## Scraping Patterns
+- Embed URL is now resolved **eagerly** on the `/api/bh/video/:slug` endpoint (not lazily on click). This means the detail page delivers `embedUrlFromPage` ready to use, so play is instant.
+- `xepoFrame` section on bokephunter.com contains the player but the iframe `src` is JS-rendered (not in raw HTML), so it must always be resolved via bokep.rest.
+- Thumbnails from `bokep.rest` must go through `/api/bh/proxy-thumb?url=...` — direct browser requests are hotlink-blocked.
+- Cache TTL: 5 minutes in-memory. Embed URLs cached under `embed_SLUG` key.
 
-- Homepage: `https://bokephunter.com?page=N&sort=new|popular|duration`
-- Category: `https://bokephunter.com/category/{slug}?page=N&sort=...`
-- Search: `https://bokephunter.com/search?q={term}&page=N`
-- Video detail: `https://bokephunter.com/video/{slug}`
-- Age gate: cookie `age_ok=1` bypasses the interstitial
-
-## Cache
-
-5-minute in-memory cache in `backend/scraper.js` — keeps repeated requests fast without hammering source.
+**Why:** Without eager embed resolution, users had to click play and then wait ~800ms–7s (cold) for a second server round-trip. Eager resolution adds ~1s to initial page load but makes play instant.

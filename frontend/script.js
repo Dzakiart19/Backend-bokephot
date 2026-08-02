@@ -69,16 +69,25 @@ function initFromURL() {
   }
 }
 
+// Proxy thumbnails that block hotlinking (e.g. bokep.rest images)
+function thumbSrc(url) {
+  if (!url) return '';
+  if (url.includes('bokep.rest') || url.includes('bokep31.mom') || url.includes('bokepkurir')) {
+    return `/api/bh/proxy-thumb?url=${encodeURIComponent(url)}`;
+  }
+  return url;
+}
+
 // Build video card HTML
 function buildCard(v) {
-  const thumb = v.thumbnail || '';
+  const thumb = thumbSrc(v.thumbnail || '');
   const title = escHtml(v.title);
   const views = v.views ? `${parseInt(v.views).toLocaleString('id-ID')} views` : '';
   const time  = v.timeAgo || '';
   return `
     <a href="/video/${v.slug}" class="group block hover-card">
       <div class="relative aspect-video rounded-lg sm:rounded-xl overflow-hidden border border-pink-800/50 group-hover:border-pink-600/60 transition-colors" style="background:#3b001a">
-        ${thumb ? `<img src="${escAttr(thumb)}" alt="${title}" class="thumb-img h-full w-full object-cover" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'">` : ''}
+        ${thumb ? `<img src="${escAttr(thumb)}" alt="${title}" class="thumb-img h-full w-full object-cover" loading="lazy" onerror="this.style.display='none'">` : ''}
         <div class="absolute inset-0 bg-gradient-to-t from-pink-950/70 via-transparent to-transparent hidden sm:block"></div>
         ${views ? `<span class="absolute bottom-1.5 left-1.5 sm:bottom-2 sm:left-2 rounded-md bg-pink-950/70 px-1 sm:px-1.5 py-0.5 text-[9px] sm:text-[10px] font-medium text-pink-200/70 hidden sm:block">${views}</span>` : ''}
         <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
