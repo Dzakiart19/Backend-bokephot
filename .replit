@@ -10,7 +10,7 @@ expertMode = true
 
 [userenv.shared]
 FRONTEND_URL = "https://kampung-bokep.web.app"
-REPLIT_BACKEND_URL = "https://excitable-idle-astrophysics--pataameb.replit.app"
+REPLIT_BACKEND_URL = "https://frozen-somber-driverwrapper--czqklwh.replit.app"
 
 [userenv.development]
 PORT = "5000"
