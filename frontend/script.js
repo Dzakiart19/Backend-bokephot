@@ -1,514 +1,247 @@
-// Auto-detect API base URL - smart detection for different environments
-function getApiBaseUrl() {
-  // Try to get saved URL from localStorage (if user updated it)
-  const savedUrl = localStorage.getItem('BACKEND_API_URL');
-  if (savedUrl) {
-    console.log('[CONFIG] Using saved backend URL from localStorage:', savedUrl);
-    return savedUrl;
+// BokepHunter Frontend - script.js
+const API = '/api/bh';
+
+// State
+let currentPage = 1;
+let currentSort = 'new';
+let currentCat = null;
+let currentSearch = null;
+let totalPages = 1;
+let isLoading = false;
+
+// DOM refs
+const videoGrid    = document.getElementById('videoGrid');
+const skeletonGrid = document.getElementById('skeletonGrid');
+const emptyState   = document.getElementById('emptyState');
+const errorState   = document.getElementById('errorState');
+const errorMsg     = document.getElementById('errorMsg');
+const pagination   = document.getElementById('pagination');
+const pageInfo     = document.getElementById('pageInfo');
+const pageButtons  = document.getElementById('pageButtons');
+const pageTitle    = document.getElementById('pageTitle');
+
+// Init from URL params
+function initFromURL() {
+  const params = new URLSearchParams(location.search);
+  currentPage   = parseInt(params.get('page') || '1');
+  currentSort   = params.get('sort') || 'new';
+  currentCat    = params.get('cat') || null;
+  currentSearch = params.get('q') || null;
+
+  // Update sort buttons
+  document.querySelectorAll('.sort-btn').forEach(btn => {
+    const active = btn.dataset.sort === currentSort;
+    btn.classList.toggle('bg-pink-600', active);
+    btn.classList.toggle('text-white', active);
+    btn.classList.toggle('border-pink-500', active);
+    btn.classList.toggle('bg-pink-900/40', !active);
+    btn.classList.toggle('text-pink-300', !active);
+    btn.classList.toggle('border-pink-700/30', !active);
+    btn.classList.toggle('active', active);
+  });
+
+  // Update active category in nav
+  document.querySelectorAll('.cat-link').forEach(a => {
+    const active = a.dataset.cat === currentCat;
+    a.classList.toggle('bg-pink-800/60', active);
+    a.classList.toggle('text-white', active);
+    a.classList.toggle('bg-pink-900/40', !active);
+    a.classList.toggle('text-pink-200/70', !active);
+  });
+
+  // Update page title
+  if (currentSearch) {
+    pageTitle.textContent = `🔍 Hasil: "${currentSearch}"`;
+    document.querySelectorAll('.sort-btn').forEach(b => b.style.display = 'none');
+  } else if (currentCat) {
+    const catNames = {
+      'bokep-indonesia': '🇮🇩 Bokep Indonesia', 'bokep-indo': '🔥 Bokep Indo',
+      'bokep-viral': '📱 Bokep Viral', 'bokep-jilbab': '🧕 Bokep Jilbab',
+      'bokep-abg': '✨ Bokep ABG', 'bokep-colmek': '🌶️ Bokep Colmek',
+      'bokep-tiktok': '🎵 Bokep TikTok', 'bokep-skandal': '📸 Bokep Skandal',
+      'bokep-mahasiswi': '🎓 Bokep Mahasiswi', 'bokep-barat': '🌍 Bokep Barat',
+      'bokep-asia': '🌏 Bokep Asia', 'bokep-jepang': '🇯🇵 Bokep Jepang',
+      'bokep-lesbian': '💕 Bokep Lesbian',
+    };
+    pageTitle.textContent = catNames[currentCat] || currentCat;
+  } else {
+    pageTitle.textContent = currentSort === 'popular' ? '🔥 Video Popular' : '🆕 Video Terbaru';
   }
-  
-  // Replit-specific internal path for Web Preview
-  if (window.location.hostname.includes('replit.dev') || window.location.hostname.includes('replit.app') || window.location.hostname === 'localhost') {
-    console.log('[CONFIG] Replit Environment detected → using relative /api');
-    return '/api';
-  }
-  
-  // Production / External (Firebase, etc)
-  const publicUrl = 'https://backend-bokephot-1--m4j2vzehsbsbs.replit.app/api';
-  console.log('[CONFIG] External Environment detected → using public URL:', publicUrl);
-  return publicUrl;
 }
 
-const CONFIG = {
-    API_BASE_URL: getApiBaseUrl(),
-    VIDEOS_PER_PAGE: 20,
-    PLACEHOLDER_THUMBNAIL: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE4MCIgdmlld0JveD0iMCAwIDMyMCAxODAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMjAiIGhlaWdodD0iMTgwIiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0xNDAgNzBIMTgwVjExMEgxNDBWNzBaIiBzdHJva2U9IiM2QjczODAiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWRhc2hhcnJheT0iNCA0Ii8+CjxjaXJjbGUgY3g9IjE2MCIgY3k9IjkwIiByPSIxNSIgZmlsbD0iIzZCNzM4MCIvPgo8L3N2Zz4K'
-};
+// Build video card HTML
+function buildCard(v) {
+  const thumb = v.thumbnail || '';
+  const title = escHtml(v.title);
+  const views = v.views ? `${parseInt(v.views).toLocaleString('id-ID')} views` : '';
+  const time  = v.timeAgo || '';
+  return `
+    <a href="/video/${v.slug}" class="group block hover-card">
+      <div class="relative aspect-video rounded-lg sm:rounded-xl overflow-hidden border border-pink-800/50 group-hover:border-pink-600/60 transition-colors" style="background:#3b001a">
+        ${thumb ? `<img src="${escAttr(thumb)}" alt="${title}" class="thumb-img h-full w-full object-cover" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'">` : ''}
+        <div class="absolute inset-0 bg-gradient-to-t from-pink-950/70 via-transparent to-transparent hidden sm:block"></div>
+        ${views ? `<span class="absolute bottom-1.5 left-1.5 sm:bottom-2 sm:left-2 rounded-md bg-pink-950/70 px-1 sm:px-1.5 py-0.5 text-[9px] sm:text-[10px] font-medium text-pink-200/70 hidden sm:block">${views}</span>` : ''}
+        <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+          <div class="w-10 h-10 rounded-full bg-pink-500/80 flex items-center justify-center">
+            <svg class="w-5 h-5 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+        </div>
+      </div>
+      <div class="mt-1.5 sm:mt-2.5 px-0.5">
+        <h3 class="text-[11px] sm:text-[13px] font-semibold text-pink-50 leading-snug line-clamp-2 group-hover:text-pink-200 transition-colors">${title}</h3>
+        <p class="mt-0.5 sm:mt-1 text-[10px] sm:text-[11px] text-pink-300/60">${time}</p>
+      </div>
+    </a>`;
+}
 
-let currentPage = 1;
-let currentQuery = '';
-let isLoading = false;
-let lastVideoCount = 0;
-let refreshInterval = null;
+// Show skeleton
+function showSkeleton(count = 20) {
+  const tmpl = document.getElementById('skeletonTemplate');
+  let html = '';
+  for (let i = 0; i < count; i++) html += tmpl.outerHTML.replace('id="skeletonTemplate"', '');
+  skeletonGrid.innerHTML = tmpl.outerHTML + html;
+  skeletonGrid.classList.remove('hidden');
+  videoGrid.classList.add('hidden');
+  emptyState.classList.add('hidden');
+  errorState.classList.add('hidden');
+  pagination.classList.add('hidden');
+}
 
-const elements = {
-    searchInput: document.getElementById('searchInput'),
-    searchButton: document.getElementById('searchButton'),
-    mobileSearchToggle: document.getElementById('mobileSearchToggle'),
-    mobileSearchBar: document.getElementById('mobileSearchBar'),
-    mobileSearchInput: document.getElementById('mobileSearchInput'),
-    mobileSearchBtn: document.getElementById('mobileSearchBtn'),
-    sidebar: document.getElementById('sidebar'),
-    sidebarOverlay: document.getElementById('sidebarOverlay'),
-    openSidebar: document.getElementById('openSidebar'),
-    closeSidebar: document.getElementById('closeSidebar'),
-    videoGrid: document.getElementById('videoGrid'),
-    loadingState: document.getElementById('loadingState'),
-    errorState: document.getElementById('errorState'),
-    errorMessage: document.getElementById('errorMessage'),
-    noResultsState: document.getElementById('noResultsState'),
-    loadMoreContainer: document.getElementById('loadMoreContainer'),
-    loadMoreButton: document.getElementById('loadMoreButton'),
-    retryButton: document.getElementById('retryButton'),
-    videoModal: document.getElementById('videoModal'),
-    modalTitle: document.getElementById('modalTitle'),
-    closeModal: document.getElementById('closeModal'),
-    videoPlayerContainer: document.getElementById('videoPlayerContainer'),
-    videoDuration: document.getElementById('videoDuration'),
-    videoViews: document.getElementById('videoViews'),
-    videoUploadDate: document.getElementById('videoUploadDate')
-};
+function hideSkeleton() {
+  skeletonGrid.classList.add('hidden');
+  videoGrid.classList.remove('hidden');
+}
 
-let currentVideoFileCode = '';
+// Render pagination
+function renderPagination(current, total) {
+  if (total <= 1) { pagination.classList.add('hidden'); return; }
+  pagination.classList.remove('hidden');
+  pageInfo.textContent = `Halaman ${current} dari ${total}`;
 
-document.addEventListener('DOMContentLoaded', () => {
-    initializeEventListeners();
-    loadVideos();
-    startAutoRefresh();
+  const pages = [];
+  pages.push(1);
+  if (current > 3) pages.push('...');
+  for (let p = Math.max(2, current - 1); p <= Math.min(total - 1, current + 1); p++) pages.push(p);
+  if (current < total - 2) pages.push('...');
+  if (total > 1) pages.push(total);
+
+  let html = '';
+  if (current > 1) html += `<button class="page-btn w-9 h-9 flex items-center justify-center rounded-lg bg-pink-900 hover:bg-pink-800 text-pink-400 text-xs font-semibold border border-pink-800 transition-colors" data-page="${current - 1}">◀</button>`;
+  pages.forEach(p => {
+    if (p === '...') { html += `<span class="px-1 text-pink-600 text-xs">…</span>`; return; }
+    const active = p === current;
+    html += `<button class="page-btn w-9 h-9 flex items-center justify-center rounded-lg text-xs font-semibold border transition-colors ${active ? 'bg-pink-600 text-white border-pink-500' : 'bg-pink-900 hover:bg-pink-800 text-pink-400 border-pink-800'}" data-page="${p}">${p}</button>`;
+  });
+  if (current < total) html += `<button class="page-btn w-9 h-9 flex items-center justify-center rounded-lg bg-pink-900 hover:bg-pink-800 text-pink-400 text-xs font-semibold border border-pink-800 transition-colors" data-page="${current + 1}">▶</button>`;
+  pageButtons.innerHTML = html;
+
+  pageButtons.querySelectorAll('.page-btn').forEach(btn => {
+    btn.addEventListener('click', () => navigateTo(parseInt(btn.dataset.page)));
+  });
+}
+
+function navigateTo(page) {
+  currentPage = page;
+  const params = new URLSearchParams(location.search);
+  params.set('page', page);
+  history.pushState({}, '', `?${params.toString()}`);
+  loadVideos();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Load videos
+async function loadVideos() {
+  if (isLoading) return;
+  isLoading = true;
+  showSkeleton();
+
+  try {
+    let url;
+    if (currentSearch) {
+      url = `${API}/search?q=${encodeURIComponent(currentSearch)}&page=${currentPage}`;
+    } else if (currentCat) {
+      url = `${API}/category/${currentCat}?page=${currentPage}&sort=${currentSort}`;
+    } else {
+      url = `${API}/videos?page=${currentPage}&sort=${currentSort}`;
+    }
+
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+
+    hideSkeleton();
+
+    if (!data.videos || data.videos.length === 0) {
+      emptyState.classList.remove('hidden');
+      videoGrid.innerHTML = '';
+      pagination.classList.add('hidden');
+    } else {
+      videoGrid.innerHTML = data.videos.map(buildCard).join('');
+      totalPages = data.totalPages || 1;
+      renderPagination(currentPage, totalPages);
+    }
+  } catch (e) {
+    hideSkeleton();
+    errorState.classList.remove('hidden');
+    errorMsg.textContent = e.message;
+    console.error(e);
+  } finally {
+    isLoading = false;
+  }
+}
+
+// Helpers
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escAttr(str) {
+  return String(str).replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// Events
+document.getElementById('menuToggle').addEventListener('click', () => {
+  document.getElementById('mobileSidebar').classList.remove('-translate-x-full');
+  document.getElementById('mobileOverlay').classList.remove('hidden');
+});
+function closeSidebar() {
+  document.getElementById('mobileSidebar').classList.add('-translate-x-full');
+  document.getElementById('mobileOverlay').classList.add('hidden');
+}
+
+document.getElementById('searchToggle').addEventListener('click', () => {
+  const bar = document.getElementById('searchBar');
+  const si = document.getElementById('searchIcon');
+  const ci = document.getElementById('closeIcon');
+  const open = !bar.classList.contains('hidden');
+  bar.classList.toggle('hidden', open);
+  si.classList.toggle('hidden', !open);
+  ci.classList.toggle('hidden', open);
+  if (!open) document.getElementById('searchInput').focus();
 });
 
-function startAutoRefresh() {
-    // Check every 10 seconds for new videos from bot uploads
-    refreshInterval = setInterval(async () => {
-        try {
-            const endpoint = currentQuery ? '/search' : '/videos';
-            const params = new URLSearchParams({
-                page: '1',
-                per_page: CONFIG.VIDEOS_PER_PAGE.toString()
-            });
-            if (currentQuery) params.append('search_term', currentQuery);
-            
-            const url = `${CONFIG.API_BASE_URL}${endpoint}?${params}`;
-            const response = await fetch(url);
-            
-            if (!response.ok) return;
-            const data = await response.json();
-            
-            const isSuccess = data.success === true || data.status === 200 || data.msg === 'OK';
-            if (!isSuccess) return;
-            
-            const result = data.result || {};
-            const videos = Array.isArray(result) ? result : (result.files || []);
-            const currentCount = videos.length;
-            
-            // If new videos added (from bot upload), refresh the list
-            if (currentCount > lastVideoCount && !currentQuery) {
-                console.log(`📹 New videos detected! Refreshing list... (${lastVideoCount} → ${currentCount})`);
-                currentPage = 1;
-                lastVideoCount = currentCount;
-                loadVideos();
-            }
-        } catch (error) {
-            console.log('Auto-refresh check skipped');
-        }
-    }, 10000); // Check every 10 seconds
-}
+document.getElementById('searchForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const q = document.getElementById('searchInput').value.trim();
+  if (!q) return;
+  window.location.href = `/?q=${encodeURIComponent(q)}`;
+});
 
-function initializeEventListeners() {
-    if (elements.openSidebar) elements.openSidebar.addEventListener('click', toggleSidebar);
-    if (elements.closeSidebar) elements.closeSidebar.addEventListener('click', toggleSidebar);
-    if (elements.sidebarOverlay) elements.sidebarOverlay.addEventListener('click', toggleSidebar);
-
-    if (elements.mobileSearchToggle) {
-        elements.mobileSearchToggle.addEventListener('click', () => {
-            elements.mobileSearchBar.classList.toggle('hidden');
-        });
-    }
-
-    if (elements.searchButton) elements.searchButton.addEventListener('click', () => handleSearch());
-    if (elements.searchInput) {
-        elements.searchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') handleSearch();
-        });
-    }
-    if (elements.mobileSearchBtn) {
-        elements.mobileSearchBtn.addEventListener('click', () => {
-            handleSearch(elements.mobileSearchInput.value);
-        });
-    }
-
-    if (elements.loadMoreButton) elements.loadMoreButton.addEventListener('click', loadMoreVideos);
-    if (elements.retryButton) elements.retryButton.addEventListener('click', retryLoad);
-    if (elements.closeModal) elements.closeModal.addEventListener('click', closeVideoModal);
-
-    if (elements.videoModal) {
-        elements.videoModal.addEventListener('click', (e) => {
-            if (e.target === elements.videoModal) closeVideoModal();
-        });
-    }
-
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && elements.videoModal && !elements.videoModal.classList.contains('hidden')) {
-            closeVideoModal();
-        }
-    });
-}
-
-function toggleSidebar() {
-    if (elements.sidebar) elements.sidebar.classList.toggle('-translate-x-full');
-    if (elements.sidebarOverlay) elements.sidebarOverlay.classList.toggle('hidden');
-    document.body.classList.toggle('overflow-hidden');
-}
-
-async function fetchVideos(page = 1, searchTerm = '') {
-    try {
-        const endpoint = searchTerm ? '/search' : '/videos';
-        const params = new URLSearchParams({
-            page: page.toString(),
-            per_page: CONFIG.VIDEOS_PER_PAGE.toString()
-        });
-        if (searchTerm) params.append('search_term', searchTerm);
-
-        const url = `${CONFIG.API_BASE_URL}${endpoint}?${params}`;
-        console.log('[API] Fetching from:', url);
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
-        
-        const response = await fetch(url, {
-            signal: controller.signal,
-            headers: { 
-                'Accept': 'application/json'
-            }
-        });
-        clearTimeout(timeoutId);
-        
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const data = await response.json();
-        
-        // Check if API returned an error
-        if (data && typeof data === 'object') {
-            if (data.error || (data.success === false)) {
-                throw new Error(data.error || data.msg || 'API returned an error');
-            }
-        }
-        return data;
-    } catch (error) {
-        console.error('[API-ERROR] URL:', `${CONFIG.API_BASE_URL}`, 'Error:', error.message);
-        throw error;
-    }
-}
-
-async function fetchEmbedUrl(fileId, posterUrl = '') {
-    try {
-        let url = `${CONFIG.API_BASE_URL}/embed/${fileId}`;
-        console.log('[EMBED-CALL] File ID:', fileId, 'Poster:', posterUrl);
-        if (posterUrl) {
-            url += `?poster=${encodeURIComponent(posterUrl)}`;
-        }
-        console.log('[EMBED-URL] Full URL:', url);
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
-        
-        const response = await fetch(url, { 
-            signal: controller.signal 
-        });
-        clearTimeout(timeoutId);
-        
-        console.log('[EMBED-RESPONSE] Status:', response.status, 'OK:', response.ok);
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const data = await response.json();
-        console.log('[EMBED-DATA] Received:', data);
-        return data;
-    } catch (error) {
-        console.error('[EMBED-ERROR]', error.message);
-        throw error;
-    }
-}
-
-async function loadVideos(isLoadMore = false) {
-    if (isLoading) return;
-    isLoading = true;
-    if (!isLoadMore) showLoading();
-
-    try {
-        console.log('[LOAD] Starting load with API_BASE_URL:', CONFIG.API_BASE_URL);
-        const data = await fetchVideos(currentPage, currentQuery);
-        console.log('[API-SUCCESS] Response:', data);
-        
-        // Doodstream API can return different success flags
-        const isSuccess = data.success === true || data.status === 200 || data.msg === 'OK';
-        
-        if (!isSuccess) {
-            console.error('API Response was not successful:', data);
-            throw new Error(data.error || data.msg || 'API Error');
-        }
-
-        const result = data.result || {};
-        const allVideos = Array.isArray(result) ? result : (result.files || []);
-        
-        if (!Array.isArray(allVideos) || allVideos.length === 0) {
-            if (isLoadMore) elements.loadMoreContainer.classList.add('hidden');
-            else showNoResults();
-            hideLoading();
-            return;
-        }
-
-        // Validate videos existence in parallel
-        const validationPromises = allVideos.map(async (video) => {
-            try {
-                const valRes = await fetch(`${CONFIG.API_BASE_URL}/validate/${video.file_code || video.id}`);
-                const valData = await valRes.json();
-                return valData.valid ? video : null;
-            } catch (e) {
-                return video; // Fallback to show if validation fails
-            }
-        });
-
-        const validatedVideos = (await Promise.all(validationPromises)).filter(v => v !== null);
-
-        if (validatedVideos.length === 0 && allVideos.length > 0) {
-             if (isLoadMore) elements.loadMoreContainer.classList.add('hidden');
-             else showNoResults();
-             hideLoading();
-             return;
-        }
-
-        // Update last video count for auto-refresh
-        if (!isLoadMore && currentPage === 1) {
-            lastVideoCount = validatedVideos.length;
-        }
-
-        if (!isLoadMore) elements.videoGrid.innerHTML = '';
-        validatedVideos.forEach(video => {
-            elements.videoGrid.appendChild(createVideoCard(video));
-        });
-
-        if (allVideos.length >= CONFIG.VIDEOS_PER_PAGE) {
-            elements.loadMoreContainer.classList.remove('hidden');
-        } else {
-            elements.loadMoreContainer.classList.add('hidden');
-        }
-        hideLoading();
-    } catch (error) {
-        console.error('LoadVideos error:', error.message);
-        showError('Gagal memuat video. Silakan periksa koneksi atau coba lagi nanti.');
-    } finally {
-        isLoading = false;
-    }
-}
-
-function loadMoreVideos() {
-    currentPage++;
-    loadVideos(true);
-}
-
-function createVideoCard(video) {
-    const card = document.createElement('div');
-    card.className = 'video-card bg-gray-900 rounded overflow-hidden shadow-sm cursor-pointer group flex flex-col hover:ring-2 hover:ring-red-600 transition-all';
-    const duration = formatDuration(video.duration || video.length || 0);
-    const views = formatViews(video.views || 0);
-    
-    const getSecureThumb = (url, isFallback = false) => {
-        if (!url || url.trim() === '') return CONFIG.PLACEHOLDER_THUMBNAIL;
-        let cleanUrl = url.trim();
-        if (cleanUrl.startsWith('//')) cleanUrl = 'https:' + cleanUrl;
-        else if (!cleanUrl.startsWith('http')) cleanUrl = 'https://' + cleanUrl;
-        
-        // Anti-cache buster: refresh every 15 seconds for brand new videos
-        const now = Date.now();
-        const uploadTime = video.uploaded ? new Date(video.uploaded).getTime() : 0;
-        const isNew = uploadTime > 0 && (now - uploadTime < 3600000); // New if uploaded in last hour
-        const buster = isNew ? Math.floor(now / 15000) : Math.floor(now / 300000); // 15s for new, 5m for old
-        
-        return `${CONFIG.API_BASE_URL}/proxy-thumb?url=${encodeURIComponent(cleanUrl)}&t=${buster}${isFallback ? '&fallback=1' : ''}`;
-    };
-
-    // SWAP: Use splash_img as primary because single_img (snaps) are often blank white (560 bytes)
-    // This matches the user's observation where splash works but snaps don't.
-    const primaryThumb = getSecureThumb(video.splash_img);
-    const fallbackThumb = getSecureThumb(video.single_img, true);
-    
-    // If both are placeholders, use placeholder directly
-    const useFallback = primaryThumb === CONFIG.PLACEHOLDER_THUMBNAIL && fallbackThumb === CONFIG.PLACEHOLDER_THUMBNAIL;
-    const fileId = video.file_code || video.id || '';
-    
-    // Add cache-buster to prevent stale proxy responses (only for proxy URLs, not data URIs)
-    const addCacheBuster = (url) => {
-        if (!url || url.startsWith('data:')) return url;
-        const sep = url.includes('?') ? '&' : '?';
-        // Use a more aggressive cache buster for NEW videos
-        const isNew = video.uploaded && (Date.now() - new Date(video.uploaded).getTime() < 3600000);
-        const buster = isNew ? Date.now() : Math.floor(Date.now() / 60000);
-        return url + sep + `t=${buster}`;
-    };
-    
-    const thumbWithCache = useFallback ? CONFIG.PLACEHOLDER_THUMBNAIL : addCacheBuster(primaryThumb);
-    const fallbackWithCache = addCacheBuster(fallbackThumb);
-    
-    // Use splash image as high-priority fallback if single_img is problematic
-    // Since we swapped them, splash is now primary, and we'll keep single as fallback
-    const splashThumb = getSecureThumb(video.splash_img);
-    const splashWithCache = addCacheBuster(splashThumb);
-    
-    card.innerHTML = `
-        <div class="video-thumbnail relative bg-gray-800 flex items-center justify-center">
-            <img id="thumb-${fileId}" src="${thumbWithCache}" data-primary="${primaryThumb}" data-fallback="${fallbackWithCache}" data-splash="${splashWithCache}" data-fileid="${fileId}" class="w-full h-full object-cover" alt="Thumbnail">
-            <div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 transition-opacity">
-                <svg class="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-            </div>
-            <div class="absolute bottom-1 right-1 bg-black bg-opacity-80 text-white text-[9px] px-1.5 py-0.5 rounded">${duration}</div>
-            <div class="absolute bottom-1 left-1 bg-black bg-opacity-60 text-white text-[9px] px-1.5 py-0.5 rounded flex items-center space-x-1">
-                <span>${views}</span>
-            </div>
-        </div>
-        <div class="p-1.5 flex-1 flex flex-col justify-between min-h-0">
-            <h3 class="text-gray-200 text-[11px] font-medium line-clamp-2 overflow-hidden">${video.title || 'Untitled'}</h3>
-        </div>
-    `;
-    
-    // Add fallback logic for images that fail to load and auto-refresh for new uploads
-    const imgElement = card.querySelector(`#thumb-${fileId}`);
-    if (imgElement) {
-        let retryCount = 0;
-        const maxRetries = 15; // increased retries
-        let loadCheckTimeout;
-        
-        imgElement.addEventListener('load', () => {
-            if (imgElement.naturalWidth > 10) { // Real image loaded
-                console.log(`✅ Thumbnail loaded for ${fileId}`);
-                imgElement.classList.remove('opacity-0');
-            } else {
-                console.log(`[IMAGE-SIZE-CHECK] Image too small for ${fileId}, retrying...`);
-                checkAndRefreshThumbnail(fileId, imgElement, retryCount, maxRetries);
-            }
-        });
-        
-        imgElement.addEventListener('error', function() {
-            console.log(`[IMAGE-ERROR] Triggered for ${fileId}, checking availability...`);
-            checkAndRefreshThumbnail(fileId, imgElement, retryCount, maxRetries);
-        });
-        
-        // If placeholder, check immediately
-        if (useFallback) {
-            checkAndRefreshThumbnail(fileId, imgElement, retryCount, maxRetries);
-        }
-    }
-    
-    card.setAttribute('data-file-code', fileId);
-    card.addEventListener('click', () => openVideoModal(video));
-    return card;
-}
-
-async function openVideoModal(video) {
-    if (!elements.videoModal) return;
-    console.log('[MODAL-OPEN] Opening for:', video.file_code, video.title);
-    elements.videoModal.classList.remove('hidden');
-    elements.modalTitle.textContent = video.title || 'Untitled';
-    currentVideoFileCode = video.file_code || video.id || '';
-    try {
-        elements.videoPlayerContainer.innerHTML = '<div class="text-center py-20 text-gray-400">Loading...</div>';
-        
-        // Use splash_img as the custom poster if available, otherwise single_img
-        // This uses the ?c_poster parameter you mentioned to show the image on the player
-        const posterUrl = video.splash_img || video.single_img || '';
-        console.log('[MODAL-POSTER] Using custom poster:', posterUrl);
-        
-        const embedData = await fetchEmbedUrl(video.file_code || video.id, posterUrl);
-        
-        console.log('[MODAL-EMBED-CHECK] embedData:', embedData);
-        if (embedData && embedData.embed_url) {
-            console.log('[MODAL-IFRAME] Creating iframe with URL:', embedData.embed_url);
-            elements.videoPlayerContainer.innerHTML = `<iframe src="${embedData.embed_url}" width="100%" height="100%" frameborder="0" allowfullscreen class="rounded-lg" style="aspect-ratio: 16/9;"></iframe>`;
-            if (elements.videoDuration) elements.videoDuration.textContent = formatDuration(video.duration || video.length || 0);
-            if (elements.videoViews) elements.videoViews.textContent = formatViews(video.views || 0);
-            if (elements.videoUploadDate) elements.videoUploadDate.textContent = video.uploaded || 'Unknown';
-        } else {
-            elements.videoPlayerContainer.innerHTML = '<div class="text-center py-20 text-red-500">❌ Video tidak tersedia</div>';
-        }
-    } catch (e) {
-        console.error('Error loading video:', e);
-        elements.videoPlayerContainer.innerHTML = '<div class="text-center py-20 text-red-500">Gagal memuat video. Coba lagi.</div>';
-    }
-}
-
-function closeVideoModal() {
-    if (elements.videoModal) elements.videoModal.classList.add('hidden');
-    if (elements.videoPlayerContainer) elements.videoPlayerContainer.innerHTML = '';
-    currentVideoFileCode = '';
-}
-
-
-function handleSearch(query = null) {
-    const term = query !== null ? query : elements.searchInput.value.trim();
-    if (term === currentQuery) return;
-    currentQuery = term;
+document.querySelectorAll('.sort-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (btn.dataset.sort === currentSort) return;
+    currentSort = btn.dataset.sort;
     currentPage = 1;
+    const params = new URLSearchParams(location.search);
+    params.set('sort', currentSort);
+    params.delete('page');
+    history.pushState({}, '', `?${params.toString()}`);
+    initFromURL();
     loadVideos();
-}
+  });
+});
 
-function formatDuration(s) {
-    if (!s) return '0:00';
-    const m = Math.floor(s / 60);
-    const rs = Math.floor(s % 60);
-    return `${m}:${rs.toString().padStart(2, '0')}`;
-}
+window.addEventListener('popstate', () => { initFromURL(); loadVideos(); });
 
-function formatViews(v) {
-    if (v >= 1000000) return (v / 1000000).toFixed(1) + 'M';
-    if (v >= 1000) return (v / 1000).toFixed(1) + 'K';
-    return v.toString();
-}
-
-function showLoading() {
-    if (elements.loadingState) elements.loadingState.classList.remove('hidden');
-    if (elements.errorState) elements.errorState.classList.add('hidden');
-    if (elements.noResultsState) elements.noResultsState.classList.add('hidden');
-    if (elements.videoGrid) elements.videoGrid.innerHTML = '';
-}
-
-function hideLoading() { if (elements.loadingState) elements.loadingState.classList.add('hidden'); }
-function showError(m) {
-    if (elements.errorState) elements.errorState.classList.remove('hidden');
-    if (elements.errorMessage) elements.errorMessage.textContent = m;
-}
-function showNoResults() { if (elements.noResultsState) elements.noResultsState.classList.remove('hidden'); }
-function retryLoad() { currentPage = 1; loadVideos(); }
-
-// Function to check and refresh thumbnail for newly uploaded videos
-async function checkAndRefreshThumbnail(fileId, imgElement, retryCount = 0, maxRetries = 5) {
-    if (retryCount >= maxRetries) return;
-    
-    try {
-        const response = await fetch(`${CONFIG.API_BASE_URL}/thumbnail/${fileId}`);
-        const data = await response.json();
-        
-        if (data.success && data.has_thumbnail) {
-            // Thumbnail found! Update the image
-            const thumbUrl = data.primary || data.fallback;
-            if (thumbUrl && imgElement) {
-                imgElement.src = getSecureThumb(thumbUrl);
-                console.log(`✅ Thumbnail loaded for ${fileId}`);
-                return;
-            }
-        } else if (data.is_processing) {
-            // Still processing, retry after 2 seconds
-            console.log(`⏳ Thumbnail still generating for ${fileId}, retrying...`);
-            retryCount++;
-            setTimeout(() => {
-                checkAndRefreshThumbnail(fileId, imgElement, retryCount, maxRetries);
-            }, 2000);
-        }
-    } catch (error) {
-        console.log(`[THUMBNAIL-CHECK] Error checking thumbnail for ${fileId}:`, error.message);
-    }
-}
-
-// Helper function for getSecureThumb in global scope
-function getSecureThumb(url) {
-    if (!url || url.trim() === '') {
-        return CONFIG.PLACEHOLDER_THUMBNAIL;
-    }
-    
-    let cleanUrl = url.trim();
-    if (cleanUrl.includes('/proxy-thumb?url=')) {
-        return cleanUrl;
-    }
-    
-    if (cleanUrl.startsWith('//')) {
-        cleanUrl = 'https:' + cleanUrl;
-    } else if (!cleanUrl.startsWith('http')) {
-        cleanUrl = 'https://' + cleanUrl;
-    }
-    
-    return `${CONFIG.API_BASE_URL}/proxy-thumb?url=${encodeURIComponent(cleanUrl)}`;
-}
+// Boot
+initFromURL();
+loadVideos();

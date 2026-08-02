@@ -1,410 +1,177 @@
-// Auto-detect API base URL - smart detection for different environments
-function getApiBaseUrl() {
-  // Try to get saved URL from localStorage (if user updated it)
-  const savedUrl = localStorage.getItem('BACKEND_API_URL');
-  if (savedUrl) {
-    console.log('[CONFIG] Using saved backend URL from localStorage:', savedUrl);
-    return savedUrl;
+// BokepHunter Detail Page - detail.js
+const API = '/api/bh';
+
+const loadingState  = document.getElementById('loadingState');
+const videoContent  = document.getElementById('videoContent');
+const errorState    = document.getElementById('errorState');
+const errorMsg      = document.getElementById('errorMsg');
+
+// Get slug from URL path /video/SLUG
+function getSlug() {
+  const path = location.pathname;
+  const m = path.match(/\/video\/(.+)/);
+  return m ? m[1] : null;
+}
+
+// Helpers
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Build related card (grid style for mobile)
+function buildRelatedCardGrid(v) {
+  const thumb = v.thumbnail || '';
+  const title = escHtml(v.title);
+  return `
+    <a href="/video/${v.slug}" class="group block">
+      <div class="relative aspect-video rounded-lg overflow-hidden border border-pink-800/50 group-hover:border-pink-600/60 transition-colors" style="background:#3b001a">
+        ${thumb ? `<img src="${thumb}" alt="${title}" class="h-full w-full object-cover" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'">` : ''}
+        <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+          <div class="w-8 h-8 rounded-full bg-pink-500/80 flex items-center justify-center">
+            <svg class="w-4 h-4 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+        </div>
+      </div>
+      <div class="mt-1.5">
+        <h4 class="text-[11px] font-semibold text-pink-100 line-clamp-2 leading-snug group-hover:text-white">${title}</h4>
+        <p class="text-[10px] text-pink-400/60 mt-0.5">${v.timeAgo || ''}</p>
+      </div>
+    </a>`;
+}
+
+// Build related card (sidebar list style for desktop)
+function buildRelatedCardList(v) {
+  const thumb = v.thumbnail || '';
+  const title = escHtml(v.title);
+  const views = v.views ? `${parseInt(v.views).toLocaleString('id-ID')} views` : '';
+  return `
+    <a href="/video/${v.slug}" class="flex gap-2 sm:gap-3 group rounded-xl hover:bg-pink-900/40 p-2 -mx-2 transition-colors">
+      <div class="relative w-[120px] sm:w-[140px] shrink-0 aspect-video rounded-lg overflow-hidden bg-pink-900 border border-pink-800/50">
+        ${thumb ? `<img src="${thumb}" alt="${title}" class="w-full h-full object-cover" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'">` : ''}
+      </div>
+      <div class="flex-1 min-w-0 py-0.5">
+        <h4 class="text-[12px] font-semibold text-pink-100 group-hover:text-white line-clamp-2 leading-snug">${title}</h4>
+        ${views ? `<p class="mt-1 text-[11px] text-pink-400/60">${views}</p>` : ''}
+        <p class="text-[11px] text-pink-500/50">${v.timeAgo || ''}</p>
+      </div>
+    </a>`;
+}
+
+// Load video detail
+async function loadDetail() {
+  const slug = getSlug();
+  if (!slug) {
+    showError('Slug video tidak ditemukan');
+    return;
   }
-  
-  // Replit-specific internal path for Web Preview
-  if (window.location.hostname.includes('replit.dev') || window.location.hostname.includes('replit.app') || window.location.hostname === 'localhost') {
-    console.log('[CONFIG] Replit Environment detected → using relative /api');
-    return '/api';
+
+  loadingState.classList.remove('hidden');
+  videoContent.classList.add('hidden');
+  errorState.classList.add('hidden');
+
+  try {
+    const resp = await fetch(`${API}/video/${encodeURIComponent(slug)}`);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    if (!data || !data.title) throw new Error('Data video tidak valid');
+
+    renderVideo(data);
+  } catch (e) {
+    showError(e.message);
   }
-  
-  // Production / External (Firebase, etc)
-  const publicUrl = 'https://backend-bokephot-1--m4j2vzehsbsbs.replit.app/api';
-  console.log('[CONFIG] External Environment detected → using public URL:', publicUrl);
-  return publicUrl;
 }
 
-// Konfigurasi
-const CONFIG = {
-    API_BASE_URL: getApiBaseUrl(),
-    PLACEHOLDER_THUMBNAIL: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIwIiBoZWlnaHQ9IjE4MCIgdmlld0JveD0iMCAwIDMyMCAxODAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIzMjAiIGhlaWdodD0iMTgwIiBmaWxsPSIjMzc0MTUxIi8+CjxwYXRoIGQ9Ik0xNDAgNzBIMTgwVjExMEgxNDBWNzBaIiBzdHJva2U9IiM2QjczODAiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWRhc2hhcnJheT0iNCA0Ii8+CjxjaXJjbGUgY3g9IjE2MCIgY3k9IjkwIiByPSIxNSIgZmlsbD0iIzZCNzM4MCIvPgo8L3N2Zz4K'
-};
+function showError(msg) {
+  loadingState.classList.add('hidden');
+  videoContent.classList.add('hidden');
+  errorState.classList.remove('hidden');
+  errorMsg.textContent = msg;
+}
 
-// DOM Elements
-const elements = {
-    videoTitle: document.getElementById('videoTitle'),
-    videoPlayer: document.getElementById('videoPlayer'),
-    videoViews: document.getElementById('videoViews'),
-    videoUploadDate: document.getElementById('videoUploadDate'),
-    videoDescription: document.getElementById('videoDescription'),
-    relatedVideos: document.getElementById('relatedVideos')
-};
+function renderVideo(data) {
+  loadingState.classList.add('hidden');
+  videoContent.classList.remove('hidden');
 
-// Initialize App
-document.addEventListener('DOMContentLoaded', () => {
-    loadVideoDetail();
-    loadRelatedVideos();
+  // Meta tags
+  document.getElementById('pageTitle').textContent = `${data.title} — BokepHunter`;
+  document.getElementById('pageMeta').setAttribute('content', data.description || data.title);
+
+  // Thumbnail
+  const thumbEl = document.getElementById('playerThumb');
+  if (data.thumbnail) { thumbEl.src = data.thumbnail; thumbEl.alt = data.title; }
+  else thumbEl.style.display = 'none';
+
+  // Title
+  document.getElementById('videoTitle').textContent = data.title;
+
+  // Views
+  const viewsEl = document.querySelector('#videoViews span');
+  viewsEl.textContent = data.views ? `${parseInt(data.views).toLocaleString('id-ID')} views` : '';
+
+  // Time
+  const timeEl = document.querySelector('#videoTime span');
+  timeEl.textContent = data.timeAgo || '';
+
+  // Categories
+  const catEl = document.getElementById('videoCategories');
+  if (data.categories && data.categories.length) {
+    catEl.innerHTML = data.categories.map(c =>
+      `<a href="/?cat=${c.slug}" class="rounded-lg px-2.5 py-1 text-[11px] font-semibold bg-pink-900/60 text-pink-200/70 hover:bg-pink-800/60 border border-pink-700/30 transition-colors">${escHtml(c.name)}</a>`
+    ).join('');
+  }
+
+  // Description
+  if (data.description) {
+    const descEl = document.getElementById('videoDesc');
+    descEl.textContent = data.description;
+    descEl.classList.remove('hidden');
+  }
+
+  // Player setup
+  const overlay = document.getElementById('playerOverlay');
+  const frame   = document.getElementById('playerFrame');
+  const noEmbed = document.getElementById('noEmbed');
+
+  overlay.addEventListener('click', () => {
+    if (data.embedUrl) {
+      overlay.style.display = 'none';
+      frame.classList.remove('hidden');
+      frame.innerHTML = `<iframe src="${data.embedUrl}" width="100%" height="100%" frameborder="0" allowfullscreen allow="autoplay; fullscreen" scrolling="no"></iframe>`;
+    } else {
+      // No embed — show external link
+      overlay.style.display = 'none';
+      noEmbed.classList.remove('hidden');
+      noEmbed.classList.add('flex');
+      const extLink = document.getElementById('watchExternalLink');
+      const bhUrl = `https://bokephunter.com/video/${data.slug}`;
+      extLink.href = bhUrl;
+    }
+  });
+
+  // Related videos
+  const relatedList   = document.getElementById('relatedList');
+  const mobileRelated = document.getElementById('mobileRelated');
+
+  if (data.related && data.related.length) {
+    relatedList.innerHTML = data.related.map(buildRelatedCardList).join('');
+    mobileRelated.innerHTML = data.related.slice(0, 8).map(buildRelatedCardGrid).join('');
+  } else {
+    relatedList.innerHTML = '<p class="text-pink-400/50 text-sm">Tidak ada video terkait</p>';
+  }
+}
+
+// Search form
+document.getElementById('searchToggle').addEventListener('click', () => {
+  const bar = document.getElementById('searchBar');
+  bar.classList.toggle('hidden');
+  if (!bar.classList.contains('hidden')) document.getElementById('searchInput').focus();
 });
 
-// API Functions
-async function fetchVideoDetails(fileId) {
-    try {
-        const response = await fetch(`${CONFIG.API_BASE_URL}/file/${fileId}`);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        return await response.json();
-    } catch (error) {
-        console.error('Error fetching video details:', error);
-        throw error;
-    }
-}
-
-async function fetchEmbedUrl(fileId) {
-    try {
-        const response = await fetch(`${CONFIG.API_BASE_URL}/embed/${fileId}`);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        return await response.json();
-    } catch (error) {
-        console.error('Error fetching embed URL:', error);
-        throw error;
-    }
-}
-
-async function fetchVideos(page = 1, limit = 10) {
-    try {
-        const params = new URLSearchParams({
-            page: page.toString(),
-            per_page: limit.toString()
-        });
-
-        const response = await fetch(`${CONFIG.API_BASE_URL}/videos?${params}`);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        return await response.json();
-    } catch (error) {
-        console.error('Error fetching videos:', error);
-        throw error;
-    }
-}
-
-// Video Loading Functions
-async function loadVideoDetail() {
-    // Get video ID from URL parameters
-    const urlParams = new URLSearchParams(window.location.search);
-    const videoId = urlParams.get('id');
-    
-    if (!videoId) {
-        showVideoError('Video ID tidak ditemukan dalam URL');
-        return;
-    }
-
-    try {
-        // Load video details
-        const videoData = await fetchVideoDetails(videoId);
-        
-        if (!videoData.success || !videoData.result) {
-            throw new Error(videoData.error || 'Video tidak ditemukan');
-        }
-
-        const video = videoData.result;
-        
-        // Update video info
-        elements.videoTitle.textContent = video.title || video.name || 'Untitled Video';
-        elements.videoViews.textContent = formatViews(video.views || 0) + ' views';
-        elements.videoUploadDate.textContent = formatDate(video.uploaded || video.created || Date.now());
-        elements.videoDescription.textContent = video.description || 'Tidak ada deskripsi untuk video ini.';
-        
-        // Load video player (let Doodstream handle any errors)
-        await loadVideoPlayer(videoId);
-        
-    } catch (error) {
-        console.error('Error loading video detail:', error);
-        showVideoError('Gagal memuat detail video: ' + error.message);
-    }
-}
-
-async function loadVideoPlayer(fileId) {
-    try {
-        // First validate if video exists
-        const valRes = await fetch(`${CONFIG.API_BASE_URL}/validate/${fileId}`);
-        const valData = await valRes.json();
-        
-        if (!valData.valid) {
-            showVideoError('Video tidak tersedia atau telah dihapus.');
-            return;
-        }
-
-        // Fetch fresh video details to get the thumbnail/splash for the poster
-        const videoData = await fetchVideoDetails(fileId);
-        const video = videoData.result;
-        const posterUrl = video.splash_img || video.single_img || '';
-        
-        const response = await fetch(`${CONFIG.API_BASE_URL}/embed/${fileId}${posterUrl ? `?poster=${encodeURIComponent(posterUrl)}` : ''}`);
-        const embedData = await response.json();
-        
-        if (embedData.success && embedData.embed_url) {
-            // Create iframe for video player
-            elements.videoPlayer.innerHTML = `
-                <iframe 
-                    src="${embedData.embed_url}" 
-                    width="100%" 
-                    height="100%" 
-                    frameborder="0" 
-                    allowfullscreen
-                    class="rounded-lg"
-                    style="aspect-ratio: 16/9; min-height: 300px; background: #000;"
-                ></iframe>
-            `;
-        } else {
-            throw new Error('Failed to get embed URL');
-        }
-    } catch (error) {
-        console.error('Error loading video player:', error);
-        showVideoError('Gagal memuat video player: ' + error.message);
-    }
-}
-
-async function loadRelatedVideos() {
-    try {
-        const data = await fetchVideos(1, 6);
-        
-        if (!data.success) {
-            throw new Error(data.error || 'Failed to fetch related videos');
-        }
-
-        const videos = data.result?.files || [];
-        
-        if (videos.length === 0) {
-            elements.relatedVideos.innerHTML = `
-                <div class="text-center text-gray-400 py-8">
-                    <p>Tidak ada video terkait</p>
-                </div>
-            `;
-            return;
-        }
-
-        // Filter out current video if it's in the list
-        const urlParams = new URLSearchParams(window.location.search);
-        const currentVideoId = urlParams.get('id');
-        const filteredVideos = videos.filter(video => 
-            (video.file_code || video.id) !== currentVideoId
-        );
-
-        elements.relatedVideos.innerHTML = '';
-        filteredVideos.forEach(video => {
-            const videoCard = createRelatedVideoCard(video);
-            elements.relatedVideos.appendChild(videoCard);
-        });
-        
-    } catch (error) {
-        console.error('Error loading related videos:', error);
-        elements.relatedVideos.innerHTML = `
-            <div class="text-center text-red-500 py-8">
-                <p>Gagal memuat video terkait</p>
-            </div>
-        `;
-    }
-}
-
-// Proxy thumbnail URLs through backend to handle new uploads
-function getProxiedThumbUrl(url) {
-    if (!url || !url.trim()) return null;
-    let cleanUrl = url.trim();
-    
-    if (cleanUrl.startsWith('//')) {
-        cleanUrl = 'https:' + cleanUrl;
-    } else if (!cleanUrl.startsWith('http')) {
-        cleanUrl = 'https://' + cleanUrl;
-    }
-    
-    return `${CONFIG.API_BASE_URL}/proxy-thumb?url=${encodeURIComponent(cleanUrl)}`;
-}
-
-// UI Functions
-function createRelatedVideoCard(video) {
-    const card = document.createElement('div');
-    card.className = 'flex space-x-3 bg-gray-700 rounded-lg p-3 cursor-pointer hover:bg-gray-600 transition-colors';
-    
-    // Use primary thumbnail, with fallbacks
-    const primaryThumb = video.single_img || video.thumbnail_url || video.screenshot;
-    const fallbackThumb = video.splash_img;
-    const fileId = video.file_code || video.id;
-    
-    let thumbnailUrl = CONFIG.PLACEHOLDER_THUMBNAIL;
-    if (primaryThumb && primaryThumb.trim()) {
-        thumbnailUrl = getProxiedThumbUrl(primaryThumb);
-    } else if (fallbackThumb && fallbackThumb.trim()) {
-        thumbnailUrl = getProxiedThumbUrl(fallbackThumb);
-    }
-    
-    const duration = formatDuration(video.duration || video.length || 0);
-    const views = formatViews(video.views || 0);
-    
-    card.innerHTML = `
-        <div class="relative flex-shrink-0">
-            <img 
-                id="thumb-${fileId}"
-                src="${thumbnailUrl}" 
-                alt="${video.title || video.name || 'Video'}"
-                class="w-32 h-20 object-cover rounded-md"
-            >
-            <div class="absolute bottom-1 right-1 bg-black bg-opacity-75 text-white text-xs px-1 py-0.5 rounded">
-                ${duration}
-            </div>
-        </div>
-        <div class="flex-1 min-w-0">
-            <h4 class="font-semibold text-white text-sm mb-1 line-clamp-2">
-                ${video.title || video.name || 'Untitled Video'}
-            </h4>
-            <p class="text-xs text-gray-400">${views} views</p>
-            <p class="text-xs text-gray-400">${formatDate(video.uploaded || video.created || Date.now())}</p>
-        </div>
-    `;
-    
-    // Auto-refresh thumbnail for new uploads with timeout monitoring
-    const imgElement = card.querySelector(`#thumb-${fileId}`);
-    if (imgElement) {
-        let loadCheckTimeout;
-        
-        // Monitor if image loads within timeout
-        loadCheckTimeout = setTimeout(() => {
-            // If image hasn't loaded within 1.5 seconds, check thumbnail via backend
-            if (imgElement.naturalWidth === 0 && !imgElement.hasAttribute('data-checking')) {
-                console.log(`[RELATED] Image not loaded for ${fileId}, checking via backend...`);
-                imgElement.setAttribute('data-checking', '1');
-                checkAndRefreshThumbnail(fileId, imgElement, 0, 5);
-            }
-        }, 1500);
-        
-        imgElement.addEventListener('load', () => {
-            clearTimeout(loadCheckTimeout);
-        });
-        
-        imgElement.addEventListener('error', async function() {
-            clearTimeout(loadCheckTimeout);
-            if (primaryThumb && !this.hasAttribute('data-tried-primary')) {
-                this.setAttribute('data-tried-primary', '1');
-                const altUrl = getProxiedThumbUrl(primaryThumb);
-                if (altUrl) this.src = altUrl;
-            } else if (fallbackThumb && !this.hasAttribute('data-tried-fallback')) {
-                this.setAttribute('data-tried-fallback', '1');
-                const altUrl = getProxiedThumbUrl(fallbackThumb);
-                if (altUrl) this.src = altUrl;
-            } else if (!this.hasAttribute('data-checking')) {
-                this.setAttribute('data-checking', '1');
-                checkAndRefreshThumbnail(fileId, imgElement, 0, 5);
-            }
-        });
-        
-        // If initial thumbnail is placeholder, immediately check backend
-        if (thumbnailUrl === CONFIG.PLACEHOLDER_THUMBNAIL) {
-            clearTimeout(loadCheckTimeout);
-            checkAndRefreshThumbnail(fileId, imgElement, 0, 5);
-        }
-    }
-    
-    // Add click event
-    card.addEventListener('click', () => {
-        const videoId = video.file_code || video.id;
-        window.location.href = `detail.html?id=${videoId}`;
-    });
-    
-    return card;
-}
-
-function showVideoError(message) {
-    elements.videoPlayer.innerHTML = `
-        <div class="text-center text-red-500 py-12">
-            <svg class="w-16 h-16 mx-auto mb-4" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-            </svg>
-            <h3 class="text-xl font-semibold mb-2">Error</h3>
-            <p>${message}</p>
-            <button onclick="window.location.href='index.html'" class="mt-4 bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">
-                Kembali ke Home
-            </button>
-        </div>
-    `;
-}
-
-// Utility Functions
-function formatDuration(seconds) {
-    if (!seconds || seconds === 0) return '0:00';
-    
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-}
-
-function formatViews(views) {
-    if (views >= 1000000) {
-        return (views / 1000000).toFixed(1) + 'M';
-    } else if (views >= 1000) {
-        return (views / 1000).toFixed(1) + 'K';
-    }
-    return views.toString();
-}
-
-function formatDate(dateString) {
-    try {
-        const date = new Date(dateString);
-        const now = new Date();
-        const diffTime = Math.abs(now - date);
-        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-        
-        if (diffDays === 0) return 'Today';
-        if (diffDays === 1) return 'Yesterday';
-        if (diffDays < 7) return `${diffDays} days ago`;
-        if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-        if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
-        return `${Math.floor(diffDays / 365)} years ago`;
-    } catch (error) {
-        return 'Unknown';
-    }
-}
-
-// Auto-refresh related videos every 15 seconds to catch new uploads from bot
-let relatedVideoInterval = null;
-document.addEventListener('DOMContentLoaded', () => {
-    relatedVideoInterval = setInterval(loadRelatedVideos, 15000);
+document.getElementById('searchForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const q = document.getElementById('searchInput').value.trim();
+  if (q) window.location.href = `/?q=${encodeURIComponent(q)}`;
 });
 
-// Cleanup on page unload
-window.addEventListener('beforeunload', () => {
-    if (relatedVideoInterval) clearInterval(relatedVideoInterval);
-});
-
-// Function to check and refresh thumbnail for newly uploaded videos
-async function checkAndRefreshThumbnail(fileId, imgElement, retryCount = 0, maxRetries = 5) {
-    if (retryCount >= maxRetries) return;
-    
-    try {
-        const response = await fetch(`${CONFIG.API_BASE_URL}/thumbnail/${fileId}`);
-        const data = await response.json();
-        
-        if (data.success && data.has_thumbnail) {
-            // Thumbnail found! Update the image
-            const thumbUrl = data.primary || data.fallback;
-            if (thumbUrl && imgElement) {
-                imgElement.src = getProxiedThumbUrl(thumbUrl);
-                console.log(`✅ Thumbnail loaded for ${fileId}`);
-                return;
-            }
-        } else if (data.is_processing) {
-            // Still processing, retry after 2 seconds
-            console.log(`⏳ Thumbnail still generating for ${fileId}, retrying...`);
-            retryCount++;
-            setTimeout(() => {
-                checkAndRefreshThumbnail(fileId, imgElement, retryCount, maxRetries);
-            }, 2000);
-        }
-    } catch (error) {
-        console.log(`[THUMBNAIL-CHECK] Error checking thumbnail for ${fileId}:`, error.message);
-    }
-}
+// Boot
+loadDetail();

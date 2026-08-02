@@ -4,6 +4,8 @@ const axios = require('axios');
 const path = require('path');
 require('dotenv').config();
 
+const { scrapeHomepage, scrapeCategory, scrapeSearch, scrapeVideoDetail, getCategories } = require('./scraper');
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -213,6 +215,67 @@ app.get('/api/thumbnail/:fileId', async (req, res) => {
   }
 });
 
+// ============================================================
+// BokepHunter Scraper Routes
+// ============================================================
+
+// GET /api/bh/videos?page=&sort=
+app.get('/api/bh/videos', async (req, res) => {
+  try {
+    const { page = 1, sort = 'new' } = req.query;
+    const data = await scrapeHomepage(page, sort);
+    res.json(data);
+  } catch (e) {
+    console.error('[BH-VIDEOS]', e.message);
+    res.status(500).json({ error: e.message, videos: [] });
+  }
+});
+
+// GET /api/bh/categories
+app.get('/api/bh/categories', (req, res) => {
+  res.json(getCategories());
+});
+
+// GET /api/bh/category/:slug?page=&sort=
+app.get('/api/bh/category/:slug', async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const { page = 1, sort = 'new' } = req.query;
+    const data = await scrapeCategory(slug, page, sort);
+    res.json(data);
+  } catch (e) {
+    console.error('[BH-CATEGORY]', e.message);
+    res.status(500).json({ error: e.message, videos: [] });
+  }
+});
+
+// GET /api/bh/search?q=&page=
+app.get('/api/bh/search', async (req, res) => {
+  try {
+    const { q = '', page = 1 } = req.query;
+    if (!q.trim()) return res.json({ videos: [], totalPages: 0, page: 1, q });
+    const data = await scrapeSearch(q, page);
+    res.json(data);
+  } catch (e) {
+    console.error('[BH-SEARCH]', e.message);
+    res.status(500).json({ error: e.message, videos: [] });
+  }
+});
+
+// GET /api/bh/video/:slug
+app.get('/api/bh/video/:slug', async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const data = await scrapeVideoDetail(slug);
+    res.json(data);
+  } catch (e) {
+    console.error('[BH-VIDEO]', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ============================================================
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ success: true, message: 'Doodstream API Proxy is running' });
@@ -378,6 +441,11 @@ app.get('/', (req, res) => {
 
 // Detail route to serve detail.html
 app.get('/detail', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/detail.html'));
+});
+
+// Video detail page route (new slug-based)
+app.get('/video/:slug', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/detail.html'));
 });
 

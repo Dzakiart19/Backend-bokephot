@@ -1,0 +1,2 @@
+- [BokepHunter scraper](bokephunter-scraper.md) — site scrapes bokephunter.com; two embed source types need different resolution strategies
+- [Backend dep mismatch fixed](backend-deps.md) — node-telegram-bot-api missing from backend/package.json; must be installed there, not just root
