@@ -33,11 +33,13 @@ app.use((req, res, next) => {
 // BokepHunter Scraper Routes
 // ============================================================
 
-// GET /api/bh/videos?page=&sort=
+// GET /api/bh/videos?page=&filter=
 app.get('/api/bh/videos', async (req, res) => {
   try {
-    const { page = 1, sort = 'new' } = req.query;
-    const data = await scrapeHomepage(page, sort);
+    const { page = 1, filter = 'terbaru', sort } = req.query;
+    // support legacy ?sort= param
+    const effectiveFilter = filter !== 'terbaru' ? filter : (sort || 'terbaru');
+    const data = await scrapeHomepage(page, effectiveFilter);
     res.json(data);
   } catch (e) {
     console.error('[BH-VIDEOS]', e.message);

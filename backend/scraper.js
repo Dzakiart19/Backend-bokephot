@@ -184,14 +184,28 @@ function parseTotalPages(html, basePattern = /\/halaman\/(\d+)/) {
   return pageNums.length > 0 ? Math.max(...pageNums) : 1;
 }
 
-// ── Scrape homepage ───────────────────────────────────────────────────────────
-async function scrapeHomepage(page = 1, sort = 'new') {
-  page = parseInt(page);
+// ── Map filter slug ke query param indoav ─────────────────────────────────────
+const FILTER_MAP = {
+  'terbaru':     '',                     // default (no filter param)
+  'dilihat':     'banyak-dilihat',
+  'disukai':     'banyak-disukai',
+  'dikomentari': 'banyak-dikomentari',
+  'panjang':     'durasi-panjang',
+  'random':      'random',
+  // legacy compat
+  'new':         '',
+  'popular':     'banyak-dilihat',
+};
 
-  // Page 1: gunakan /site/feed JSON API (lebih cepat, tidak perlu scrape HTML)
-  if (page === 1) {
+// ── Scrape homepage ───────────────────────────────────────────────────────────
+async function scrapeHomepage(page = 1, filter = 'terbaru') {
+  page = parseInt(page);
+  const indoavFilter = FILTER_MAP[filter] !== undefined ? FILTER_MAP[filter] : '';
+
+  // Page 1 tanpa filter: gunakan /site/feed JSON API (lebih cepat)
+  if (page === 1 && !indoavFilter) {
     try {
-      const cacheKey = `feed_${sort}`;
+      const cacheKey = `feed_terbaru`;
       let data = getCached(cacheKey);
       if (!data) {
         const feedUrl = `${BASE_URL}/site/feed`;
@@ -205,7 +219,7 @@ async function scrapeHomepage(page = 1, sort = 'new') {
       if (data && data.success) {
         const videos = parseFeedVideos(data);
         if (videos.length > 0) {
-          return { videos, totalPages: 478, page: 1, sort };
+          return { videos, totalPages: 478, page: 1, filter };
         }
       }
     } catch (e) {
@@ -213,16 +227,16 @@ async function scrapeHomepage(page = 1, sort = 'new') {
     }
   }
 
-  // Page 2+: scrape HTML dari /halaman/N
-  const filterParam = sort === 'popular' ? '?filter=terpopuler' : '';
+  // Semua kasus lain: scrape HTML
+  const filterQuery = indoavFilter ? `?filter=${indoavFilter}` : '';
   const url = page === 1
-    ? `${BASE_URL}/${filterParam}`
-    : `${BASE_URL}/halaman/${page}${filterParam}`;
+    ? `${BASE_URL}/${filterQuery}`
+    : `${BASE_URL}/halaman/${page}${filterQuery}`;
 
   const html = await fetchPage(url);
   const videos = parseVideoCards(html);
   const totalPages = parseTotalPages(html, /\/halaman\/(\d+)/);
-  return { videos, totalPages: Math.max(totalPages, 1), page, sort };
+  return { videos, totalPages: Math.max(totalPages, 1), page, filter };
 }
 
 // ── Scrape category ───────────────────────────────────────────────────────────

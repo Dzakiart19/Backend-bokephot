@@ -2,12 +2,12 @@
 const API = '/api/bh';
 
 // State
-let currentPage = 1;
-let currentSort = 'new';
-let currentCat = null;
+let currentPage   = 1;
+let currentFilter = 'terbaru';
+let currentCat    = null;
 let currentSearch = null;
-let totalPages = 1;
-let isLoading = false;
+let totalPages    = 1;
+let isLoading     = false;
 
 // DOM refs
 const videoGrid    = document.getElementById('videoGrid');
@@ -20,60 +20,90 @@ const pageInfo     = document.getElementById('pageInfo');
 const pageButtons  = document.getElementById('pageButtons');
 const pageTitle    = document.getElementById('pageTitle');
 
+// Category display names
+const CAT_NAMES = {
+  'bokep-indonesia': '🇮🇩 Bokep Indonesia',
+  'bokep-indo':      '🔥 Bokep Indo',
+  'bokep-sin':       '😈 Bokep Sin',
+  'bokep-dosa':      '💋 Bokep Dosa',
+  'bokep-barat':     '🌍 Bokep Barat',
+  'bokep-asia':      '🌏 Bokep Asia',
+  'bokep-jepang':    '🇯🇵 Bokep Jepang',
+  'tanpa-sensor':    '🔞 Tanpa Sensor',
+};
+
+// Filter display names
+const FILTER_NAMES = {
+  'terbaru':  '🆕 Video Terbaru',
+  'dilihat':  '👁️ Terbanyak Dilihat',
+  'disukai':  '❤️ Terbanyak Disukai',
+  'panjang':  '⏱️ Durasi Panjang',
+  'random':   '🎲 Video Random',
+};
+
 // Init from URL params
 function initFromURL() {
   const params = new URLSearchParams(location.search);
   currentPage   = parseInt(params.get('page') || '1');
-  currentSort   = params.get('sort') || 'new';
+  currentFilter = params.get('filter') || 'terbaru';
   currentCat    = params.get('cat') || null;
   currentSearch = params.get('q') || null;
 
-  // Update sort buttons
-  document.querySelectorAll('.sort-btn').forEach(btn => {
-    const active = btn.dataset.sort === currentSort;
-    btn.classList.toggle('bg-pink-600', active);
-    btn.classList.toggle('text-white', active);
-    btn.classList.toggle('border-pink-500', active);
+  // Update active filter buttons (only show on homepage, not category/search)
+  const filterButtons = document.getElementById('filterButtons');
+  const showFilters   = !currentCat && !currentSearch;
+  filterButtons.style.display = showFilters ? '' : 'none';
+
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    const active = btn.dataset.filter === currentFilter;
+    btn.classList.toggle('bg-pink-600',    active);
+    btn.classList.toggle('text-white',     active);
+    btn.classList.toggle('border-pink-500',active);
     btn.classList.toggle('bg-pink-900/40', !active);
-    btn.classList.toggle('text-pink-300', !active);
+    btn.classList.toggle('text-pink-300',  !active);
     btn.classList.toggle('border-pink-700/30', !active);
     btn.classList.toggle('active', active);
   });
 
-  // Update active category in nav
+  // Update active category in desktop nav
   document.querySelectorAll('.cat-link').forEach(a => {
     const active = a.dataset.cat === currentCat;
-    a.classList.toggle('bg-pink-800/60', active);
-    a.classList.toggle('text-white', active);
-    a.classList.toggle('bg-pink-900/40', !active);
+    a.classList.toggle('bg-pink-800/60',   active);
+    a.classList.toggle('text-white',       active);
+    a.classList.toggle('border-pink-500/50', active);
+    a.classList.toggle('bg-pink-900/40',   !active);
     a.classList.toggle('text-pink-200/70', !active);
+    a.classList.toggle('border-pink-700/30', !active);
   });
 
-  // Update page title
+  // Update active in mobile bottom nav
+  document.querySelectorAll('.mobile-cat-link').forEach(a => {
+    const active = a.dataset.cat === currentCat;
+    a.classList.toggle('text-pink-200', active);
+    a.classList.toggle('text-pink-400/60', !active);
+  });
+
+  // Mobile home link
+  const mobileHome = document.getElementById('mobileHomeLink');
+  if (mobileHome) {
+    const homeActive = !currentCat && !currentSearch;
+    mobileHome.classList.toggle('text-pink-200', homeActive);
+    mobileHome.classList.toggle('text-pink-400/60', !homeActive);
+  }
+
+  // Page title
   if (currentSearch) {
     pageTitle.textContent = `🔍 Hasil: "${currentSearch}"`;
-    document.querySelectorAll('.sort-btn').forEach(b => b.style.display = 'none');
   } else if (currentCat) {
-    const catNames = {
-      'bokep-indonesia': '🇮🇩 Bokep Indonesia', 'bokep-indo': '🔥 Bokep Indo',
-      'bokep-viral': '📱 Bokep Viral', 'bokep-jilbab': '🧕 Bokep Jilbab',
-      'bokep-abg': '✨ Bokep ABG', 'bokep-colmek': '🌶️ Bokep Colmek',
-      'bokep-tiktok': '🎵 Bokep TikTok', 'bokep-skandal': '📸 Bokep Skandal',
-      'bokep-mahasiswi': '🎓 Bokep Mahasiswi', 'bokep-barat': '🌍 Bokep Barat',
-      'bokep-asia': '🌏 Bokep Asia', 'bokep-jepang': '🇯🇵 Bokep Jepang',
-      'bokep-lesbian': '💕 Bokep Lesbian',
-    };
-    pageTitle.textContent = catNames[currentCat] || currentCat;
+    pageTitle.textContent = CAT_NAMES[currentCat] || currentCat;
   } else {
-    pageTitle.textContent = currentSort === 'popular' ? '🔥 Video Popular' : '🆕 Video Terbaru';
+    pageTitle.textContent = FILTER_NAMES[currentFilter] || '🆕 Video Terbaru';
   }
 }
 
-// Proxy thumbnails yang block hotlinking
+// Proxy thumbnails
 function thumbSrc(url) {
-  if (!url) return '';
-  // a.embedan.com (indoav thumbnails) bisa diakses langsung
-  return url;
+  return url || '';
 }
 
 // Build video card HTML
@@ -167,9 +197,9 @@ async function loadVideos() {
     if (currentSearch) {
       url = `${API}/search?q=${encodeURIComponent(currentSearch)}&page=${currentPage}`;
     } else if (currentCat) {
-      url = `${API}/category/${currentCat}?page=${currentPage}&sort=${currentSort}`;
+      url = `${API}/category/${currentCat}?page=${currentPage}`;
     } else {
-      url = `${API}/videos?page=${currentPage}&sort=${currentSort}`;
+      url = `${API}/videos?page=${currentPage}&filter=${encodeURIComponent(currentFilter)}`;
     }
 
     const resp = await fetch(url);
@@ -205,7 +235,7 @@ function escAttr(str) {
   return String(str).replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
-// Events
+// Mobile sidebar
 document.getElementById('menuToggle').addEventListener('click', () => {
   document.getElementById('mobileSidebar').classList.remove('-translate-x-full');
   document.getElementById('mobileOverlay').classList.remove('hidden');
@@ -215,10 +245,11 @@ function closeSidebar() {
   document.getElementById('mobileOverlay').classList.add('hidden');
 }
 
+// Search toggle (header)
 document.getElementById('searchToggle').addEventListener('click', () => {
   const bar = document.getElementById('searchBar');
-  const si = document.getElementById('searchIcon');
-  const ci = document.getElementById('closeIcon');
+  const si  = document.getElementById('searchIcon');
+  const ci  = document.getElementById('closeIcon');
   const open = !bar.classList.contains('hidden');
   bar.classList.toggle('hidden', open);
   si.classList.toggle('hidden', !open);
@@ -233,13 +264,14 @@ document.getElementById('searchForm').addEventListener('submit', e => {
   window.location.href = `/?q=${encodeURIComponent(q)}`;
 });
 
-document.querySelectorAll('.sort-btn').forEach(btn => {
+// Filter buttons
+document.querySelectorAll('.filter-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    if (btn.dataset.sort === currentSort) return;
-    currentSort = btn.dataset.sort;
-    currentPage = 1;
+    if (btn.dataset.filter === currentFilter) return;
+    currentFilter = btn.dataset.filter;
+    currentPage   = 1;
     const params = new URLSearchParams(location.search);
-    params.set('sort', currentSort);
+    params.set('filter', currentFilter);
     params.delete('page');
     history.pushState({}, '', `?${params.toString()}`);
     initFromURL();

@@ -27,6 +27,8 @@
     ::-webkit-scrollbar-thumb { background: #831843; border-radius: 3px; }
     .skeleton { background: linear-gradient(90deg, #3b001a 25%, #500127 50%, #3b001a 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; }
     @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
 <body class="bg-pink-950 text-pink-50 antialiased pb-16 sm:pb-0 min-h-screen">
@@ -34,35 +36,37 @@
 <!-- Header -->
 <header class="sticky top-0 z-50 border-b border-pink-800/50 bg-pink-950/90 backdrop-blur-2xl">
   <div class="mx-auto max-w-[1400px] px-3 sm:px-5 py-2 sm:py-3">
-    <div class="flex items-center justify-between gap-3">
+    <div class="flex items-center gap-2 sm:gap-3">
+      <!-- Mobile: hamburger -->
       <button id="menuToggle" class="sm:hidden flex items-center justify-center w-8 h-8 rounded-lg border border-pink-700/50 text-pink-300 hover:text-white hover:bg-pink-800/50 shrink-0">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
       </button>
+      <!-- Logo -->
       <a href="/" class="flex items-center gap-2 shrink-0">
         <div class="h-7 w-7 rounded-lg bg-gradient-to-br from-pink-500 to-pink-700 flex items-center justify-center text-white font-black text-sm shadow-lg">B</div>
-        <span class="font-extrabold text-base sm:text-lg text-white tracking-tight hidden xs:block">BokepHunter</span>
+        <span class="font-extrabold text-base sm:text-lg text-white tracking-tight">BokepHunter</span>
       </a>
-      <!-- Desktop Nav -->
-      <nav class="hidden sm:flex items-center gap-1 overflow-x-auto scrollbar-hide">
-        <a href="/" class="shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all border border-pink-700/30 bg-pink-800/60 text-white">🏠 Home</a>
+      <!-- Desktop Nav Categories -->
+      <nav class="hidden sm:flex items-center gap-1 overflow-x-auto scrollbar-hide flex-1">
+        <a href="/" class="shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all border border-pink-700/30 bg-pink-800/60 text-white" id="homeLink">🏠 Home</a>
         <a href="/?cat=bokep-indonesia" class="cat-link shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all border border-pink-700/30 bg-pink-900/40 text-pink-200/70 hover:bg-pink-800/40" data-cat="bokep-indonesia">🇮🇩 Indonesia</a>
-        <a href="/?cat=bokep-viral" class="cat-link shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all border border-pink-700/30 bg-pink-900/40 text-pink-200/70 hover:bg-pink-800/40" data-cat="bokep-viral">📱 Viral</a>
-        <a href="/?cat=bokep-jilbab" class="cat-link shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all border border-pink-700/30 bg-pink-900/40 text-pink-200/70 hover:bg-pink-800/40" data-cat="bokep-jilbab">🧕 Jilbab</a>
-        <a href="/?cat=bokep-abg" class="cat-link shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all border border-pink-700/30 bg-pink-900/40 text-pink-200/70 hover:bg-pink-800/40" data-cat="bokep-abg">✨ ABG</a>
-        <a href="/?cat=bokep-colmek" class="cat-link shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all border border-pink-700/30 bg-pink-900/40 text-pink-200/70 hover:bg-pink-800/40" data-cat="bokep-colmek">🌶️ Colmek</a>
-        <a href="/?cat=bokep-tiktok" class="cat-link shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all border border-pink-700/30 bg-pink-900/40 text-pink-200/70 hover:bg-pink-800/40" data-cat="bokep-tiktok">🎵 TikTok</a>
-        <a href="/?cat=bokep-jepang" class="cat-link shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all border border-pink-700/30 bg-pink-900/40 text-pink-200/70 hover:bg-pink-800/40" data-cat="bokep-jepang">🇯🇵 Jepang</a>
+        <a href="/?cat=bokep-indo" class="cat-link shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all border border-pink-700/30 bg-pink-900/40 text-pink-200/70 hover:bg-pink-800/40" data-cat="bokep-indo">🔥 Indo</a>
+        <a href="/?cat=bokep-sin" class="cat-link shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all border border-pink-700/30 bg-pink-900/40 text-pink-200/70 hover:bg-pink-800/40" data-cat="bokep-sin">😈 Sin</a>
+        <a href="/?cat=bokep-dosa" class="cat-link shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all border border-pink-700/30 bg-pink-900/40 text-pink-200/70 hover:bg-pink-800/40" data-cat="bokep-dosa">💋 Dosa</a>
         <a href="/?cat=bokep-barat" class="cat-link shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all border border-pink-700/30 bg-pink-900/40 text-pink-200/70 hover:bg-pink-800/40" data-cat="bokep-barat">🌍 Barat</a>
+        <a href="/?cat=bokep-asia" class="cat-link shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all border border-pink-700/30 bg-pink-900/40 text-pink-200/70 hover:bg-pink-800/40" data-cat="bokep-asia">🌏 Asia</a>
+        <a href="/?cat=bokep-jepang" class="cat-link shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all border border-pink-700/30 bg-pink-900/40 text-pink-200/70 hover:bg-pink-800/40" data-cat="bokep-jepang">🇯🇵 Jepang</a>
+        <a href="/?cat=tanpa-sensor" class="cat-link shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all border border-pink-700/30 bg-pink-900/40 text-pink-200/70 hover:bg-pink-800/40" data-cat="tanpa-sensor">🔞 Tanpa Sensor</a>
       </nav>
-      <!-- Search Toggle -->
-      <div class="flex items-center gap-2 ml-auto sm:ml-0">
+      <!-- Search Toggle (header kanan) -->
+      <div class="ml-auto sm:ml-0 shrink-0">
         <button id="searchToggle" class="flex items-center justify-center w-8 h-8 rounded-lg border border-pink-700/50 text-pink-300 hover:text-white hover:bg-pink-800/50">
           <svg id="searchIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
           <svg id="closeIcon" class="w-4 h-4 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
       </div>
     </div>
-    <!-- Search Bar -->
+    <!-- Search Bar (dropdown di bawah header) -->
     <div id="searchBar" class="hidden mt-2 pb-1">
       <form id="searchForm" class="flex gap-2">
         <input id="searchInput" type="text" placeholder="Cari video..." autocomplete="off"
@@ -77,24 +81,19 @@
 <div id="mobileOverlay" class="fixed inset-0 z-[60] bg-black/60 hidden sm:hidden" onclick="closeSidebar()"></div>
 <div id="mobileSidebar" class="fixed inset-y-0 left-0 z-[70] w-72 bg-pink-950 border-r border-pink-800/50 shadow-2xl transform -translate-x-full transition-transform duration-250 sm:hidden overflow-y-auto">
   <div class="flex items-center justify-between p-4 border-b border-pink-800/50">
-    <span class="font-extrabold text-white">Menu</span>
-    <button onclick="closeSidebar()" class="text-pink-400 hover:text-white">✕</button>
+    <span class="font-extrabold text-white">Kategori</span>
+    <button onclick="closeSidebar()" class="text-pink-400 hover:text-white p-1">✕</button>
   </div>
-  <div class="p-3 space-y-1" id="sidebarCats">
-    <a href="/" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-pink-200 hover:bg-pink-800/40">🏠 Home</a>
-    <a href="/?cat=bokep-indonesia" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-pink-200/70 hover:bg-pink-800/40">🇮🇩 Bokep Indonesia</a>
-    <a href="/?cat=bokep-indo" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-pink-200/70 hover:bg-pink-800/40">🔥 Bokep Indo</a>
-    <a href="/?cat=bokep-viral" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-pink-200/70 hover:bg-pink-800/40">📱 Bokep Viral</a>
-    <a href="/?cat=bokep-jilbab" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-pink-200/70 hover:bg-pink-800/40">🧕 Bokep Jilbab</a>
-    <a href="/?cat=bokep-abg" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-pink-200/70 hover:bg-pink-800/40">✨ Bokep ABG</a>
-    <a href="/?cat=bokep-colmek" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-pink-200/70 hover:bg-pink-800/40">🌶️ Bokep Colmek</a>
-    <a href="/?cat=bokep-tiktok" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-pink-200/70 hover:bg-pink-800/40">🎵 Bokep TikTok</a>
-    <a href="/?cat=bokep-skandal" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-pink-200/70 hover:bg-pink-800/40">📸 Bokep Skandal</a>
-    <a href="/?cat=bokep-mahasiswi" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-pink-200/70 hover:bg-pink-800/40">🎓 Bokep Mahasiswi</a>
-    <a href="/?cat=bokep-barat" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-pink-200/70 hover:bg-pink-800/40">🌍 Bokep Barat</a>
-    <a href="/?cat=bokep-asia" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-pink-200/70 hover:bg-pink-800/40">🌏 Bokep Asia</a>
-    <a href="/?cat=bokep-jepang" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-pink-200/70 hover:bg-pink-800/40">🇯🇵 Bokep Jepang</a>
-    <a href="/?cat=bokep-lesbian" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-pink-200/70 hover:bg-pink-800/40">💕 Bokep Lesbian</a>
+  <div class="p-3 space-y-1">
+    <a href="/" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-pink-200 hover:bg-pink-800/40 transition-colors">🏠 Home</a>
+    <a href="/?cat=bokep-indonesia" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-pink-200/70 hover:bg-pink-800/40 transition-colors">🇮🇩 Bokep Indonesia</a>
+    <a href="/?cat=bokep-indo" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-pink-200/70 hover:bg-pink-800/40 transition-colors">🔥 Bokep Indo</a>
+    <a href="/?cat=bokep-sin" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-pink-200/70 hover:bg-pink-800/40 transition-colors">😈 Bokep Sin</a>
+    <a href="/?cat=bokep-dosa" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-pink-200/70 hover:bg-pink-800/40 transition-colors">💋 Bokep Dosa</a>
+    <a href="/?cat=bokep-barat" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-pink-200/70 hover:bg-pink-800/40 transition-colors">🌍 Bokep Barat</a>
+    <a href="/?cat=bokep-asia" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-pink-200/70 hover:bg-pink-800/40 transition-colors">🌏 Bokep Asia</a>
+    <a href="/?cat=bokep-jepang" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-pink-200/70 hover:bg-pink-800/40 transition-colors">🇯🇵 Bokep Jepang</a>
+    <a href="/?cat=tanpa-sensor" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-pink-200/70 hover:bg-pink-800/40 transition-colors">🔞 Tanpa Sensor</a>
   </div>
 </div>
 
@@ -102,12 +101,15 @@
 <main class="mx-auto max-w-[1400px] px-3 sm:px-5 py-4 sm:py-6">
 
   <!-- Page Header -->
-  <div class="flex items-center justify-between gap-3 mb-4 sm:mb-5 flex-wrap">
-    <h1 id="pageTitle" class="text-lg sm:text-2xl font-bold text-white tracking-tight">🔥 Video Terbaru</h1>
-    <!-- Sort Buttons -->
-    <div id="sortButtons" class="flex gap-1.5">
-      <button data-sort="new" class="sort-btn active rounded-lg px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold transition-all bg-pink-600 text-white border border-pink-500">🆕 Terbaru</button>
-      <button data-sort="popular" class="sort-btn rounded-lg px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold transition-all bg-pink-900/40 text-pink-300 hover:bg-pink-800/40 border border-pink-700/30">🔥 Popular</button>
+  <div class="flex items-center justify-between gap-3 mb-3 sm:mb-4 flex-wrap">
+    <h1 id="pageTitle" class="text-lg sm:text-2xl font-bold text-white tracking-tight">🆕 Video Terbaru</h1>
+    <!-- Filter Buttons -->
+    <div id="filterButtons" class="flex gap-1 sm:gap-1.5 flex-wrap">
+      <button data-filter="terbaru"     class="filter-btn active rounded-lg px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold transition-all bg-pink-600 text-white border border-pink-500">🆕 Terbaru</button>
+      <button data-filter="dilihat"     class="filter-btn rounded-lg px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold transition-all bg-pink-900/40 text-pink-300 hover:bg-pink-800/40 border border-pink-700/30">👁️ Terbanyak</button>
+      <button data-filter="disukai"     class="filter-btn rounded-lg px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold transition-all bg-pink-900/40 text-pink-300 hover:bg-pink-800/40 border border-pink-700/30">❤️ Disukai</button>
+      <button data-filter="panjang"     class="filter-btn rounded-lg px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold transition-all bg-pink-900/40 text-pink-300 hover:bg-pink-800/40 border border-pink-700/30">⏱️ Panjang</button>
+      <button data-filter="random"      class="filter-btn rounded-lg px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold transition-all bg-pink-900/40 text-pink-300 hover:bg-pink-800/40 border border-pink-700/30">🎲 Random</button>
     </div>
   </div>
 
@@ -145,23 +147,23 @@
   </div>
 </main>
 
-<!-- Mobile Bottom Nav -->
+<!-- Mobile Bottom Nav — Home + 3 kategori utama, tanpa search (search ada di header) -->
 <nav class="sm:hidden fixed bottom-0 inset-x-0 z-50 bg-pink-950/95 backdrop-blur-2xl border-t border-pink-800/50 flex items-center justify-around py-2">
-  <a href="/" class="flex flex-col items-center gap-0.5 px-3 py-1 text-pink-200">
+  <a href="/" class="flex flex-col items-center gap-0.5 px-3 py-1 text-pink-200 transition-colors" id="mobileHomeLink">
     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
     <span class="text-[10px] font-semibold">Home</span>
   </a>
-  <button onclick="document.getElementById('searchToggle').click()" class="flex flex-col items-center gap-0.5 px-3 py-1 text-pink-400/50">
-    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-    <span class="text-[10px] font-semibold">Search</span>
-  </button>
-  <a href="/?cat=bokep-indonesia" class="flex flex-col items-center gap-0.5 px-3 py-1 text-pink-400/50">
+  <a href="/?cat=bokep-indonesia" class="flex flex-col items-center gap-0.5 px-3 py-1 text-pink-400/60 hover:text-pink-200 transition-colors mobile-cat-link" data-cat="bokep-indonesia">
     <span class="text-lg leading-none">🇮🇩</span>
     <span class="text-[10px] font-semibold">Indo</span>
   </a>
-  <a href="/?cat=bokep-viral" class="flex flex-col items-center gap-0.5 px-3 py-1 text-pink-400/50">
-    <span class="text-lg leading-none">📱</span>
-    <span class="text-[10px] font-semibold">Viral</span>
+  <a href="/?cat=bokep-jepang" class="flex flex-col items-center gap-0.5 px-3 py-1 text-pink-400/60 hover:text-pink-200 transition-colors mobile-cat-link" data-cat="bokep-jepang">
+    <span class="text-lg leading-none">🇯🇵</span>
+    <span class="text-[10px] font-semibold">Jepang</span>
+  </a>
+  <a href="/?cat=tanpa-sensor" class="flex flex-col items-center gap-0.5 px-3 py-1 text-pink-400/60 hover:text-pink-200 transition-colors mobile-cat-link" data-cat="tanpa-sensor">
+    <span class="text-lg leading-none">🔞</span>
+    <span class="text-[10px] font-semibold">Sensor</span>
   </a>
 </nav>
 
