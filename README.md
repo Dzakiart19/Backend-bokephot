@@ -165,10 +165,10 @@ window.BACKEND_URL = 'https://backend-bokephot--akjgwylm.replit.app'  // di-inje
 
 ```json
 {
-  "axios":   "^1.x",   // HTTP client untuk scraping
-  "cors":    "^2.x",   // CORS middleware
-  "dotenv":  "^16.x",  // .env loader
-  "express": "^4.x"    // Web framework
+  "axios":   "^1.13.x",  // HTTP client untuk scraping
+  "cors":    "^2.8.x",   // CORS middleware
+  "dotenv":  "^17.2.x",  // .env loader
+  "express": "^4.22.x"   // Web framework
 }
 ```
 
@@ -176,7 +176,7 @@ window.BACKEND_URL = 'https://backend-bokephot--akjgwylm.replit.app'  // di-inje
 
 **Video tidak muncul** → Cek koneksi ke `bokepcolmek.me`, lihat log backend untuk error scraping.
 
-**Thumbnail 404** → Gunakan endpoint `/api/bh/proxy-thumb?url=<thumb_url>` untuk bypass hotlink protection.
+**Thumbnail 404** → Gunakan endpoint `/api/bh/proxy-thumb?url=<thumb_url>` untuk bypass hotlink protection. Hanya menerima host dari whitelist (`bokepcolmek.me`, `i0-i3.wp.com`, `secure.gravatar.com`).
 
 **Embed tidak bisa diputar** → Source mungkin butuh iframe (xhamster, xvideos, dll) — player sudah handle otomatis.
 

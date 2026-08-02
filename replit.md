@@ -114,6 +114,10 @@ Semua fetch di `frontend/js/lib/api.js` pakai `(window.BACKEND_URL || '') + '/ap
 - **SPA routing**: Di Replit → Express handle `/video/:slug` → `detail.html`. Di Firebase → `firebase.json` rewrites handle hal yang sama.
 - **Player multi-mode**: M3U8 → HLS.js, MP4/WebM → `<video>`, sisanya → `<iframe>`.
 - **Tidak ada `node-telegram-bot-api`**: Dihapus dari root `package.json` — tidak dipakai di kode manapun dan menarik `request@2.88.2` (Critical CVE) yang diblokir Socket Security Policy saat deploy.
+- **NaN guard di scraper**: Semua fungsi paginasi (`scrapeHomepage`, `scrapeCategory`, `scrapeSearch`) validasi `parseInt(page)` — fallback ke 1 jika NaN atau < 1.
+- **Proxy thumbnail — SSRF whitelist**: `proxy.js` hanya izinkan host dari daftar eksplisit (`bokepcolmek.me`, `i0-i3.wp.com`, `secure.gravatar.com`). URL di luar daftar → 403.
+- **`decodeHtml` lengkap**: Handles `&nbsp;`, `&mdash;`, `&laquo;`, `&raquo;`, `&bull;`, `&copy;`, `&reg;`, `&trade;` selain entities dasar.
+- **Nama konsisten**: Semua file menggunakan "Kampung Bokep" — tidak ada lagi referensi "BokepHunter" atau "Vidorey" di kode.
 
 ## Environment Variables
 
