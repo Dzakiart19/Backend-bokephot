@@ -1,6 +1,91 @@
 const axios = require('axios');
 
 const BASE_URL = 'https://bokephunter.com';
+
+// ── IndoAV RC4 decryption ────────────────────────────────────────────────────
+// Ported directly from indoav's minified JS (file.P0uWl5eB.js)
+function rc4(str, key) {
+  let n, o = [], r = 0, l = '', a = 0;
+  for (a = 0; a < 256; a++) o[a] = a;
+  for (a = 0; a < 256; a++) {
+    r = (r + o[a] + key.charCodeAt(a % key.length)) % 256;
+    n = o[a]; o[a] = o[r]; o[r] = n;
+  }
+  a = 0; r = 0;
+  for (let i = 0; i < str.length; i++) {
+    r = (r + o[a = (a + 1) % 256]) % 256;
+    n = o[a]; o[a] = o[r]; o[r] = n;
+    l += String.fromCharCode(str.charCodeAt(i) ^ o[(o[a] + o[r]) % 256]);
+  }
+  return l;
+}
+
+function reverseStr(s) { return s.split('').reverse().join(''); }
+
+// Static key extracted from indoav JS bundle
+const INDOAV_STATIC_KEY = 'rqpSaEddZ156f342cjwOD8vc4/SYtI0ILIo5UUj45apkqA06FzRKvr92GErrdKGZozMV1L52EueOl7B7yO1efjk8uBhSzLOf';
+
+function deriveIndoAVKey() {
+  let p = Buffer.from(INDOAV_STATIC_KEY, 'base64').toString('binary');
+  p = rc4(p, '');
+  p = Buffer.from(p, 'base64').toString('binary');
+  return p;
+}
+
+// Cache the derived key (it's static)
+let _indoavKey = null;
+function getIndoAVKey() {
+  if (!_indoavKey) _indoavKey = deriveIndoAVKey();
+  return _indoavKey;
+}
+
+function decryptIndoAVToken(token) {
+  try {
+    const key = getIndoAVKey();
+    const decoded = Buffer.from(reverseStr(token), 'base64').toString('binary');
+    const decrypted = rc4(decoded, key);
+    return JSON.parse(decrypted);
+  } catch (e) {
+    return null;
+  }
+}
+
+// Resolve direct video URL from IndoAV embed page (no ads!)
+async function resolveIndoAVDirect(videoSlug) {
+  const cacheKey = `indoav_direct_${videoSlug}`;
+  const cached = getCached(cacheKey);
+  if (cached) return cached;
+
+  const embedUrl = `https://www.indoav.com/video/embed/${videoSlug}`;
+  try {
+    const resp = await axios.get(embedUrl, {
+      headers: {
+        ...HEADERS,
+        Referer: 'https://bokephunter.com/',
+        Cookie: '',
+      },
+      timeout: 10000,
+    });
+    const html = resp.data;
+
+    // Extract data-play-token from video-container or player element
+    const tokenMatch = html.match(/data-play-token="([^"]+)"/);
+    if (!tokenMatch) return null;
+
+    const payload = decryptIndoAVToken(tokenMatch[1]);
+    if (!payload || !Array.isArray(payload.u) || payload.u.length === 0) return null;
+
+    // Pick best quality (last = highest res, or fallback to first)
+    const directUrl = payload.u[payload.u.length - 1] || payload.u[0];
+    if (!directUrl) return null;
+
+    setCache(cacheKey, directUrl);
+    return directUrl;
+  } catch (e) {
+    console.error(`[SCRAPER] resolveIndoAVDirect failed for ${videoSlug}: ${e.message}`);
+    return null;
+  }
+}
 const HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
   'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -232,7 +317,7 @@ async function resolveEmbedUrl(slug, thumbnail) {
 
   let embedUrl = null;
 
-  // For indoav: construct directly (no extra fetch needed)
+  // For indoav: return embed URL — the frontend uses a sandboxed iframe to block popup ads
   if (slug.startsWith('indoav-')) {
     embedUrl = `https://www.indoav.com/video/embed/${slug.replace('indoav-', '')}`;
     setCache(cacheKey, embedUrl);

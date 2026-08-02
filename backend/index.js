@@ -84,8 +84,9 @@ app.get('/api/bh/video/:slug', async (req, res) => {
     res.json(data);
 
     // After responding, resolve embed in background so it lands in cache.
-    // Next call to /embed (from frontend prefetch) will hit cache instantly.
-    if (!data.embedUrlFromPage) {
+    // Always resolve for indoav (need to decrypt RC4 for direct URL, even if embedUrlFromPage is set).
+    const needsResolve = !data.embedUrlFromPage || slug.startsWith('indoav-');
+    if (needsResolve) {
       resolveEmbedUrl(slug, data.thumbnail || '').catch(() => {});
     }
   } catch (e) {
@@ -100,10 +101,18 @@ app.get('/api/bh/video/:slug/embed', async (req, res) => {
     const { slug } = req.params;
     const { thumbnail } = req.query;
     const embedUrl = await resolveEmbedUrl(slug, thumbnail || '');
-    res.json({ embedUrl: embedUrl || null });
+    // Detect if the resolved URL is a direct video (m3u8/mp4) or an iframe src
+    const isDirect = embedUrl && (
+      embedUrl.includes('.m3u8') ||
+      embedUrl.includes('.mp4') ||
+      embedUrl.includes('cdn.') ||
+      embedUrl.includes('stream.')
+    );
+    const type = isDirect ? 'direct' : 'iframe';
+    res.json({ embedUrl: embedUrl || null, type });
   } catch (e) {
     console.error('[BH-EMBED]', e.message);
-    res.json({ embedUrl: null });
+    res.json({ embedUrl: null, type: 'iframe' });
   }
 });
 

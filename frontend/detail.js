@@ -149,17 +149,18 @@ function renderVideo(data) {
   const noEmbed = document.getElementById('noEmbed');
   const playBtn = document.getElementById('playBtn');
 
-  // Start prefetching embed URL immediately in background.
-  // By the time the user taps play (usually 2-5s after page load), it's ready.
+  // For IndoAV slugs, always call /embed to get the direct decrypted URL (no ads).
+  // For others, use embedUrlFromPage if available to skip an extra round-trip.
+  const isIndoAV = data.slug && data.slug.startsWith('indoav-');
   let embedPromise = null;
-  if (data.embedUrlFromPage) {
-    embedPromise = Promise.resolve(data.embedUrlFromPage);
+  if (data.embedUrlFromPage && !isIndoAV) {
+    embedPromise = Promise.resolve({ embedUrl: data.embedUrlFromPage, type: 'iframe' });
   } else {
     const qs = data.thumbnail ? `?thumbnail=${encodeURIComponent(data.thumbnail)}` : '';
-    embedPromise = fetchWithTimeout(`${API}/video/${encodeURIComponent(data.slug)}/embed${qs}`, 10000)
+    embedPromise = fetchWithTimeout(`${API}/video/${encodeURIComponent(data.slug)}/embed${qs}`, 15000)
       .then(r => r.json())
-      .then(r => r.embedUrl || null)
-      .catch(() => null);
+      .then(r => ({ embedUrl: r.embedUrl || null, type: r.type || 'iframe' }))
+      .catch(() => ({ embedUrl: null, type: 'iframe' }));
   }
 
   overlay.addEventListener('click', async () => {
@@ -167,9 +168,9 @@ function renderVideo(data) {
     playBtn.innerHTML = `<svg class="w-8 h-8 text-white animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>`;
 
     try {
-      const embedUrl = await embedPromise;
+      const { embedUrl, type } = await embedPromise;
       if (embedUrl) {
-        showEmbed(embedUrl);
+        showEmbed(embedUrl, type);
       } else {
         showNoEmbed(data.slug);
       }
@@ -178,10 +179,55 @@ function renderVideo(data) {
     }
   });
 
-  function showEmbed(url) {
+  function showEmbed(url, type) {
     overlay.style.display = 'none';
     frame.classList.remove('hidden');
-    frame.innerHTML = `<iframe src="${url}" width="100%" height="100%" frameborder="0" allowfullscreen allow="autoplay; fullscreen" scrolling="no"></iframe>`;
+
+    const isM3U8 = url.includes('.m3u8');
+    const isMP4  = url.includes('.mp4') || url.includes('.webm');
+    const isIndoAvEmbed = url.includes('indoav.com/video/embed');
+
+    if (type === 'direct' || isM3U8 || isMP4) {
+      // Direct video — play with HLS.js (for m3u8) or native <video>
+      const video = document.createElement('video');
+      video.controls = true;
+      video.autoplay = true;
+      video.playsInline = true;
+      video.style.width = '100%';
+      video.style.height = '100%';
+      video.style.background = '#000';
+
+      if (isM3U8 && typeof Hls !== 'undefined' && Hls.isSupported()) {
+        const hls = new Hls({ enableWorker: false });
+        hls.loadSource(url);
+        hls.attachMedia(video);
+      } else {
+        // Native HLS (Safari) or plain mp4
+        video.src = url;
+      }
+
+      frame.innerHTML = '';
+      frame.appendChild(video);
+      video.play().catch(() => {});
+    } else if (isIndoAvEmbed) {
+      // IndoAV embed — use sandbox to block popup/popunder ads.
+      // allow-scripts: HLS player needs JS
+      // allow-same-origin: player XHR to indoav.com needs same-origin context
+      // allow-forms: video load POST
+      // NO allow-popups / allow-top-navigation → ads can't open new tabs/windows
+      frame.innerHTML = `<iframe
+        src="${url}"
+        width="100%" height="100%"
+        frameborder="0"
+        allowfullscreen
+        allow="autoplay; fullscreen"
+        scrolling="no"
+        sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
+      ></iframe>`;
+    } else {
+      // Regular iframe embed (luluvdo, etc.)
+      frame.innerHTML = `<iframe src="${url}" width="100%" height="100%" frameborder="0" allowfullscreen allow="autoplay; fullscreen" scrolling="no"></iframe>`;
+    }
   }
 
   function showNoEmbed(slug) {
