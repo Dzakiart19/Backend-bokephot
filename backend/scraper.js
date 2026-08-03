@@ -74,11 +74,11 @@ async function scrapeVideoDetail(slug) {
   const embedUrl = embedM ? embedM[1] : '';
   if (embedUrl) setCache(`embed_${slug}`, embedUrl);
 
-  // Kategori dari body class
+  // Kategori dari body class (handle double-quote dan single-quote HTML attribute)
   const allCats  = getCategories();
   const catMap   = Object.fromEntries(allCats.map(c => [c.slug, c]));
   const categories = [];
-  const bodyM    = html.match(/<body[^>]+class="([^"]+)"/);
+  const bodyM    = html.match(/<body[^>]+class=["']([^"']+)["']/);
   if (bodyM) {
     const seen = new Set();
     for (const cls of bodyM[1].split(/\s+/)) {

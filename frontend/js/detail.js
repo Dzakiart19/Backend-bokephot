@@ -181,5 +181,8 @@ document.getElementById('searchForm').addEventListener('submit', e => {
   if (q) window.location.href = `/?q=${encodeURIComponent(q)}`;
 });
 
+// ── Expose ke global (dipanggil dari onclick HTML) ────────────────────────────
+window.loadDetail = loadDetail;
+
 // ── Boot ──────────────────────────────────────────────────────────────────────
 loadDetail();
