@@ -3,7 +3,7 @@ import { fetchVideos, fetchCategory, fetchSearch } from './lib/api.js';
 import { buildCard, showSkeleton, hideSkeleton }   from './lib/cards.js';
 import { renderPagination }                         from './lib/pagination.js';
 import { loadAndRenderCategories, updateActiveStates, catMap } from './lib/nav.js';
-import { fireAd, firePendingAd }                    from './lib/ads.js';
+import { fireAd, firePendingAd, initAdClickDelegation } from './lib/ads.js';
 
 // ── State ─────────────────────────────────────────────────────────────────────
 let currentPage   = 1;
@@ -123,7 +123,8 @@ window.loadVideos = loadVideos;
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
 (async () => {
-  firePendingAd(); // ← iklan pending dari klik kategori (full page navigation)
+  firePendingAd();           // ← iklan pending dari klik video/kategori sebelumnya
+  initAdClickDelegation();   // ← pasang event delegation untuk semua [data-ad-click]
   await loadAndRenderCategories();
   initFromURL();
   loadVideos();

@@ -17,7 +17,7 @@ frontend/
     └── lib/
         ├── ads.js        # ★ Sistem iklan directlink terpusat
         ├── api.js        # fetch wrappers → /api/bh/* (relative URL, baca error body)
-        ├── cards.js      # buildCard variants, skeleton, import AD_ONCLICK
+        ├── cards.js      # buildCard variants, skeleton, data-ad-click delegation
         ├── nav.js        # Render nav + sidebar, markAdPending saat pilih kategori
         ├── pagination.js # Render tombol halaman dengan ellipsis
         ├── utils.js      # escHtml, escAttr (XSS-safe rendering)
@@ -59,18 +59,22 @@ export const AD_URL = 'https://rm358.com/4/11476496'; // ← ganti di sini
 
 | Event | Mekanisme | Kapan fire |
 |-------|-----------|-----------|
-| Klik video card | Inline onclick → set flag localStorage | Saat detail page load (page-load context) |
-| Klik play button | `fireAd()` sync | Saat overlay diklik (user gesture) |
-| Klik pagination | `fireAd()` sync | Di dalam `navigateTo()` (user gesture) |
-| Pilih kategori | `markAdPending()` → flag localStorage | Saat homepage berikutnya load |
+| Klik video card / related | Event delegation `[data-ad-click]` → `markAdPending()` | Saat page berikutnya load (`firePendingAd`) |
+| Klik play button | `fireAd()` sync | Saat overlay diklik (direct user gesture) |
+| Klik pagination | `fireAd()` sync | Di dalam `navigateTo()` (direct user gesture) |
+| Pilih kategori | `markAdPending()` via nav.js | Saat homepage berikutnya load (`firePendingAd`) |
 
 ### Kenapa dua mekanisme berbeda?
 
-- **`fireAd()` direct** — aman jika dipanggil synchronous di dalam event handler click (browser tahu itu user gesture, `window.open()` tidak diblokir)
-- **localStorage flag** — untuk klik yang langsung menyebabkan navigasi halaman (card → detail, kategori → index). `window.open()` dipanggil di page-load berikutnya (300ms delay) — lebih reliable di mobile browser
+- **`fireAd()` direct** — dipanggil synchronous di dalam event handler click; browser mengklasifikasikannya sebagai user gesture sehingga `window.open()` tidak diblokir.
+- **localStorage flag + `firePendingAd()`** — untuk klik yang langsung menyebabkan navigasi (card → detail, kategori → index). Flag di-set sebelum navigasi, lalu `window.open()` dipanggil **tanpa setTimeout** di page-load berikutnya untuk kompatibilitas iOS Safari.
 
-### Debounce
-1 detik — mencegah double-fire jika user klik cepat dua kali. **Bukan cooldown** — iklan tetap muncul di setiap klik baru.
+### Event Delegation
+
+Semua `[data-ad-click]` link (video cards, related cards) ditangani oleh satu listener lewat `initAdClickDelegation()` — tidak ada inline `onclick` string di HTML yang di-generate.
+
+### Cooldown
+**15 detik** antar popup — standar industri untuk menghindari popup blocker browser. Sebelumnya 1 detik (terlalu agresif).
 
 ## API Error Handling
 

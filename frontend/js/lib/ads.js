@@ -1,35 +1,26 @@
 // ── Ads — Directlink terpusat ─────────────────────────────────────────────────
-// Iklan muncul setiap klik (video, play, pagination, kategori).
-// Debounce 1 detik saja — cegah double-fire dari klik cepat, bukan batasi per menit.
+// Direktlink terbuka setiap trigger (video click, play, pagination, kategori).
+// Cooldown 15 detik — cegah popup blocker browser dari pola terlalu agresif.
 
-export const AD_URL      = 'https://rm358.com/4/11476496';
-const DEBOUNCE_MS        = 1000; // 1 detik — bukan cooldown, hanya anti-dobel
+export const AD_URL    = 'https://rm358.com/4/11476496';
+const COOLDOWN_MS      = 15_000; // 15 detik antar popup (standar industri)
 
-const KEY_TS   = '_adt';    // timestamp fire terakhir (debounce)
+const KEY_TS   = '_adt';    // timestamp fire terakhir (cooldown)
 const KEY_FLAG = '_adfire'; // flag pending (untuk navigation context)
 
-// Cek debounce — return true jika boleh fire, sekaligus update timestamp
+// ── Internal: cek cooldown — return true jika boleh fire ─────────────────────
 function _canFire() {
   try {
     const n    = Date.now();
     const last = +localStorage.getItem(KEY_TS) || 0;
-    if (n - last < DEBOUNCE_MS) return false;
+    if (n - last < COOLDOWN_MS) return false;
     localStorage.setItem(KEY_TS, n);
     return true;
   } catch { return false; }
 }
 
-// ── Inline onclick string untuk dynamically-generated HTML (cards) ────────────
-// Set flag → window.open dipanggil dari detail.js di page-load context (mobile safe)
-export const AD_ONCLICK =
-  `(function(){` +
-  `  try {` +
-  `    var k='${KEY_TS}',f='${KEY_FLAG}',n=Date.now(),t=+localStorage.getItem(k)||0;` +
-  `    if(n-t>=${DEBOUNCE_MS}){localStorage.setItem(k,n);localStorage.setItem(f,'1');}` +
-  `  } catch(e){}` +
-  `})();`;
-
-// ── fireAd — langsung buka tab iklan (direct user gesture: play, pagination) ──
+// ── fireAd ───────────────────────────────────────────────────────────────────
+// Buka tab iklan langsung. Gunakan saat ada direct user gesture (play, pagination).
 export function fireAd() {
   try {
     if (!_canFire()) return;
@@ -37,7 +28,8 @@ export function fireAd() {
   } catch (e) { /* popup blocked */ }
 }
 
-// ── markAdPending — set flag untuk page-load berikutnya (kategori navigation) ─
+// ── markAdPending ─────────────────────────────────────────────────────────────
+// Set flag untuk di-fire di page berikutnya. Dipakai saat user navigate (klik card).
 export function markAdPending() {
   try {
     if (!_canFire()) return;
@@ -45,13 +37,25 @@ export function markAdPending() {
   } catch (e) {}
 }
 
-// ── firePendingAd — fire jika ada flag (panggil saat page load) ───────────────
+// ── firePendingAd ─────────────────────────────────────────────────────────────
+// Fire jika ada flag pending. Panggil di page load (script.js & detail.js).
+// Tanpa setTimeout — window.open dari setTimeout dianggap bukan direct user gesture
+// oleh iOS Safari dan akan di-block. Panggil seawal mungkin di page load context.
 export function firePendingAd() {
   try {
     if (localStorage.getItem(KEY_FLAG) !== '1') return;
     localStorage.removeItem(KEY_FLAG);
-    setTimeout(() => {
-      try { window.open(AD_URL, '_blank', 'noopener'); } catch (e) {}
-    }, 300);
+    window.open(AD_URL, '_blank', 'noopener');
   } catch (e) {}
+}
+
+// ── initAdClickDelegation ─────────────────────────────────────────────────────
+// Event delegation untuk semua [data-ad-click] link.
+// Menggantikan AD_ONCLICK inline string — satu listener, tanpa duplikasi logika.
+// Panggil sekali di boot tiap halaman.
+export function initAdClickDelegation() {
+  document.addEventListener('click', e => {
+    if (!e.target.closest('[data-ad-click]')) return;
+    markAdPending();
+  });
 }

@@ -63,13 +63,14 @@ URL iklan dikonfigurasi di satu tempat: `frontend/js/lib/ads.js` → `AD_URL`.
 
 | Trigger | Mekanisme | File |
 |---------|-----------|------|
-| Klik video card | `AD_ONCLICK` inline → localStorage flag → fire di detail.js page-load | `cards.js` + `detail.js` |
+| Klik video card / related | Event delegation `[data-ad-click]` → `markAdPending()` | `cards.js` + `ads.js` |
 | Klik play button | `fireAd()` direct (user gesture sync) | `detail.js` overlay click |
 | Klik pagination | `fireAd()` direct (user gesture sync) | `script.js` navigateTo() |
-| Pilih kategori | `markAdPending()` → localStorage flag → fire di script.js page-load | `nav.js` + `script.js` |
+| Pilih kategori | `markAdPending()` → localStorage flag | `nav.js` + `script.js` |
 
-- **Debounce**: 1 detik — cegah double-fire, bukan cooldown panjang
-- **Mobile safe**: `window.open()` dari page-load context (tidak dari nested onclick)
+- **Cooldown**: **15 detik** antar popup — standar industri, cegah popup blocker browser
+- **iOS Safari fix**: `firePendingAd()` tanpa `setTimeout` (setTimeout memblokir popup di iOS)
+- **Event delegation**: tidak ada inline `onclick` string — satu listener via `initAdClickDelegation()`
 - **Ganti URL iklan**: edit `AD_URL` di `frontend/js/lib/ads.js`
 
 ## Security

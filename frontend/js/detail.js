@@ -2,7 +2,7 @@
 import { fetchVideoDetail, fetchEmbed }             from './lib/api.js';
 import { buildRelatedCardGrid, buildRelatedCardList } from './lib/cards.js';
 import { escHtml, escAttr }                          from './lib/utils.js';
-import { fireAd, firePendingAd }                     from './lib/ads.js';
+import { fireAd, firePendingAd, initAdClickDelegation } from './lib/ads.js';
 
 // ── DOM refs ──────────────────────────────────────────────────────────────────
 const loadingState = document.getElementById('loadingState');
@@ -16,8 +16,9 @@ function getSlug() {
   return m ? m[1] : null;
 }
 
-// ── Fire pending ad dari klik video card (set di cards.js via localStorage flag) ─
+// ── Fire pending ad dari klik video card (set via localStorage flag) ─────────
 firePendingAd();
+initAdClickDelegation(); // ← pasang event delegation untuk related video cards
 
 // ── Load & render ─────────────────────────────────────────────────────────────
 async function loadDetail() {
