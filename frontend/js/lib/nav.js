@@ -1,5 +1,6 @@
 import { fetchCategories } from './api.js';
 import { icon }           from './icons.js';
+import { markAdPending }  from './ads.js';
 
 // Shared category map (slug → data) diisi oleh loadAndRenderCategories
 export const catMap = {};
@@ -63,6 +64,7 @@ function makeFeaturedLink(c) {
   a.dataset.cat = c.slug;
   a.className   = 'cat-link shrink-0 flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all border border-pink-700/30 bg-pink-900/40 text-pink-200/70 hover:bg-pink-800/40 hover:text-pink-100';
   a.innerHTML   = `${icon(c.icon, 'w-3.5 h-3.5 shrink-0')}<span>${c.name}</span>`;
+  a.addEventListener('click', () => markAdPending()); // ← iklan saat pilih kategori
   return a;
 }
 
@@ -72,5 +74,6 @@ function makeSidebarLink(c) {
   a.dataset.cat = c.slug;
   a.className   = 'sidebar-cat-link flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-semibold text-pink-200/60 hover:bg-pink-800/40 hover:text-white transition-colors';
   a.innerHTML   = `<span class="w-4 h-4 shrink-0 opacity-70">${icon(c.icon, 'w-4 h-4')}</span><span>${c.name}</span>`;
+  a.addEventListener('click', () => markAdPending()); // ← iklan saat pilih kategori
   return a;
 }

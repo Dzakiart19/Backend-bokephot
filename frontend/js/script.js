@@ -3,6 +3,7 @@ import { fetchVideos, fetchCategory, fetchSearch } from './lib/api.js';
 import { buildCard, showSkeleton, hideSkeleton }   from './lib/cards.js';
 import { renderPagination }                         from './lib/pagination.js';
 import { loadAndRenderCategories, updateActiveStates, catMap } from './lib/nav.js';
+import { fireAd, firePendingAd }                    from './lib/ads.js';
 
 // ── State ─────────────────────────────────────────────────────────────────────
 let currentPage   = 1;
@@ -75,6 +76,7 @@ async function loadVideos() {
 }
 
 function navigateTo(page) {
+  fireAd(); // ← iklan saat klik pagination (user gesture langsung)
   currentPage = page;
   const params = new URLSearchParams(location.search);
   params.set('page', page);
@@ -118,6 +120,7 @@ window.addEventListener('popstate', () => { initFromURL(); loadVideos(); });
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
 (async () => {
+  firePendingAd(); // ← iklan pending dari klik kategori (full page navigation)
   await loadAndRenderCategories();
   initFromURL();
   loadVideos();

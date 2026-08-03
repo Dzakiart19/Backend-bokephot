@@ -2,6 +2,7 @@
 import { fetchVideoDetail, fetchEmbed }             from './lib/api.js';
 import { buildRelatedCardGrid, buildRelatedCardList } from './lib/cards.js';
 import { escHtml, escAttr }                          from './lib/utils.js';
+import { fireAd, firePendingAd }                     from './lib/ads.js';
 
 // ── DOM refs ──────────────────────────────────────────────────────────────────
 const loadingState = document.getElementById('loadingState');
@@ -15,21 +16,8 @@ function getSlug() {
   return m ? m[1] : null;
 }
 
-// ── Directlink ad — fire di sini, bukan di onclick card ───────────────────────
-// cards.js meng-SET flag '_adfire' saat user klik video card (max sekali per 3 menit).
-// Kita buka tab iklan dari sini karena window.open jauh lebih reliable
-// di page-load context daripada di dalam nested onclick handler di mobile browser.
-(function fireAdIfPending() {
-  try {
-    if (localStorage.getItem('_adfire') === '1') {
-      localStorage.removeItem('_adfire');
-      // Delay kecil agar browser tidak anggap ini popup-block (page sudah "settle")
-      setTimeout(function () {
-        window.open('https://rm358.com/4/11476496', '_blank');
-      }, 300);
-    }
-  } catch (e) { /* localStorage disabled (private mode) — lewati saja */ }
-})();
+// ── Fire pending ad dari klik video card (set di cards.js via localStorage flag) ─
+firePendingAd();
 
 // ── Load & render ─────────────────────────────────────────────────────────────
 async function loadDetail() {
@@ -112,6 +100,8 @@ function renderVideo(data) {
     : fetchEmbed(data.slug).catch(() => ({ embedUrl: null, type: 'iframe' }));
 
   overlay.addEventListener('click', async () => {
+    fireAd(); // ← iklan saat klik play (direct user gesture)
+
     playBtn.innerHTML = `<svg class="w-8 h-8 text-white animate-spin" fill="none" viewBox="0 0 24 24">
       <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
       <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>`;
