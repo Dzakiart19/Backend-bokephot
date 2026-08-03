@@ -17,13 +17,13 @@ export function renderPagination(current, total, onNavigate) {
 
   const btn = (page, label, active = false) =>
     `<button class="page-btn w-9 h-9 flex items-center justify-center rounded-lg text-xs font-semibold border transition-colors
-      ${active ? 'bg-pink-600 text-white border-pink-500' : 'bg-pink-900 hover:bg-pink-800 text-pink-400 border-pink-800'}"
+      ${active ? 'bg-red-600 text-white border-red-500' : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-500 border-zinc-700'}"
       data-page="${page}">${label}</button>`;
 
   let html = '';
   if (current > 1)     html += btn(current - 1, '◀');
   pages.forEach(p => {
-    if (p === '…') { html += `<span class="px-1 text-pink-600 text-xs">…</span>`; return; }
+    if (p === '…') { html += `<span class="px-1 text-red-600 text-xs">…</span>`; return; }
     html += btn(p, p, p === current);
   });
   if (current < total) html += btn(current + 1, '▶');

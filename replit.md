@@ -140,8 +140,11 @@ Workflow `Backend Server` menjalankan `node backend/index.js`. Frontend ter-serv
 
 ## Design System
 
-- **Background**: `bg-pink-950` (#1a0010)
-- **Aksen**: `pink-500` – `pink-700`
+- **Background**: `#1E1E1E` (dark gray — `bg-[#1e1e1e]`)
+- **Surface**: `zinc-800` (#27272a) / `zinc-700` (#3f3f46)
+- **Border**: `zinc-700` / `zinc-600`
+- **Aksen (CTA)**: `red-600` / `red-500` (tombol, active state, logo)
+- **Teks**: `zinc-50` → `zinc-400` (hierarchy)
 - **Font**: Plus Jakarta Sans (Google Fonts)
 - **CSS**: Tailwind CSS via CDN (tanpa build step)
 - **Icon**: SVG inline custom (`frontend/js/lib/icons.js`)

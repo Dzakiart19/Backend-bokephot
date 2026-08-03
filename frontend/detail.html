@@ -20,33 +20,33 @@
   <style>
     body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
     .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #1a0010; }
-    ::-webkit-scrollbar-thumb { background: #831843; border-radius: 3px; }
-    .skeleton { background: linear-gradient(90deg, #3b001a 25%, #500127 50%, #3b001a 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; }
+    ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #1e1e1e; }
+    ::-webkit-scrollbar-thumb { background: #555555; border-radius: 3px; }
+    .skeleton { background: linear-gradient(90deg, #2a2a2a 25%, #333333 50%, #2a2a2a 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; }
     @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
     #playerFrame iframe { width: 100%; height: 100%; border: none; }
     #playerFrame video  { width: 100%; height: 100%; background: #000; display: block; }
   </style>
 </head>
-<body class="bg-pink-950 text-pink-50 antialiased pb-14 sm:pb-0 min-h-screen">
+<body class="bg-[#1e1e1e] text-zinc-50 antialiased pb-14 sm:pb-0 min-h-screen">
 
 <!-- Header -->
-<header class="sticky top-0 z-50 border-b border-pink-800/50 bg-pink-950/90 backdrop-blur-2xl">
+<header class="sticky top-0 z-50 border-b border-zinc-700/50 bg-[#1e1e1e]/90 backdrop-blur-2xl">
   <div class="mx-auto max-w-[1400px] px-3 sm:px-5 py-2 sm:py-3">
     <div class="flex items-center gap-3">
       <!-- Logo -->
       <a href="/" class="flex items-center gap-2 shrink-0">
-        <div class="h-7 w-7 rounded-lg bg-gradient-to-br from-pink-500 to-pink-700 flex items-center justify-center text-white font-black text-[11px] tracking-tight shadow-lg">KB</div>
+        <div class="h-7 w-7 rounded-lg bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center text-white font-black text-[11px] tracking-tight shadow-lg">KB</div>
         <span class="font-extrabold text-base sm:text-lg text-white tracking-tight hidden sm:inline">Kampung Bokep</span>
       </a>
       <!-- Back -->
-      <a href="/" class="ml-1 flex items-center gap-1.5 text-pink-400 hover:text-pink-200 text-sm transition-colors">
+      <a href="/" class="ml-1 flex items-center gap-1.5 text-zinc-500 hover:text-zinc-300 text-sm transition-colors">
         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M7.72 12.53a.75.75 0 010-1.06l7.5-7.5a.75.75 0 111.06 1.06L9.31 12l6.97 6.97a.75.75 0 11-1.06 1.06l-7.5-7.5z" clip-rule="evenodd"/></svg>
         <span class="hidden sm:inline text-sm font-medium">Kembali</span>
       </a>
       <!-- Search -->
       <div class="ml-auto">
-        <button id="searchToggle" class="flex items-center justify-center w-8 h-8 rounded-lg border border-pink-700/50 text-pink-300 hover:text-white hover:bg-pink-800/50">
+        <button id="searchToggle" class="flex items-center justify-center w-8 h-8 rounded-lg border border-zinc-600/50 text-zinc-400 hover:text-white hover:bg-zinc-700/50">
           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M10.5 3.75a6.75 6.75 0 100 13.5 6.75 6.75 0 000-13.5zM2.25 10.5a8.25 8.25 0 1114.59 5.28l4.69 4.69a.75.75 0 11-1.06 1.06l-4.69-4.69A8.25 8.25 0 012.25 10.5z" clip-rule="evenodd"/></svg>
         </button>
       </div>
@@ -54,8 +54,8 @@
     <div id="searchBar" class="hidden mt-2 pb-1">
       <form id="searchForm" class="flex gap-2">
         <input id="searchInput" type="text" placeholder="Cari video..." autocomplete="off"
-          class="flex-1 rounded-xl bg-pink-900/60 border border-pink-700/50 px-4 py-2 text-sm text-pink-50 placeholder-pink-400/50 focus:outline-none focus:border-pink-500">
-        <button type="submit" class="rounded-xl bg-pink-600 hover:bg-pink-500 px-4 py-2 text-sm font-semibold text-white transition-colors">Cari</button>
+          class="flex-1 rounded-xl bg-zinc-800/60 border border-zinc-600/50 px-4 py-2 text-sm text-zinc-50 placeholder-zinc-500/50 focus:outline-none focus:border-red-500">
+        <button type="submit" class="rounded-xl bg-red-600 hover:bg-red-500 px-4 py-2 text-sm font-semibold text-white transition-colors">Cari</button>
       </form>
     </div>
   </div>
@@ -85,13 +85,13 @@
 
     <!-- Left: Player + Info -->
     <div>
-      <div class="-mx-3 sm:mx-0 sm:rounded-2xl bg-black overflow-hidden sm:shadow-2xl sm:shadow-black/50 sm:ring-1 sm:ring-pink-800 relative">
+      <div class="-mx-3 sm:mx-0 sm:rounded-2xl bg-black overflow-hidden sm:shadow-2xl sm:shadow-black/50 sm:ring-1 sm:ring-zinc-700 relative">
         <div class="aspect-video relative">
           <!-- Overlay click-to-play -->
           <div id="playerOverlay" class="absolute inset-0 z-10 bg-black flex items-center justify-center cursor-pointer group">
             <img id="playerThumb" src="" alt="" class="absolute inset-0 w-full h-full object-cover opacity-50" referrerpolicy="no-referrer" onerror="this.style.display='none'">
             <div class="relative z-20 text-center">
-              <div id="playBtn" class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-pink-500/90 flex items-center justify-center mx-auto shadow-2xl shadow-pink-500/50 group-hover:scale-110 transition-transform">
+              <div id="playBtn" class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-red-500/90 flex items-center justify-center mx-auto shadow-2xl shadow-red-500/50 group-hover:scale-110 transition-transform">
                 <svg class="w-8 h-8 sm:w-10 sm:h-10 text-white ml-1" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" clip-rule="evenodd"/></svg>
               </div>
               <p class="mt-3 text-sm text-white/80 font-medium">Klik untuk Putar</p>
@@ -100,14 +100,14 @@
           <!-- Player frame -->
           <div id="playerFrame" class="w-full h-full hidden absolute inset-0"></div>
           <!-- No embed fallback -->
-          <div id="noEmbed" class="hidden absolute inset-0 bg-pink-900/90 flex items-center justify-center text-center p-6">
+          <div id="noEmbed" class="hidden absolute inset-0 bg-zinc-800/90 flex items-center justify-center text-center p-6">
             <div>
-              <div class="w-12 h-12 text-pink-600 mx-auto mb-3">
+              <div class="w-12 h-12 text-red-600 mx-auto mb-3">
                 <svg viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M12 1.5a5.25 5.25 0 00-5.25 5.25v3a3 3 0 00-3 3v6.75a3 3 0 003 3h10.5a3 3 0 003-3v-6.75a3 3 0 00-3-3v-3c0-2.9-2.35-5.25-5.25-5.25zm3.75 8.25v-3a3.75 3.75 0 10-7.5 0v3h7.5z" clip-rule="evenodd"/></svg>
               </div>
-              <p class="text-pink-200 font-semibold">Video tidak tersedia untuk embed langsung</p>
+              <p class="text-zinc-300 font-semibold">Video tidak tersedia untuk embed langsung</p>
               <a id="watchExternalLink" href="#" target="_blank" rel="noopener noreferrer"
-                class="inline-block mt-4 rounded-xl bg-pink-600 hover:bg-pink-500 px-6 py-2.5 text-sm font-bold text-white transition-colors">
+                class="inline-block mt-4 rounded-xl bg-red-600 hover:bg-red-500 px-6 py-2.5 text-sm font-bold text-white transition-colors">
                 Tonton di Sumber Asli
               </a>
             </div>
@@ -118,7 +118,7 @@
       <!-- Video info -->
       <div class="mt-3 sm:mt-5">
         <h1 id="videoTitle" class="text-base sm:text-xl font-bold text-white leading-snug"></h1>
-        <div class="mt-2 flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm text-pink-300/70">
+        <div class="mt-2 flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm text-zinc-400/70">
           <span id="videoViews" class="hidden flex items-center gap-1.5">
             <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path fill-rule="evenodd" d="M1.323 11.447C2.811 6.976 7.028 3.75 12.001 3.75c4.97 0 9.185 3.223 10.675 7.69.12.362.12.752 0 1.113-1.487 4.471-5.705 7.697-10.677 7.697-4.97 0-9.186-3.223-10.675-7.69a1.762 1.762 0 010-1.113zM17.25 12a5.25 5.25 0 11-10.5 0 5.25 5.25 0 0110.5 0z" clip-rule="evenodd"/></svg>
             <span></span>
@@ -137,7 +137,7 @@
           </span>
         </div>
         <div id="videoCategories" class="mt-3 flex flex-wrap gap-1.5"></div>
-        <div id="videoDesc" class="mt-3 text-xs sm:text-sm text-pink-200/60 leading-relaxed bg-pink-900/30 rounded-xl p-3 hidden"></div>
+        <div id="videoDesc" class="mt-3 text-xs sm:text-sm text-zinc-300/60 leading-relaxed bg-zinc-800/30 rounded-xl p-3 hidden"></div>
       </div>
 
       <!-- Mobile Related -->
@@ -157,18 +157,18 @@
 
 <!-- Error State -->
 <div id="errorState" class="hidden mx-auto max-w-[1400px] px-3 sm:px-5 py-20 text-center">
-  <div class="w-12 h-12 text-pink-700 mx-auto mb-4">
+  <div class="w-12 h-12 text-zinc-600 mx-auto mb-4">
     <svg viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.748c1.154 2-.29 4.5-2.599 4.5H4.645c-2.309 0-3.752-2.5-2.598-4.5L9.4 3.003zM12 8.25a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V9a.75.75 0 01.75-.75zm0 8.25a.75.75 0 100-1.5.75.75 0 000 1.5z" clip-rule="evenodd"/></svg>
   </div>
-  <p class="text-pink-300 font-semibold text-lg">Gagal memuat video</p>
-  <p id="errorMsg" class="text-pink-400/60 text-sm mt-1"></p>
-  <button onclick="loadDetail()" class="mt-4 rounded-xl bg-pink-600 hover:bg-pink-500 px-6 py-2 text-sm font-semibold text-white transition-colors">Coba Lagi</button>
-  <a href="/" class="inline-block mt-2 rounded-xl bg-transparent hover:bg-pink-900/40 border border-pink-700/50 px-6 py-2 text-sm font-semibold text-pink-300 transition-colors">Kembali ke Home</a>
+  <p class="text-zinc-400 font-semibold text-lg">Gagal memuat video</p>
+  <p id="errorMsg" class="text-zinc-500/60 text-sm mt-1"></p>
+  <button onclick="loadDetail()" class="mt-4 rounded-xl bg-red-600 hover:bg-red-500 px-6 py-2 text-sm font-semibold text-white transition-colors">Coba Lagi</button>
+  <a href="/" class="inline-block mt-2 rounded-xl bg-transparent hover:bg-zinc-800/40 border border-zinc-600/50 px-6 py-2 text-sm font-semibold text-zinc-400 transition-colors">Kembali ke Home</a>
 </div>
 
 <!-- Mobile Bottom Nav — Home only -->
-<nav class="sm:hidden fixed bottom-0 inset-x-0 z-50 bg-pink-950/95 backdrop-blur-2xl border-t border-pink-800/50 flex items-center justify-center py-2">
-  <a href="/" class="flex flex-col items-center gap-0.5 px-6 py-1 text-pink-200 transition-colors">
+<nav class="sm:hidden fixed bottom-0 inset-x-0 z-50 bg-[#1e1e1e]/95 backdrop-blur-2xl border-t border-zinc-700/50 flex items-center justify-center py-2">
+  <a href="/" class="flex flex-col items-center gap-0.5 px-6 py-1 text-zinc-300 transition-colors">
     <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M11.47 3.84a.75.75 0 011.06 0l8.69 8.69a.75.75 0 101.06-1.06l-8.689-8.69a2.25 2.25 0 00-3.182 0l-8.69 8.69a.75.75 0 001.061 1.06l8.69-8.69z"/><path d="M12 5.432l8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 01-.75-.75v-4.5a.75.75 0 00-.75-.75h-3a.75.75 0 00-.75.75V21a.75.75 0 01-.75.75H5.625a1.875 1.875 0 01-1.875-1.875v-6.198a2.29 2.29 0 00.091-.086L12 5.43z"/></svg>
     <span class="text-[10px] font-semibold">Home</span>
   </a>

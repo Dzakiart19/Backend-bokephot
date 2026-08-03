@@ -109,10 +109,13 @@ Firebase production → BACKEND_URL = 'https://xxx.replit.app' (di-inject deploy
 
 ## Design System
 
-- **Background**: `bg-pink-950` (#1a0010)
-- **Aksen**: `pink-500` – `pink-700`
+- **Background**: `#1E1E1E` dark gray (`bg-[#1e1e1e]`)
+- **Surface**: `zinc-800` (#27272a) / `zinc-700` (#3f3f46)
+- **Border**: `zinc-700` / `zinc-600`
+- **Aksen (CTA)**: `red-600` / `red-500` (tombol, active state, logo KB)
+- **Teks**: `zinc-50` → `zinc-400` (hierarchy)
 - **Font**: Plus Jakarta Sans (Google Fonts)
 - **CSS framework**: Tailwind CSS via `cdn.tailwindcss.com` (no build step)
 - **Icon**: SVG inline custom (`js/lib/icons.js`)
-- **Scrollbar custom**: pink-950 track, pink-800 thumb
-- **Skeleton animation**: shimmer gradient
+- **Scrollbar custom**: `#1e1e1e` track, `#555555` thumb
+- **Skeleton animation**: shimmer gradient (`#2a2a2a` → `#333333`)

@@ -78,7 +78,7 @@ function renderVideo(data) {
   const catEl = document.getElementById('videoCategories');
   if (data.categories?.length) {
     catEl.innerHTML = data.categories.map(c =>
-      `<a href="/?cat=${escAttr(c.slug)}" class="rounded-lg px-2.5 py-1 text-[11px] font-semibold bg-pink-900/60 text-pink-200/70 hover:bg-pink-800/60 border border-pink-700/30 transition-colors">${escHtml(c.name)}</a>`
+      `<a href="/?cat=${escAttr(c.slug)}" class="rounded-lg px-2.5 py-1 text-[11px] font-semibold bg-zinc-800/60 text-zinc-300/70 hover:bg-zinc-700/60 border border-zinc-600/30 transition-colors">${escHtml(c.name)}</a>`
     ).join('');
   }
 
@@ -165,7 +165,7 @@ function renderVideo(data) {
     relatedList.innerHTML   = data.related.map(buildRelatedCardList).join('');
     mobileRelated.innerHTML = data.related.slice(0, 8).map(buildRelatedCardGrid).join('');
   } else {
-    relatedList.innerHTML = '<p class="text-pink-400/50 text-sm">Tidak ada video terkait</p>';
+    relatedList.innerHTML = '<p class="text-zinc-500/50 text-sm">Tidak ada video terkait</p>';
   }
 }
 
