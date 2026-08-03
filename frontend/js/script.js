@@ -118,6 +118,9 @@ window.closeSidebar = () => {
 // ── Browser navigation ────────────────────────────────────────────────────────
 window.addEventListener('popstate', () => { initFromURL(); loadVideos(); });
 
+// ── Expose ke global scope (dipanggil dari onclick HTML) ──────────────────────
+window.loadVideos = loadVideos;
+
 // ── Boot ──────────────────────────────────────────────────────────────────────
 (async () => {
   firePendingAd(); // ← iklan pending dari klik kategori (full page navigation)

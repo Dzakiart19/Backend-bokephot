@@ -27,8 +27,12 @@ function parseDuration(iso) {
 function formatRelativeDate(isoDate) {
   if (!isoDate) return '';
   try {
-    const diff   = Date.now() - new Date(isoDate).getTime();
+    const date = new Date(isoDate);
+    if (isNaN(date.getTime())) return ''; // tanggal invalid
+    const diff   = Date.now() - date.getTime();
+    if (diff < 0) return 'baru saja'; // tanggal di masa depan
     const mins   = Math.floor(diff / 60_000);
+    if (mins < 1)  return 'baru saja';
     const hours  = Math.floor(diff / 3_600_000);
     const days   = Math.floor(diff / 86_400_000);
     const months = Math.floor(days / 30);

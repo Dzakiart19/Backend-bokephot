@@ -12,6 +12,15 @@ const PORT = process.env.PORT || 5000;
 
 console.log(`ℹ️  PORT=${PORT}`);
 
+// ── Security headers ──────────────────────────────────────────────────────────
+app.disable('x-powered-by'); // jangan expose server tech stack
+app.use((_req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  next();
+});
+
 // ── Middleware ────────────────────────────────────────────────────────────────
 app.use(cors());
 app.use(express.json());

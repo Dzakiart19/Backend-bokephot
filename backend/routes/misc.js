@@ -22,4 +22,14 @@ router.get('/', (_req, res) => res.sendFile(path.join(FRONTEND, 'index.html')));
 router.get('/detail', (_req, res) => res.sendFile(path.join(FRONTEND, 'detail.html')));
 router.get('/video/:slug', (_req, res) => res.sendFile(path.join(FRONTEND, 'detail.html')));
 
+// ── Catch-all 404 ──────────────────────────────────────────────────────────────
+// API routes yang tidak ada → JSON
+router.use('/api/*', (_req, res) => {
+  res.status(404).json({ error: 'Endpoint tidak ditemukan' });
+});
+// Halaman web yang tidak ada → index.html (SPA fallback)
+router.use((_req, res) => {
+  res.sendFile(path.join(FRONTEND, 'index.html'));
+});
+
 module.exports = router;

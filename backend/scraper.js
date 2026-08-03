@@ -5,10 +5,13 @@ const { decodeHtml, parseDuration, formatRelativeDate } = require('./lib/helpers
 const { parseVideoCards, parseTotalPages } = require('./lib/parser');
 const { getCategories } = require('./lib/categories');
 
+const MAX_PAGE = 2000; // batas halaman wajar, cegah request page=9999
+
 // ── Homepage ──────────────────────────────────────────────────────────────────
 async function scrapeHomepage(page = 1) {
   page = parseInt(page);
   if (isNaN(page) || page < 1) page = 1;
+  if (page > MAX_PAGE) page = MAX_PAGE;
   const url  = page === 1 ? `${BASE_URL}/` : `${BASE_URL}/page/${page}/`;
   const html = await fetchPage(url);
   return {
@@ -22,6 +25,7 @@ async function scrapeHomepage(page = 1) {
 async function scrapeCategory(slug, page = 1) {
   page = parseInt(page);
   if (isNaN(page) || page < 1) page = 1;
+  if (page > MAX_PAGE) page = MAX_PAGE;
   const url  = page === 1
     ? `${BASE_URL}/kategori/${slug}/`
     : `${BASE_URL}/kategori/${slug}/page/${page}/`;
@@ -41,6 +45,7 @@ async function scrapeCategory(slug, page = 1) {
 async function scrapeSearch(q, page = 1) {
   page = parseInt(page);
   if (isNaN(page) || page < 1) page = 1;
+  if (page > MAX_PAGE) page = MAX_PAGE;
   const url  = page === 1
     ? `${BASE_URL}/?s=${encodeURIComponent(q)}`
     : `${BASE_URL}/page/${page}/?s=${encodeURIComponent(q)}`;
