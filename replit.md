@@ -27,7 +27,7 @@ Browser → Express :5000 (dev) / :PORT (prod)
 | File | Fungsi |
 |------|--------|
 | `index.js` | Entry point, security headers, rate limiting, mount routes |
-| `scraper.js` | Homepage, kategori, search, detail video, embed resolver |
+| `scraper.js` | Homepage, kategori, search, detail video, embed resolver. Berisi helper `isVideoDetailPage()` (deteksi redirect 200→homepage) dan `parseCategoriesFromContent()` (parse kategori dari `entry-content`, bukan body class) |
 | `lib/fetcher.js` | axios + cache wrapper, retry pada timeout, fail-fast pada source 5xx |
 | `lib/parser.js` | Regex parser untuk `<article>` video cards dan pagination |
 | `lib/cache.js` | In-memory Map, TTL 5 menit, max 300 entry (FIFO eviction) |
@@ -82,7 +82,7 @@ URL iklan dikonfigurasi di satu tempat: `frontend/js/lib/ads.js` → `AD_URL`.
 | `Referrer-Policy` | `strict-origin-when-cross-origin` |
 | CORS | `*` (public read-only API) |
 | SSRF proxy-thumb | Whitelist host: `bokepcolmek.me`, `i0-i3.wp.com`, `secure.gravatar.com` |
-| Rate limit API | 60 req/menit/IP |
+| Rate limit API | 100 req/menit/IP |
 | Rate limit proxy-thumb | 120 req/menit/IP |
 
 ## Error Handling
@@ -94,10 +94,13 @@ Fetcher membedakan jenis error sumber:
 | Sumber return 5xx | `SOURCE_5xx` | 503 + pesan user-friendly |
 | Timeout (after retry) | `SOURCE_TIMEOUT` | 504 + pesan user-friendly |
 | Sumber return 404 | `SOURCE_404` | 404 |
+| Slug video tidak ada (source redirect ke homepage) | `SOURCE_404` | 404 |
 | Error lain | — | 500 |
 | Rate limit | — | 429 + `Retry-After` header |
 
 Fetcher retry **2x** untuk network error/timeout, tapi langsung fail untuk HTTP 5xx (retry HTTP 5xx sia-sia).
+
+> **Catatan penting:** Sumber site (`bokepcolmek.me`) mengembalikan HTTP 200 + homepage untuk slug `/vids/` yang tidak valid. `scraper.js` mendeteksi kondisi ini secara manual dengan memeriksa keberadaan meta tag video (`article:published_time`, `itemprop="embedURL"`, `itemprop="duration"`) — jika tidak ada, error `SOURCE_404` dilempar.
 
 ## Routing
 

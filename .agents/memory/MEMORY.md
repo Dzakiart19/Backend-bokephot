@@ -1,2 +1,2 @@
-- [BokepHunter scraper](bokephunter-scraper.md) — site scrapes bokephunter.com; two embed source types need different resolution strategies
+- [BokepHunter scraper](bokephunter-scraper.md) — site scrapes bokepcolmek.me; slug invalid dapat 200+homepage bukan 404; body class tidak ada category-slug; parse dari entry-content
 - [Backend dep mismatch fixed](backend-deps.md) — node-telegram-bot-api missing from backend/package.json; must be installed there, not just root

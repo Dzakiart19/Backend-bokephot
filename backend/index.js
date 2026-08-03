@@ -23,7 +23,7 @@ app.use((_req, res, next) => {
 });
 
 // ── Rate limiting ─────────────────────────────────────────────────────────────
-const apiLimit   = createRateLimit({ windowMs: 60_000, max: 60,  message: 'Terlalu banyak permintaan. Coba lagi dalam 1 menit.' });
+const apiLimit   = createRateLimit({ windowMs: 60_000, max: 100, message: 'Terlalu banyak permintaan. Coba lagi dalam 1 menit.' });
 const thumbLimit = createRateLimit({ windowMs: 60_000, max: 120, message: 'Terlalu banyak permintaan thumbnail. Coba lagi nanti.' });
 
 // ── Middleware ────────────────────────────────────────────────────────────────

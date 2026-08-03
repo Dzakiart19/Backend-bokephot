@@ -57,10 +57,69 @@ async function scrapeSearch(q, page = 1) {
   };
 }
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+/**
+ * Deteksi apakah halaman yang di-fetch adalah benar-benar halaman video detail.
+ * Sumber site me-redirect slug tidak valid ke homepage (HTTP 200),
+ * sehingga kita perlu validasi konten secara manual.
+ */
+function isVideoDetailPage(html) {
+  return (
+    html.includes('article:published_time') ||
+    html.includes('itemprop="embedURL"')    ||
+    html.includes('itemprop="duration"')
+  );
+}
+
+/**
+ * Parse kategori dari bagian konten artikel (bukan nav menu).
+ * Sumber site memiliki nav menu yang memuat SEMUA kategori — untuk menghindari
+ * polusi, kita scope pencarian ke dalam <div class="entry-content ..."> saja.
+ * Fallback ke seluruh HTML jika entry-content tidak ditemukan.
+ */
+function parseCategoriesFromContent(html, allCats) {
+  const catMap = Object.fromEntries(allCats.map(c => [c.slug, c]));
+
+  // Ambil hanya bagian entry-content agar tidak mengambil kategori dari nav
+  const contentStart = html.indexOf('class="entry-content');
+  const contentEnd   = html.indexOf('id="related-videos"');
+  const scope = contentStart >= 0
+    ? html.substring(contentStart, contentEnd > contentStart ? contentEnd : contentStart + 8000)
+    : html;
+
+  const seen       = new Set();
+  const categories = [];
+  const re         = /href="[^"]*\/kategori\/([^"\/]+)\/?["\/]/g;
+  let m;
+  while ((m = re.exec(scope)) !== null) {
+    const catSlug = m[1];
+    if (seen.has(catSlug)) continue;
+    seen.add(catSlug);
+    const info = catMap[catSlug];
+    categories.push({
+      slug: catSlug,
+      name: info
+        ? info.name
+        : catSlug.split('-').map(w => w[0].toUpperCase() + w.slice(1)).join(' '),
+    });
+  }
+  return categories;
+}
+
 // ── Video detail ──────────────────────────────────────────────────────────────
 async function scrapeVideoDetail(slug) {
   const url  = `${BASE_URL}/vids/${slug}/`;
   const html = await fetchPage(url);
+
+  // FIX #2: Deteksi redirect ke homepage (slug tidak valid)
+  // Source site mengembalikan HTTP 200 + homepage untuk slug apapun,
+  // sehingga kita harus validasi konten halaman secara manual.
+  if (!isVideoDetailPage(html)) {
+    const err = new Error('SOURCE_404');
+    err.sourceStatus = 404;
+    throw err;
+  }
 
   const title       = (m => m ? decodeHtml(m[1]) : slug)(html.match(/property="og:title"\s+content="([^"]+)"/));
   const description = (m => m ? decodeHtml(m[1]) : '')(html.match(/property="og:description"\s+content="([^"]+)"/));
@@ -69,30 +128,13 @@ async function scrapeVideoDetail(slug) {
   const postedAt    = (html.match(/property="article:published_time"\s+content="([^"]+)"/) || [])[1] || '';
   const postedAgo   = formatRelativeDate(postedAt);
 
-  // Embed URL (langsung dari itemprop, tidak perlu RC4)
+  // Embed URL
   const embedM   = html.match(/itemprop="embedURL"\s+content="([^"]+)"/);
   const embedUrl = embedM ? embedM[1] : '';
   if (embedUrl) setCache(`embed_${slug}`, embedUrl);
 
-  // Kategori dari body class (handle double-quote dan single-quote HTML attribute)
-  const allCats  = getCategories();
-  const catMap   = Object.fromEntries(allCats.map(c => [c.slug, c]));
-  const categories = [];
-  const bodyM    = html.match(/<body[^>]+class=["']([^"']+)["']/);
-  if (bodyM) {
-    const seen = new Set();
-    for (const cls of bodyM[1].split(/\s+/)) {
-      if (!cls.startsWith('category-')) continue;
-      const catSlug = cls.replace('category-', '');
-      if (seen.has(catSlug)) continue;
-      seen.add(catSlug);
-      const info = catMap[catSlug];
-      categories.push({
-        slug: catSlug,
-        name: info ? info.name : catSlug.split('-').map(w => w[0].toUpperCase() + w.slice(1)).join(' '),
-      });
-    }
-  }
+  // FIX #1: Parse kategori dari entry-content (bukan body class yang tidak ada)
+  const categories = parseCategoriesFromContent(html, getCategories());
 
   // Related videos
   const relIdx = html.indexOf('id="related-videos"');
@@ -111,6 +153,10 @@ async function resolveEmbedUrl(slug) {
 
   try {
     const html = await fetchPage(`${BASE_URL}/vids/${slug}/`);
+
+    // Jangan resolve embed jika halaman bukan video detail
+    if (!isVideoDetailPage(html)) return null;
+
     const embedM = html.match(/itemprop="embedURL"\s+content="([^"]+)"/);
     if (embedM) { setCache(key, embedM[1]); return embedM[1]; }
 

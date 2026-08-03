@@ -1,26 +1,44 @@
 ---
-name: BokepHunter scraper
-description: Scrapes bokephunter.com; two embed source types with different resolution strategies. Thumbnail hotlink notes included.
+name: BokepHunter / BokepColmek scraper quirks
+description: Perilaku non-obvious dari sumber site bokepcolmek.me yang mempengaruhi cara scraper harus bekerja
 ---
 
-## Embed source types
+## Quirk #1 — Slug tidak valid → HTTP 200 bukan 404
 
-**bokeprest-XXXX** slugs:
-- Thumbnail from `bokep.rest/wp-content/uploads/...` — hotlink-blocked, must proxy via `/api/bh/proxy-thumb`
-- Embed resolved by: bokep.rest page → luluvdo.com/e/ID → unpack eval(p,a,c,k,e,d) JS → extract `file:"https://...master.m3u8"` → return direct HLS stream (no ads)
-- Luluvdo m3u8 tokens expire ~8h (e=28800 param); 5-min in-memory cache is fine
-- If Luluvdo direct fails, falls back to luluvdo iframe
+Sumber site mengembalikan HTTP 200 + halaman homepage untuk slug `/vids/` apapun yang tidak valid, bukan HTTP 404. Fetcher tidak bisa membedakan ini karena statusnya tetap 200.
 
-**indoav-XXXX** slugs:
-- Embed constructed as `https://www.indoav.com/video/embed/VIDEOID`
-- Loaded in sandboxed iframe (`sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"`) — no `allow-popups` blocks popup/popunder ads
-- RC4 `/video/v/` POST for direct stream blocked by Cloudflare server-side; sandbox is the best available approach
+**Fix:** Di `scraper.js` → fungsi `isVideoDetailPage(html)` memeriksa keberadaan meta tag video:
+- `article:published_time`
+- `itemprop="embedURL"`
+- `itemprop="duration"`
 
-## Key decisions
+Jika tidak satu pun ada → lempar `SOURCE_404`.
 
-- Embed URL is now resolved **eagerly** on the `/api/bh/video/:slug` endpoint (not lazily on click). This means the detail page delivers `embedUrlFromPage` ready to use, so play is instant.
-- `xepoFrame` section on bokephunter.com contains the player but the iframe `src` is JS-rendered (not in raw HTML), so it must always be resolved via bokep.rest.
-- Thumbnails from `bokep.rest` must go through `/api/bh/proxy-thumb?url=...` — direct browser requests are hotlink-blocked.
-- Cache TTL: 5 minutes in-memory. Embed URLs cached under `embed_SLUG` key.
+**Why:** Tanpa ini, `/api/bh/video/slug-ngawur` mengembalikan HTTP 200 dengan data semi-kosong (judul diambil dari homepage). Frontend akan render halaman detail kosong alih-alih redirect ke 404.
 
-**Why:** Eager embed resolution inside the API response caused 10–17s page load times (scrape + embed = sequential). The pattern that works: return page data fast (~0.7s), fire embed resolution as a fire-and-forget background task after `res.json()`, and have the frontend immediately start prefetching `/embed` so the promise is already resolved by the time the user taps play.
+**How to apply:** Setiap fungsi yang fetch `/vids/{slug}/` harus memanggil `isVideoDetailPage(html)` sebelum parsing. Sudah diterapkan di `scrapeVideoDetail()` dan `resolveEmbedUrl()`.
+
+---
+
+## Quirk #2 — Body class tidak mengandung `category-{slug}`
+
+WordPress biasanya menambahkan `category-{slug}` pada `<body class="...">` di halaman post. Tema **retrotube** yang dipakai sumber site TIDAK melakukan ini.
+
+Body class aktual:
+```
+wp-singular post-template-default single single-post postid-XXXXXX single-format-standard wp-embed-responsive wp-theme-retrotube
+```
+
+**Fix:** Di `scraper.js` → fungsi `parseCategoriesFromContent(html, allCats)`:
+- Scope pencarian ke bagian `entry-content` saja (bukan seluruh halaman, karena nav menu memuat SEMUA kategori sebagai list).
+- Parse href `/kategori/{slug}/` dalam scope tersebut.
+
+**Why:** Nav menu di setiap halaman menampilkan semua 47 kategori — tanpa scoping ke entry-content, semua kategori akan ikut terparsing untuk setiap video.
+
+**How to apply:** Gunakan `parseCategoriesFromContent` bukan regex body class. Sudah diterapkan di `scrapeVideoDetail()`.
+
+---
+
+## Struktur HTML entry-content
+
+Kategori video ada di dalam `<div class="entry-content ...">` sebagai link href ke `/kategori/{slug}/`. Related videos ada di `id="related-videos"`. Scope parsing kategori harus antara `entry-content` dan `related-videos`.
